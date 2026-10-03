@@ -56,6 +56,10 @@ export function createCatalogService(
   repository: DataRepository,
 ): CatalogService {
   return {
+    async brands() {
+      const db = await repository.read();
+      return [...db.brands].sort((a, b) => a.name.localeCompare(b.name, "vi"));
+    },
     async categories() {
       const db = await repository.read();
       return db.categories.map((category) => ({

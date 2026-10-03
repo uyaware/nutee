@@ -50,6 +50,7 @@ export default function UsersPage() {
       </Stack>
       <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
         <TextField
+          type="search"
           label="Tìm tên, email hoặc điện thoại"
           value={q}
           onChange={(e) => update("q", e.target.value)}

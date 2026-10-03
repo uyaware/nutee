@@ -93,6 +93,7 @@ export default function OperationsOrdersPage() {
         }}
       >
         <TextField
+          type="search"
           label="Tìm đơn hàng"
           placeholder="Mã đơn, tên người nhận hoặc số điện thoại"
           value={q}

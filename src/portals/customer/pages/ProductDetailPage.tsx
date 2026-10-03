@@ -116,7 +116,7 @@ function ProductGallery({ product }: { product: ProductDetail }) {
                 transform: "translateX(-50%)",
                 px: 1.5,
                 py: 0.5,
-                borderRadius: 4,
+                borderRadius: 2,
                 bgcolor: "background.paper",
                 color: "text.secondary",
               }}
@@ -251,7 +251,7 @@ export default function ProductDetailPage() {
       </Breadcrumbs>
       <Paper
         variant="outlined"
-        sx={{ p: { xs: 2, sm: 3, lg: 4 }, borderRadius: 3 }}
+        sx={{ p: { xs: 2, sm: 3, lg: 4 }, borderRadius: 2 }}
       >
         <Box
           sx={{
@@ -419,7 +419,7 @@ export default function ProductDetailPage() {
         id="product-specifications"
         variant="outlined"
         aria-labelledby="product-specs-title"
-        sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3 }}
+        sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 2 }}
       >
         <Typography id="product-specs-title" variant="h2" sx={{ mb: 2 }}>
           Thông số kỹ thuật

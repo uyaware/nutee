@@ -12,9 +12,7 @@ const base: ThemeOptions = {
       contrastText: tokens.color.surface,
     },
     secondary: {
-      main: tokens.color.orangeDark,
-      light: tokens.color.orange,
-      dark: tokens.color.orangeInk,
+      main: tokens.color.charcoal,
       contrastText: tokens.color.surface,
     },
     background: { default: tokens.color.canvas, paper: tokens.color.surface },
@@ -51,7 +49,7 @@ const base: ThemeOptions = {
       fontSize: tokens.typography.small,
     },
   },
-  shape: { borderRadius: tokens.radius.medium },
+  shape: { borderRadius: tokens.radius.small },
   spacing: tokens.spacing.unit,
   components: {
     MuiButton: {
@@ -73,16 +71,30 @@ const base: ThemeOptions = {
           width: tokens.layout.controlHeight,
           height: tokens.layout.controlHeight,
           flexShrink: 0,
+          borderRadius: tokens.radius.small,
         },
       },
     },
     MuiPaper: {
       defaultProps: { elevation: 0 },
-      styleOverrides: { outlined: { borderColor: tokens.color.border } },
+      styleOverrides: {
+        root: { borderRadius: tokens.radius.medium },
+        outlined: { borderColor: tokens.color.border },
+      },
     },
     MuiCard: {
-      styleOverrides: { root: { border: `1px solid ${tokens.color.border}` } },
+      styleOverrides: {
+        root: {
+          border: `1px solid ${tokens.color.border}`,
+          borderRadius: tokens.radius.medium,
+        },
+      },
     },
+    MuiChip: {
+      styleOverrides: { root: { borderRadius: tokens.radius.small } },
+    },
+    MuiAppBar: { styleOverrides: { root: { borderRadius: 0 } } },
+    MuiDrawer: { styleOverrides: { paper: { borderRadius: 0 } } },
     MuiTextField: { defaultProps: { fullWidth: true, size: "small" } },
     MuiInputBase: {
       styleOverrides: {
@@ -107,6 +119,7 @@ const base: ThemeOptions = {
     MuiOutlinedInput: {
       styleOverrides: {
         root: ({ ownerState }) => ({
+          ...(ownerState.type === "search" ? { borderRadius: "999px" } : {}),
           ...(ownerState.multiline
             ? { height: "auto", alignItems: "flex-start", padding: "12px 14px" }
             : {

@@ -93,7 +93,6 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
           <Button
             startIcon={<AddRounded />}
             variant="contained"
-            color="secondary"
             onClick={() => {
               setError("");
               setDraft({ id: "", name: "", parentId: "", isActive: true });
@@ -105,6 +104,7 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
       />
       <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
         <TextField
+          type="search"
           label={`Tìm tên ${label}`}
           value={q}
           onChange={(e) => update("q", e.target.value)}

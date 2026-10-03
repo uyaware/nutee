@@ -160,6 +160,7 @@ export default function CatalogPage() {
             }}
           >
             <TextField
+              type="search"
               name="q"
               label="Tìm tên, mã hoặc cấu hình"
               defaultValue={filters.q}

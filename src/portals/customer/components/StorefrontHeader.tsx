@@ -80,7 +80,13 @@ export function StorefrontHeader() {
             key={search}
             role="search"
             aria-label="Tìm sản phẩm toàn cửa hàng"
-            sx={{ gridArea: "search", minWidth: 0 }}
+            sx={{
+              gridArea: "search",
+              minWidth: 0,
+              width: "100%",
+              maxWidth: 500,
+              justifySelf: "center",
+            }}
             onSubmit={(event) => {
               event.preventDefault();
               const q = String(
@@ -90,6 +96,7 @@ export function StorefrontHeader() {
             }}
           >
             <TextField
+              type="search"
               name="q"
               label="Tìm sản phẩm"
               defaultValue={search}
@@ -132,7 +139,7 @@ export function StorefrontHeader() {
             <Button
               component={Link}
               to={session.data ? "/account/profile" : "/login"}
-              variant="contained"
+              variant="outlined"
               startIcon={<PersonOutlineRounded />}
               sx={{
                 px: { xs: 1.25, sm: 2 },

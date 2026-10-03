@@ -32,7 +32,7 @@ export default function HomePage() {
       <Paper
         sx={{
           bgcolor: tokens.color.blueTint,
-          borderRadius: 4,
+          borderRadius: 2,
           overflow: "hidden",
           display: "grid",
           gridTemplateColumns: { xs: "1fr", md: "1.15fr 1fr" },
@@ -186,10 +186,7 @@ export default function HomePage() {
           sx={{ mb: 3 }}
         >
           <Box>
-            <Typography variant="overline" color="primary">
-              THE NUTEE EDIT
-            </Typography>
-            <Typography variant="h2">Một góc công nghệ</Typography>
+            <Typography variant="h2">Các sản phẩm nổi bật</Typography>
           </Box>
           <Button
             component={Link}

@@ -128,6 +128,7 @@ export default function PrototypeAfterSales({ portal }: { portal: Portal }) {
         sx={{ minWidth: 0 }}
       >
         <TextField
+          type="search"
           label="Tìm kiếm yêu cầu"
           placeholder="Mã yêu cầu, đơn hoặc tên sản phẩm"
           value={q}

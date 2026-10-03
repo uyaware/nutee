@@ -3,17 +3,15 @@ import {
   Box,
   Button,
   Container,
-  Divider,
   Stack,
   Typography,
 } from "@mui/material";
-import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
-import { Brand } from "../../../shared/components/Brand";
 import { useLogout, useSession } from "../../../shared/auth/useSession";
 import { ErrorState, LoadingState } from "../../../shared/components/Feedback";
 import { safeReturnTo } from "../../../shared/auth/redirect";
 import { StorefrontHeader } from "../components/StorefrontHeader";
+import { StorefrontFooter } from "../components/StorefrontFooter";
 
 export function StorefrontLayout() {
   const location = useLocation();
@@ -67,38 +65,7 @@ export function StorefrontLayout() {
           <Outlet />
         )}
       </Container>
-      <Box
-        component="footer"
-        sx={{
-          bgcolor: "background.paper",
-          borderTop: "1px solid",
-          borderColor: "divider",
-          py: 4,
-        }}
-      >
-        <Container maxWidth="xl">
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            justifyContent="space-between"
-            spacing={3}
-          >
-            <Brand />
-            <Stack direction="row" spacing={2} flexWrap="wrap">
-              <Button
-                component={Link}
-                to="/management"
-                endIcon={<ArrowOutwardRounded />}
-              >
-                Cổng vận hành
-              </Button>
-            </Stack>
-          </Stack>
-          <Divider sx={{ my: 3 }} />
-          <Typography variant="caption" color="text.secondary">
-            © {new Date().getFullYear()} NUTEE. Không gian công nghệ của bạn.
-          </Typography>
-        </Container>
-      </Box>
+      <StorefrontFooter />
     </Box>
   );
 }

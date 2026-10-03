@@ -54,7 +54,6 @@ export default function PromotionsPage() {
             component={Link}
             to="/management/promotions/new"
             variant="contained"
-            color="secondary"
             startIcon={<AddRounded />}
           >
             Tạo khuyến mãi
@@ -63,6 +62,7 @@ export default function PromotionsPage() {
       />
       <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
         <TextField
+          type="search"
           label="Tìm mã khuyến mãi"
           value={q}
           onChange={(e) => update("q", e.target.value)}

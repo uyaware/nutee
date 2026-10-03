@@ -47,7 +47,7 @@ export function ProductReviews({
       id="product-reviews"
       variant="outlined"
       aria-labelledby="product-reviews-title"
-      sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3 }}
+      sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 2 }}
     >
       <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 3 }}>
         <Typography variant="h2" id="product-reviews-title">

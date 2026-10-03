@@ -65,7 +65,7 @@ export default function ReviewPage() {
       >
         Quay lại đơn hàng
       </Button>
-      <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 3 }}>
+      <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 2 }}>
         {params.get("sent") === "1" ? (
           <Stack
             spacing={2.5}

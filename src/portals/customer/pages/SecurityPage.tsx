@@ -64,7 +64,7 @@ export default function SecurityPage() {
           Quản lý mật khẩu đăng nhập của bạn.
         </Typography>
       </Stack>
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: "hidden" }}>
+      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
         {complete ? (
           <Stack
             spacing={2.5}
@@ -116,7 +116,7 @@ export default function SecurityPage() {
                 sx={{
                   width: 44,
                   height: 44,
-                  borderRadius: 1.5,
+                  borderRadius: 1,
                   bgcolor: "action.selected",
                   color: "primary.main",
                   display: "flex",

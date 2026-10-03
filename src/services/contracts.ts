@@ -31,6 +31,7 @@ export interface AuthService {
 }
 export interface CatalogService {
   categories(): Promise<CatalogFacets["categories"]>;
+  brands(): Promise<CatalogFacets["brands"]>;
   featured(): Promise<ProductSummary[]>;
   list(filters: CatalogFilters): Promise<CatalogPage>;
   detail(id: string): Promise<ProductDetail>;

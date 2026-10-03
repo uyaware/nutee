@@ -82,7 +82,7 @@ export function CartProductRow({
             height: { xs: 64, sm: 80 },
             p: 1,
             bgcolor: "background.default",
-            borderRadius: 1.5,
+            borderRadius: 1,
           }}
         >
           <ProductImage src={item.imageUrl} alt={`Minh họa ${item.name}`} />

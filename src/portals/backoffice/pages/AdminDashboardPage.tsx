@@ -153,12 +153,7 @@ export default function AdminDashboardPage() {
                     borderColor: "primary.main",
                     boxShadow: `0 12px 28px ${alpha(tokens.color.blue, 0.18)}`,
                   }
-                : i === 2
-                  ? {
-                      bgcolor: tokens.color.orangeTint,
-                      borderColor: alpha(tokens.color.orange, 0.28),
-                    }
-                  : {}),
+                : {}),
             }}
           >
             <Typography
@@ -175,12 +170,7 @@ export default function AdminDashboardPage() {
               sx={{
                 fontSize: "clamp(1.25rem, 2vw, 2rem)",
                 fontWeight: 700,
-                color:
-                  i === 0
-                    ? "common.white"
-                    : i === 2
-                      ? "secondary.main"
-                      : "text.primary",
+                color: i === 0 ? "common.white" : "text.primary",
                 my: 1.5,
                 fontVariantNumeric: "tabular-nums",
                 overflowWrap: "anywhere",
@@ -304,7 +294,6 @@ export default function AdminDashboardPage() {
             component={Link}
             to="/management/after-sales?status=pending"
             variant="outlined"
-            color="secondary"
           >
             Tiếp nhận yêu cầu
           </Button>
@@ -338,7 +327,6 @@ export default function AdminDashboardPage() {
               component={Link}
               to={`/management/${link.to}`}
               variant="outlined"
-              color={link.to === "products/new" ? "secondary" : "primary"}
             >
               {link.label}
             </Button>

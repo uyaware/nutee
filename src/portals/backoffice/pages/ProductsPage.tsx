@@ -71,7 +71,6 @@ export default function ProductsPage() {
             to="/management/products/new"
             startIcon={<AddRounded />}
             variant="contained"
-            color="secondary"
           >
             Thêm sản phẩm
           </Button>
@@ -92,6 +91,7 @@ export default function ProductsPage() {
       </Stack>
       <Stack direction={{ xs: "column", lg: "row" }} gap={2}>
         <TextField
+          type="search"
           label="Tìm tên hoặc SKU"
           value={q}
           onChange={(e) => update("q", e.target.value)}

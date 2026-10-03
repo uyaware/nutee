@@ -189,7 +189,7 @@ export default function ProfilePage() {
             sx={{
               p: { xs: 2.5, sm: 3 },
               bgcolor: "background.default",
-              borderRadius: "0 0 12px 12px",
+              borderRadius: "0 0 8px 8px",
             }}
           >
             <Typography variant="body2" color="text.secondary">

@@ -94,6 +94,7 @@ export function PrototypeOrderHistory({
             </Tabs>
           </Paper>
           <TextField
+            type="search"
             label="Tìm theo mã đơn"
             value={search}
             onChange={(event) => updateParam("q", event.target.value)}
