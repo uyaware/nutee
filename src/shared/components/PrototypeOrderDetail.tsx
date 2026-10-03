@@ -32,6 +32,7 @@ import { StatusBadge } from "./StatusBadge";
 import { EmptyState } from "./Feedback";
 import { PrototypeWorkflow } from "./PrototypeWorkflow";
 import { usePrototypeWorkflow } from "../lib/usePrototypeWorkflow";
+import { StatusHistoryStepper } from "./StatusHistoryStepper";
 import {
   OrderProducts,
   OrderTotals,
@@ -195,57 +196,41 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
           <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
             <Stack spacing={2}>
               <Typography variant="h2">Lịch sử đơn hàng</Typography>
-              {order.history.map((entry, index) => (
-                <Stack
-                  key={`${entry.at}-${index}`}
-                  direction={{ xs: "column", sm: "row" }}
-                  gap={1.5}
-                  alignItems={{ sm: "center" }}
-                >
-                  <Box>
-                    <StatusBadge status={entry.status} />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    {dateTime(entry.at)}
-                    {!customer &&
-                      ` · ${entry.actorId.startsWith("customer") ? "Khách hàng" : "Nhân viên vận hành"}`}
-                  </Typography>
-                </Stack>
-              ))}
-              {!customer &&
-                workflow.preview.map((entry) => (
-                  <Stack
-                    key={entry.status}
-                    spacing={1}
-                    sx={{
-                      pl: 2,
-                      borderLeft: "2px solid",
-                      borderColor: "primary.main",
-                    }}
-                  >
-                    <Box>
-                      <StatusBadge status={entry.status} />
-                    </Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Bước xử lý minh họa · Nhân viên vận hành
-                    </Typography>
-                    <Typography
-                      sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
-                    >
-                      {entry.note}
-                    </Typography>
-                  </Stack>
-                ))}
-              {params.get("cancelled") === "1" && (
-                <Stack spacing={1}>
-                  <Box>
-                    <StatusBadge status="cancelled" />
-                  </Box>
-                  <Typography variant="body2">
-                    Minh họa xác nhận hủy đơn.
-                  </Typography>
-                </Stack>
-              )}
+              <StatusHistoryStepper
+                label="Lịch sử trạng thái đơn hàng"
+                finished={status === "delivered" || cancelled}
+                entries={[
+                  ...order.history.map((entry) => ({
+                    title:
+                      steps.find((step) => step.status === entry.status)
+                        ?.label ?? "Đã hủy",
+                    description: `${dateTime(entry.at)} · ${entry.actorId.startsWith("customer") ? "Khách hàng" : "Nhân viên vận hành"}`,
+                    negative: entry.status === "cancelled",
+                  })),
+                  ...(customer
+                    ? []
+                    : workflow.preview.map((entry) => ({
+                        title:
+                          steps.find((step) => step.status === entry.status)
+                            ?.label ?? "Đã hủy",
+                        description: "Bước xử lý minh họa · Nhân viên vận hành",
+                        note: entry.note,
+                        negative: entry.status === "cancelled",
+                      }))),
+                  ...(customer &&
+                  params.get("cancelled") === "1" &&
+                  order.status !== "cancelled"
+                    ? [
+                        {
+                          title: "Đã hủy",
+                          description: "Bước xử lý minh họa · Khách hàng",
+                          note: reason,
+                          negative: true,
+                        },
+                      ]
+                    : []),
+                ]}
+              />
             </Stack>
           </Paper>
         </Stack>

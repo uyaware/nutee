@@ -66,7 +66,7 @@ export default function PrototypeAfterSales({ portal }: { portal: Portal }) {
       (type === "all" || request.type === type) &&
       `${request.id} ${order?.id} ${item?.name} ${order?.address.recipient}`
         .toLocaleLowerCase("vi")
-        .includes(q.toLocaleLowerCase("vi"))
+        .includes(q.trim().toLocaleLowerCase("vi"))
     );
   });
   const size = 5;
@@ -76,10 +76,10 @@ export default function PrototypeAfterSales({ portal }: { portal: Portal }) {
   );
   const update = (key: string, value: string) => {
     const next = new URLSearchParams(params);
-    if (value && value !== "all") next.set(key, value);
+    if (value && (key === "q" || value !== "all")) next.set(key, value);
     else next.delete(key);
     if (key !== "page") next.delete("page");
-    setParams(next, { replace: true });
+    setParams(next, { replace: true, preventScrollReset: true });
   };
   return (
     <Stack spacing={3}>
@@ -127,19 +127,24 @@ export default function PrototypeAfterSales({ portal }: { portal: Portal }) {
           ))}
         </Tabs>
       </Paper>
-      <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        gap={2}
+        sx={{ minWidth: 0 }}
+      >
         <TextField
-          label="Tìm mã yêu cầu, đơn hoặc sản phẩm"
+          label="Tìm kiếm yêu cầu"
+          placeholder="Mã yêu cầu, đơn hoặc tên sản phẩm"
           value={q}
           onChange={(event) => update("q", event.target.value)}
-          sx={{ flex: 1 }}
+          sx={{ flex: "1 1 0", minWidth: 0 }}
         />
         <TextField
           select
           label="Loại yêu cầu"
           value={type}
           onChange={(event) => update("type", event.target.value)}
-          sx={{ minWidth: 200 }}
+          sx={{ width: { xs: "100%", sm: 220 }, flexShrink: 0 }}
         >
           <MenuItem value="all">Tất cả yêu cầu</MenuItem>
           {Object.entries(afterSaleTypes).map(([value, label]) => (

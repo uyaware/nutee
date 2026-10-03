@@ -25,7 +25,10 @@ export function StorefrontHeader() {
   const navigate = useNavigate();
   const session = useSession("customer");
   const cart = useCart();
-  const search = new URLSearchParams(location.search).get("q") ?? "";
+  const search =
+    location.pathname === "/products"
+      ? (new URLSearchParams(location.search).get("q") ?? "")
+      : "";
   return (
     <AppBar
       position="sticky"
