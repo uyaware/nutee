@@ -194,6 +194,15 @@ export function PrototypeOrderHistory({
                     Đánh giá
                   </Button>
                 )}
+                {customer && order.status === "delivered" && (
+                  <Button
+                    component={Link}
+                    to={`/account/after-sales/new?orderId=${order.id}&itemId=${order.items[0].id}`}
+                    variant="outlined"
+                  >
+                    Bảo hành / đổi trả
+                  </Button>
+                )}
               </Stack>
             </Stack>
           </Stack>

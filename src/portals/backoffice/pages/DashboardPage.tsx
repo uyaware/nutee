@@ -1,27 +1,31 @@
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { services } from "../../../services";
+import { prototypeOrders } from "../../../mocks/checkout";
+import { prototypeAfterSales } from "../../../mocks/operations";
 import { useSession } from "../../../shared/auth/useSession";
 import { roleLabels } from "../../../shared/auth/permissions";
-import { ErrorState, LoadingState } from "../../../shared/components/Feedback";
 import { OrdersPage } from "../../../shared/components/OrdersPage";
 import { money } from "../../../shared/lib/format";
 import { tokens } from "../../../shared/theme/tokens";
 
 export default function DashboardPage() {
   const session = useSession("backoffice");
-  const query = useQuery({
-    queryKey: ["backoffice", session.data?.id, "dashboard"],
-    queryFn: services.management.dashboard,
-  });
-  if (query.isPending) return <LoadingState />;
-  if (query.isError)
-    return (
-      <ErrorState error={query.error} retry={() => void query.refetch()} />
-    );
-  const data = query.data;
+  const data = {
+    orders: prototypeOrders.length,
+    pending: prototypeOrders.filter((order) => order.status === "pending")
+      .length,
+    afterSales: prototypeAfterSales.filter(
+      (request) =>
+        request.status === "pending" || request.status === "reviewing",
+    ).length,
+    paidRevenue: prototypeOrders
+      .filter(
+        (order) =>
+          order.paymentStatus === "paid" && order.status !== "cancelled",
+      )
+      .reduce((sum, order) => sum + order.total, 0),
+  };
   const metrics =
     session.data?.role === "admin"
       ? [
@@ -41,9 +45,9 @@ export default function DashboardPage() {
             note: "Đơn đang chờ xác nhận",
           },
           {
-            label: "Sản phẩm công khai",
-            value: data.products,
-            note: "Sản phẩm đang hiển thị tại cửa hàng",
+            label: "Hậu mãi cần xem",
+            value: data.afterSales,
+            note: "Yêu cầu chờ tiếp nhận hoặc đang kiểm tra",
           },
         ]
       : [
@@ -132,6 +136,22 @@ export default function DashboardPage() {
           </Paper>
         ))}
       </Box>
+      <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
+        <Button
+          component={Link}
+          to="/management/orders?status=pending"
+          variant="contained"
+        >
+          Xử lý đơn chờ xác nhận
+        </Button>
+        <Button
+          component={Link}
+          to="/management/after-sales?status=pending"
+          variant="outlined"
+        >
+          Tiếp nhận hậu mãi
+        </Button>
+      </Stack>
       <OrdersPage portal="backoffice" compact />
       <Paper
         sx={{
@@ -141,11 +161,11 @@ export default function DashboardPage() {
         }}
       >
         <Typography variant="h3" component="h2">
-          Dữ liệu được kết nối
+          Không gian vận hành mẫu
         </Typography>
         <Typography variant="body2" sx={{ mt: 1 }}>
-          Thông tin sản phẩm và đơn hàng được đồng bộ giữa cửa hàng và cổng vận
-          hành.
+          Số liệu được tính từ danh sách mẫu. Các thao tác xử lý đơn và hậu mãi
+          chỉ minh họa giao diện, không cập nhật dữ liệu giữa hai portal.
         </Typography>
       </Paper>
     </Stack>

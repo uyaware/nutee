@@ -13,6 +13,7 @@ import ShieldOutlined from "@mui/icons-material/ShieldOutlined";
 import ReceiptLongOutlined from "@mui/icons-material/ReceiptLongOutlined";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
+import SupportAgentRounded from "@mui/icons-material/SupportAgentRounded";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useLogout, useSession } from "../../../shared/auth/useSession";
 import { ErrorState } from "../../../shared/components/Feedback";
@@ -23,6 +24,11 @@ const navigation = [
   { path: "addresses", label: "Địa chỉ", icon: LocationOnOutlined },
   { path: "security", label: "Bảo mật", icon: ShieldOutlined },
   { path: "orders", label: "Đơn hàng", icon: ReceiptLongOutlined },
+  {
+    path: "after-sales",
+    label: "Bảo hành & đổi trả",
+    icon: SupportAgentRounded,
+  },
 ];
 
 export function AccountLayout() {

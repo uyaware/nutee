@@ -4,15 +4,19 @@ import { ThemeProvider } from "@mui/material/styles";
 import { backofficeTheme } from "../../shared/theme";
 import { RequireAuth } from "../../shared/auth/RequireAuth";
 import { LoginPage } from "../../shared/components/LoginPage";
-import {
-  OrdersPage,
-  OrderDetailPage,
-} from "../../shared/components/OrdersPage";
+import { OrderDetailPage } from "../../shared/components/OrdersPage";
 import { SystemPage } from "../../shared/components/SystemPage";
 import { ManagementLayout } from "./layouts/ManagementLayout";
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const ProductsPage = lazy(() => import("./pages/ProductsPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
+const OperationsOrdersPage = lazy(() => import("./pages/OperationsOrdersPage"));
+const AfterSalesPage = lazy(
+  () => import("../../shared/components/PrototypeAfterSales"),
+);
+const AfterSaleDetailPage = lazy(
+  () => import("../../shared/components/PrototypeAfterSaleDetail"),
+);
 export default function BackofficeRoutes() {
   return (
     <ThemeProvider theme={backofficeTheme}>
@@ -21,10 +25,18 @@ export default function BackofficeRoutes() {
         <Route element={<RequireAuth portal="backoffice" />}>
           <Route element={<ManagementLayout />}>
             <Route index element={<DashboardPage />} />
-            <Route path="orders" element={<OrdersPage portal="backoffice" />} />
+            <Route path="orders" element={<OperationsOrdersPage />} />
             <Route
               path="orders/:id"
               element={<OrderDetailPage portal="backoffice" />}
+            />
+            <Route
+              path="after-sales"
+              element={<AfterSalesPage portal="backoffice" />}
+            />
+            <Route
+              path="after-sales/:id"
+              element={<AfterSaleDetailPage portal="backoffice" />}
             />
             <Route
               element={

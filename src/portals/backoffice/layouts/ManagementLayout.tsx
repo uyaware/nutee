@@ -22,6 +22,7 @@ import PeopleOutlineRounded from "@mui/icons-material/PeopleOutlineRounded";
 import MenuRounded from "@mui/icons-material/MenuRounded";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
+import SupportAgentRounded from "@mui/icons-material/SupportAgentRounded";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { Brand } from "../../../shared/components/Brand";
 import { ErrorState } from "../../../shared/components/Feedback";
@@ -39,6 +40,11 @@ export function ManagementLayout() {
       to: "/management/orders",
       label: "Đơn hàng",
       icon: ReceiptLongOutlined,
+    },
+    {
+      to: "/management/after-sales",
+      label: "Hậu mãi",
+      icon: SupportAgentRounded,
     },
     ...(hasPermission(user.role, "products:write")
       ? [

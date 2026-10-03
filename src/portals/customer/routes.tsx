@@ -23,6 +23,13 @@ const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const PaymentPage = lazy(() => import("./pages/PaymentPage"));
 const OrderSuccessPage = lazy(() => import("./pages/OrderSuccessPage"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
+const AfterSalesPage = lazy(
+  () => import("../../shared/components/PrototypeAfterSales"),
+);
+const AfterSaleDetailPage = lazy(
+  () => import("../../shared/components/PrototypeAfterSaleDetail"),
+);
+const AfterSaleCreatePage = lazy(() => import("./pages/AfterSaleCreatePage"));
 export default function CustomerRoutes() {
   return (
     <Routes>
@@ -78,6 +85,18 @@ export default function CustomerRoutes() {
             <Route
               path="account/orders/:id/review/:itemId"
               element={<ReviewPage />}
+            />
+            <Route
+              path="account/after-sales"
+              element={<AfterSalesPage portal="customer" />}
+            />
+            <Route
+              path="account/after-sales/new"
+              element={<AfterSaleCreatePage />}
+            />
+            <Route
+              path="account/after-sales/:id"
+              element={<AfterSaleDetailPage portal="customer" />}
             />
           </Route>
         </Route>

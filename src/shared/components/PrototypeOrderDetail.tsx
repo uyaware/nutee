@@ -25,10 +25,13 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { paymentLabels, findPrototypeOrder } from "../../mocks/checkout";
+import { orderActions, prototypeAfterSales } from "../../mocks/operations";
 import { dateTime, money } from "../lib/format";
 import type { Order, Portal } from "../types/database";
 import { StatusBadge } from "./StatusBadge";
 import { EmptyState } from "./Feedback";
+import { PrototypeWorkflow } from "./PrototypeWorkflow";
+import { usePrototypeWorkflow } from "../lib/usePrototypeWorkflow";
 import {
   OrderProducts,
   OrderTotals,
@@ -53,6 +56,10 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
   const customer = portal === "customer";
   const orderBase = customer ? "/account/orders" : "/management/orders";
   const order = findPrototypeOrder(id, customer ? location.state : null);
+  const workflow = usePrototypeWorkflow(
+    order?.status ?? "pending",
+    orderActions,
+  );
   if (!order || (customer && order.userId !== "customer-1"))
     return (
       <Stack spacing={2}>
@@ -65,9 +72,18 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
         </Button>
       </Stack>
     );
-  const cancelled =
-    params.get("cancelled") === "1" || order.status === "cancelled";
-  const status = cancelled ? "cancelled" : order.status;
+  const status = customer
+    ? params.get("cancelled") === "1"
+      ? "cancelled"
+      : order.status
+    : workflow.status;
+  const cancelled = status === "cancelled";
+  const backTo =
+    !customer &&
+    typeof location.state?.backTo === "string" &&
+    location.state.backTo.startsWith(`${orderBase}?`)
+      ? location.state.backTo
+      : orderBase;
   const paid =
     order.paymentStatus === "paid" ||
     (order.paymentMethod === "qr" && params.get("payment") === "paid");
@@ -75,7 +91,7 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
     <Stack spacing={3}>
       <Button
         component={Link}
-        to={orderBase}
+        to={backTo}
         startIcon={<ArrowBackRounded />}
         sx={{ alignSelf: "flex-start" }}
       >
@@ -100,9 +116,11 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
       {cancelled ? (
         <Alert severity="info">
           Đơn mẫu ở trạng thái đã hủy.{" "}
-          {params.get("cancelled") === "1"
-            ? "Xác nhận hủy chỉ thay đổi màn hình minh họa, không cập nhật dữ liệu."
-            : "Bạn có thể tiếp tục khám phá các sản phẩm khác."}
+          {!customer
+            ? "Đây là trạng thái mẫu, dữ liệu đơn hàng không được cập nhật."
+            : params.get("cancelled") === "1"
+              ? "Xác nhận hủy chỉ thay đổi màn hình minh họa, không cập nhật dữ liệu."
+              : "Bạn có thể tiếp tục khám phá các sản phẩm khác."}
         </Alert>
       ) : (
         <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
@@ -150,13 +168,22 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
                       <Typography variant="body2">
                         {item.name} · Bảo hành {item.warrantyCode}
                       </Typography>
-                      <Button
-                        component={Link}
-                        to={`${orderBase}/${order.id}/review/${item.id}`}
-                        variant="outlined"
-                      >
-                        Viết đánh giá
-                      </Button>
+                      <Stack direction="row" gap={1} flexWrap="wrap">
+                        <Button
+                          component={Link}
+                          to={`${orderBase}/${order.id}/review/${item.id}`}
+                          variant="outlined"
+                        >
+                          Viết đánh giá
+                        </Button>
+                        <Button
+                          component={Link}
+                          to={`/account/after-sales/new?orderId=${order.id}&itemId=${item.id}`}
+                          variant="outlined"
+                        >
+                          Bảo hành / đổi trả
+                        </Button>
+                      </Stack>
                     </Stack>
                   ))}
                 </Stack>
@@ -180,9 +207,35 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
                   </Box>
                   <Typography variant="body2" color="text.secondary">
                     {dateTime(entry.at)}
+                    {!customer &&
+                      ` · ${entry.actorId.startsWith("customer") ? "Khách hàng" : "Nhân viên vận hành"}`}
                   </Typography>
                 </Stack>
               ))}
+              {!customer &&
+                workflow.preview.map((entry) => (
+                  <Stack
+                    key={entry.status}
+                    spacing={1}
+                    sx={{
+                      pl: 2,
+                      borderLeft: "2px solid",
+                      borderColor: "primary.main",
+                    }}
+                  >
+                    <Box>
+                      <StatusBadge status={entry.status} />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Bước xử lý minh họa · Nhân viên vận hành
+                    </Typography>
+                    <Typography
+                      sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+                    >
+                      {entry.note}
+                    </Typography>
+                  </Stack>
+                ))}
               {params.get("cancelled") === "1" && (
                 <Stack spacing={1}>
                   <Box>
@@ -197,6 +250,15 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
           </Paper>
         </Stack>
         <Stack spacing={3}>
+          {!customer && (
+            <Paper variant="outlined" sx={{ p: 3 }}>
+              <PrototypeWorkflow
+                status={status}
+                actions={orderActions}
+                path={workflow.path}
+              />
+            </Paper>
+          )}
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={1.5}>
               <Typography variant="h3" component="h2">
@@ -262,6 +324,20 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
               Tiếp tục mua sắm
             </Button>
           )}
+          {prototypeAfterSales
+            .filter((request) =>
+              order.items.some((item) => item.id === request.orderItemId),
+            )
+            .map((request) => (
+              <Button
+                key={request.id}
+                component={Link}
+                to={`${customer ? "/account" : "/management"}/after-sales/${request.id}`}
+                variant="outlined"
+              >
+                Xem hậu mãi {request.id.toUpperCase()}
+              </Button>
+            ))}
         </Stack>
       </Box>
       <Dialog

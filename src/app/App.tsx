@@ -23,6 +23,8 @@ const customerTitles: Record<string, string> = {
   "/cart": "Giỏ hàng",
   "/checkout": "Thanh toán",
   "/account/orders": "Đơn hàng của bạn",
+  "/account/after-sales": "Bảo hành & đổi trả",
+  "/account/after-sales/new": "Tạo yêu cầu hậu mãi",
   "/account/addresses": "Địa chỉ giao hàng",
   "/account/security": "Bảo mật tài khoản",
   "/account/setup": "Hoàn thiện thông tin",
@@ -65,23 +67,25 @@ export default function App() {
         ? "Không gian công nghệ"
         : location.pathname.includes("login")
           ? "Đăng nhập"
-          : location.pathname.startsWith("/management")
-            ? "Workspace"
-            : location.pathname === "/products"
-              ? "Sản phẩm"
-              : location.pathname.startsWith("/products/")
-                ? "Chi tiết sản phẩm"
-                : location.pathname.includes("profile")
-                  ? "Tài khoản"
-                  : location.pathname.endsWith("/payment")
-                    ? "Thanh toán QR"
-                    : location.pathname.endsWith("/success")
-                      ? "Xác nhận đơn hàng"
-                      : location.pathname.includes("/review/")
-                        ? "Đánh giá sản phẩm"
-                        : location.pathname.includes("orders")
-                          ? "Đơn hàng"
-                          : "Cửa hàng";
+          : location.pathname.includes("/after-sales")
+            ? "Hậu mãi"
+            : location.pathname.startsWith("/management")
+              ? "Workspace"
+              : location.pathname === "/products"
+                ? "Sản phẩm"
+                : location.pathname.startsWith("/products/")
+                  ? "Chi tiết sản phẩm"
+                  : location.pathname.includes("profile")
+                    ? "Tài khoản"
+                    : location.pathname.endsWith("/payment")
+                      ? "Thanh toán QR"
+                      : location.pathname.endsWith("/success")
+                        ? "Xác nhận đơn hàng"
+                        : location.pathname.includes("/review/")
+                          ? "Đánh giá sản phẩm"
+                          : location.pathname.includes("orders")
+                            ? "Đơn hàng"
+                            : "Cửa hàng";
     if (!location.pathname.startsWith("/products/"))
       document.title = `NUTEE · ${customerTitles[location.pathname] ?? name}`;
     document.getElementById("main-content")?.focus({ preventScroll: true });
