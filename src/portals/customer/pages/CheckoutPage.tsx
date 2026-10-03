@@ -109,10 +109,6 @@ export default function CheckoutPage() {
           Chỉ vài bước nữa, công nghệ mới sẽ đến với bạn.
         </Typography>
       </Box>
-      <Alert severity="info">
-        Bản xem trước với {items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
-        sản phẩm. Thao tác đặt hàng và thanh toán chỉ minh họa giao diện.
-      </Alert>
       <Stepper activeStep={step} alternativeLabel sx={{ py: 1 }}>
         {["Giao hàng & thanh toán", "Xác nhận đơn hàng"].map((label) => (
           <Step key={label}>
@@ -323,7 +319,7 @@ export default function CheckoutPage() {
                           value: "qr",
                           title: "Chuyển khoản bằng mã QR",
                           description:
-                            "Xem màn hình QR và trạng thái thanh toán mẫu.",
+                            "Quét mã QR bằng ứng dụng ngân hàng để thanh toán.",
                           icon: QrCodeRounded,
                         },
                       ].map(({ value, title, description, icon: Icon }) => (
@@ -399,8 +395,8 @@ export default function CheckoutPage() {
                       </Button>
                       {promotionOpen && (
                         <Typography variant="body2" color="text.secondary">
-                          Mã mẫu giảm 100.000 ₫ cho đơn từ 1.000.000 ₫. Tổng
-                          tiền bên cạnh đã bao gồm ưu đãi.
+                          Giảm 100.000 ₫ cho đơn từ 1.000.000 ₫. Tổng tiền bên
+                          cạnh đã bao gồm ưu đãi.
                         </Typography>
                       )}
                     </Stack>
@@ -447,10 +443,6 @@ export default function CheckoutPage() {
                       Đổi phương thức thanh toán
                     </Button>
                   </Stack>
-                  <Alert severity="info">
-                    Thông tin dùng để xem trước đơn hàng. Thao tác đặt hàng chỉ
-                    minh họa giao diện.
-                  </Alert>
                 </>
               )}
               <Stack

@@ -76,7 +76,7 @@ export const demoAfterSale: AfterSaleRequest = {
       status: "pending",
       at: "2026-10-03T03:00:00.000Z",
       actorId: "customer-1",
-      note: "Đã gửi yêu cầu mẫu.",
+      note: "Khách hàng gửi yêu cầu.",
     },
   ],
 };

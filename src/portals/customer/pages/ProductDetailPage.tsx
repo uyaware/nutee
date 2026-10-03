@@ -4,8 +4,12 @@ import {
   Breadcrumbs,
   Button,
   Chip,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
   Link as MuiLink,
-  Pagination,
   Paper,
   Rating,
   Stack,
@@ -14,8 +18,15 @@ import {
   TableCell,
   TableContainer,
   TableRow,
+  Tooltip,
   Typography,
 } from "@mui/material";
+import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
+import OpenInFullRounded from "@mui/icons-material/OpenInFullRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { services } from "../../../services";
@@ -24,37 +35,101 @@ import {
   ErrorState,
   LoadingState,
 } from "../../../shared/components/Feedback";
-import { money, dateTime } from "../../../shared/lib/format";
+import { money } from "../../../shared/lib/format";
+import { ServiceError } from "../../../shared/lib/errors";
 import type { ProductDetail } from "../../../shared/types/catalog";
 import { ProductImage } from "../components/ProductImage";
-import { ServiceError } from "../../../shared/lib/errors";
 import { AddToCart } from "../components/AddToCart";
+import { ProductReviews } from "../components/ProductReviews";
 
 function ProductGallery({ product }: { product: ProductDetail }) {
-  const [selectedId, setSelectedId] = useState(product.images[0]?.id);
-  const selected =
-    product.images.find((i) => i.id === selectedId) ?? product.images[0];
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
+  const selected = product.images[selectedIndex];
+  const changeImage = (direction: number) =>
+    setSelectedIndex(
+      (index) =>
+        (index + direction + product.images.length) % product.images.length,
+    );
   return (
-    <Stack spacing={2}>
-      <Paper
-        variant="outlined"
+    <Stack spacing={2} sx={{ minWidth: 0 }}>
+      <Box
         sx={{
-          p: 3,
-          height: { xs: 280, sm: 380 },
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          position: "relative",
+          borderRadius: 2,
+          bgcolor: "background.default",
+          p: { xs: 3, sm: 5 },
+          height: { xs: 280, sm: 380, lg: 440 },
         }}
       >
         <ProductImage
-          src={selected?.url ?? ""}
-          alt={selected?.alt ?? `Minh họa ${product.name}`}
+          src={selected?.url ?? product.imageUrl}
+          alt={product.name}
           eager
         />
-      </Paper>
+        <Tooltip title="Phóng to ảnh">
+          <IconButton
+            aria-label="Phóng to ảnh sản phẩm"
+            onClick={() => setZoomed(true)}
+            sx={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              bgcolor: "background.paper",
+            }}
+          >
+            <OpenInFullRounded fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        {product.images.length > 1 && (
+          <>
+            <IconButton
+              aria-label="Ảnh trước"
+              onClick={() => changeImage(-1)}
+              sx={{
+                position: "absolute",
+                left: 8,
+                top: "calc(50% - 22px)",
+                bgcolor: "background.paper",
+              }}
+            >
+              <ChevronLeftRounded />
+            </IconButton>
+            <IconButton
+              aria-label="Ảnh tiếp theo"
+              onClick={() => changeImage(1)}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: "calc(50% - 22px)",
+                bgcolor: "background.paper",
+              }}
+            >
+              <ChevronRightRounded />
+            </IconButton>
+            <Typography
+              variant="caption"
+              sx={{
+                position: "absolute",
+                bottom: 12,
+                left: "50%",
+                transform: "translateX(-50%)",
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 4,
+                bgcolor: "background.paper",
+                color: "text.secondary",
+              }}
+            >
+              {selectedIndex + 1} / {product.images.length}
+            </Typography>
+          </>
+        )}
+      </Box>
       <Stack
         direction="row"
-        spacing={1}
+        gap={1.5}
+        justifyContent="center"
         useFlexGap
         flexWrap="wrap"
         aria-label="Chọn ảnh sản phẩm"
@@ -62,103 +137,54 @@ function ProductGallery({ product }: { product: ProductDetail }) {
         {product.images.map((image, index) => (
           <Button
             key={image.id}
-            aria-label={`Xem ảnh ${index + 1}: ${image.alt}`}
-            aria-pressed={selected?.id === image.id}
-            variant={selected?.id === image.id ? "outlined" : "text"}
-            onClick={() => setSelectedId(image.id)}
-            sx={{ width: 88, height: 70, p: 1 }}
+            aria-label={`Xem ảnh sản phẩm ${index + 1}`}
+            aria-pressed={selectedIndex === index}
+            onClick={() => setSelectedIndex(index)}
+            variant="outlined"
+            sx={{
+              minWidth: 72,
+              width: 72,
+              height: 72,
+              p: 1,
+              bgcolor:
+                selectedIndex === index
+                  ? "action.selected"
+                  : "background.paper",
+              borderColor: selectedIndex === index ? "primary.main" : "divider",
+              borderWidth: selectedIndex === index ? 2 : 1,
+            }}
           >
             <ProductImage src={image.url} alt="" />
           </Button>
         ))}
       </Stack>
-    </Stack>
-  );
-}
-
-function Reviews({
-  id,
-  rating,
-}: {
-  id: string;
-  rating: ProductDetail["rating"];
-}) {
-  const [page, setPage] = useState(1);
-  const query = useQuery({
-    queryKey: ["catalog", "reviews", id, page],
-    queryFn: () => services.catalog.reviews(id, page),
-  });
-  return (
-    <Stack spacing={3}>
-      <Typography variant="h2">Đánh giá sản phẩm</Typography>
-      {!!rating.count && (
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          useFlexGap
-          flexWrap="wrap"
-        >
-          <Rating
-            value={rating.average}
-            precision={0.1}
-            readOnly
-            aria-label={`Trung bình ${rating.average.toFixed(1)} trên 5 sao`}
-          />
-          <Typography>
-            {rating.average.toFixed(1)}/5 · {rating.count} đánh giá
-          </Typography>
-        </Stack>
-      )}
-      {query.isPending ? (
-        <LoadingState />
-      ) : query.isError ? (
-        <ErrorState error={query.error} retry={() => void query.refetch()} />
-      ) : !query.data.total ? (
-        <EmptyState
-          title="Chưa có đánh giá"
-          description="Đánh giá từ khách đã mua sẽ xuất hiện tại đây."
-        />
-      ) : (
-        <>
-          {query.data.items.map((review) => (
-            <Paper
-              key={review.id}
-              variant="outlined"
-              sx={{ p: 3, overflowWrap: "anywhere" }}
-            >
-              <Stack spacing={1}>
-                <Typography fontWeight={600}>{review.authorName}</Typography>
-                <Rating
-                  value={review.rating}
-                  readOnly
-                  aria-label={`${review.rating} trên 5 sao`}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  Đã mua hàng · {dateTime(review.createdAt)}
-                </Typography>
-                <Typography sx={{ whiteSpace: "pre-wrap" }}>
-                  {review.comment}
-                </Typography>
-              </Stack>
-            </Paper>
-          ))}
-          {query.data.total > query.data.pageSize && (
-            <Pagination
-              count={Math.ceil(query.data.total / query.data.pageSize)}
-              page={query.data.page}
-              onChange={(_, value) => setPage(value)}
-              getItemAriaLabel={(type, value) =>
-                type === "page"
-                  ? `Trang đánh giá ${value}`
-                  : type === "next"
-                    ? "Đánh giá tiếp"
-                    : "Đánh giá trước"
-              }
+      <Dialog
+        open={zoomed}
+        onClose={() => setZoomed(false)}
+        fullWidth
+        maxWidth="md"
+        aria-labelledby="product-image-title"
+      >
+        <DialogTitle id="product-image-title" sx={{ pr: 8 }}>
+          {product.name}
+          <IconButton
+            aria-label="Đóng ảnh phóng to"
+            onClick={() => setZoomed(false)}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseRounded />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ height: { xs: 300, sm: 520 } }}>
+            <ProductImage
+              src={selected?.url ?? product.imageUrl}
+              alt={product.name}
+              eager
             />
-          )}
-        </>
-      )}
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Stack>
   );
 }
@@ -189,7 +215,7 @@ export default function ProductDetailPage() {
         query.error.code === "NOT_FOUND" ? (
           <EmptyState
             title="Không tìm thấy sản phẩm"
-            description="Sản phẩm không tồn tại hoặc đã ngừng hiển thị. Khám phá các sản phẩm khác trong danh mục."
+            description="Sản phẩm không tồn tại hoặc đã ngừng hiển thị."
           />
         ) : (
           <ErrorState error={query.error} retry={() => void query.refetch()} />
@@ -201,93 +227,201 @@ export default function ProductDetailPage() {
     );
   const product = query.data;
   return (
-    <Stack spacing={5}>
+    <Stack spacing={3} sx={{ maxWidth: 1240, mx: "auto" }}>
       <Breadcrumbs
         aria-label="Đường dẫn danh mục"
-        sx={{ overflowWrap: "anywhere" }}
+        sx={{ fontSize: 13, overflowWrap: "anywhere" }}
       >
-        <MuiLink component={Link} to="/">
+        <MuiLink component={Link} to="/" color="text.secondary">
           Trang chủ
         </MuiLink>
-        {product.breadcrumb.map((c) => (
+        {product.breadcrumb.map((category) => (
           <MuiLink
-            key={c.id}
+            key={category.id}
             component={Link}
-            to={`/products?category=${encodeURIComponent(c.id)}`}
+            to={`/products?category=${encodeURIComponent(category.id)}`}
+            color="text.secondary"
           >
-            {c.name}
+            {category.name}
           </MuiLink>
         ))}
-        <Typography color="text.primary">{product.name}</Typography>
+        <Typography variant="body2" color="text.primary">
+          {product.name}
+        </Typography>
       </Breadcrumbs>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "minmax(0, 1fr)",
-            md: "repeat(2, minmax(0, 1fr))",
-          },
-          gap: { xs: 3, md: 5 },
-        }}
+      <Paper
+        variant="outlined"
+        sx={{ p: { xs: 2, sm: 3, lg: 4 }, borderRadius: 3 }}
       >
-        <ProductGallery key={id} product={product} />
-        <Stack spacing={3} sx={{ minWidth: 0, overflowWrap: "anywhere" }}>
-          <Box>
-            <MuiLink
-              component={Link}
-              to={`/products?brand=${encodeURIComponent(product.brandId)}`}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "minmax(0, 1fr)",
+              md: "minmax(0, 1.1fr) minmax(0, 1fr)",
+            },
+            gap: { xs: 3, md: 5 },
+            alignItems: "start",
+          }}
+        >
+          <ProductGallery key={id} product={product} />
+          <Stack
+            spacing={2.5}
+            sx={{ minWidth: 0, overflowWrap: "anywhere", py: { md: 1 } }}
+          >
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              gap={2}
             >
-              {product.brandName}
-            </MuiLink>
-            <Typography variant="h2" component="h1" sx={{ mt: 1 }}>
-              {product.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Mã sản phẩm: {product.sku}
-            </Typography>
-          </Box>
-          <Typography
-            variant="h2"
-            component="p"
-            color="primary"
-            sx={{ fontVariantNumeric: "tabular-nums" }}
-          >
-            {money(product.price)}
-          </Typography>
-          <Chip
-            label={product.stock ? "Còn hàng" : "Hết hàng"}
-            color={product.stock ? "success" : "warning"}
-            variant="outlined"
-            sx={{ alignSelf: "flex-start" }}
-          />
-          <Typography>
-            {product.specifications[0]?.value ?? "Thông số đang được cập nhật."}
-          </Typography>
-          <AddToCart
-            key={product.id}
-            productId={product.id}
-            stock={product.stock}
-          />
-          <Button
-            component={Link}
-            to={returnTo}
-            variant="outlined"
-            sx={{ alignSelf: "flex-start" }}
-          >
-            Quay lại danh sách
-          </Button>
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Typography fontWeight={600}>Giao hàng & bảo hành</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Thông tin giao hàng và điều kiện bảo hành cần được xác nhận trước
-              khi mua. Ảnh minh họa không đại diện cho màu sắc hoặc cấu hình
-              thực tế.
-            </Typography>
-          </Paper>
-        </Stack>
-      </Box>
-      <Box>
-        <Typography variant="h2" sx={{ mb: 3 }}>
+              <MuiLink
+                component={Link}
+                to={`/products?brand=${encodeURIComponent(product.brandId)}`}
+                sx={{ fontWeight: 600, fontSize: 13 }}
+              >
+                {product.brandName}
+              </MuiLink>
+              <Typography variant="caption" color="text.secondary">
+                SKU: {product.sku}
+              </Typography>
+            </Stack>
+            <Box>
+              <Typography
+                component="h1"
+                sx={{
+                  fontSize: { xs: 26, sm: 32 },
+                  lineHeight: 1.25,
+                  fontWeight: 700,
+                  letterSpacing: "-0.035em",
+                }}
+              >
+                {product.name}
+              </Typography>
+              <Stack
+                direction="row"
+                gap={1}
+                alignItems="center"
+                sx={{ mt: 1.5 }}
+                useFlexGap
+                flexWrap="wrap"
+              >
+                <Rating
+                  value={product.rating.average}
+                  precision={0.1}
+                  readOnly
+                  size="small"
+                  aria-label={`${product.rating.average.toFixed(1)} trên 5 sao`}
+                />
+                <MuiLink href="#product-reviews" sx={{ fontSize: 13 }}>
+                  {product.rating.count
+                    ? `${product.rating.average.toFixed(1)} · ${product.rating.count} đánh giá`
+                    : "Chưa có đánh giá"}
+                </MuiLink>
+              </Stack>
+            </Box>
+            <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: "action.selected" }}>
+              <Typography variant="body2" color="text.secondary">
+                Giá bán
+              </Typography>
+              <Typography
+                component="p"
+                color="primary.main"
+                sx={{
+                  fontSize: { xs: 30, sm: 36 },
+                  fontWeight: 700,
+                  lineHeight: 1.4,
+                  letterSpacing: "-0.04em",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {money(product.price)}
+              </Typography>
+              <Stack
+                direction="row"
+                gap={0.75}
+                alignItems="center"
+                sx={{ mt: 0.5 }}
+              >
+                <CheckCircleOutlineRounded
+                  aria-hidden="true"
+                  sx={{
+                    fontSize: 17,
+                    color: product.stock ? "success.main" : "warning.main",
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  color={product.stock ? "success.main" : "warning.main"}
+                >
+                  {product.stock
+                    ? "Còn hàng · Sẵn sàng đặt mua"
+                    : "Tạm hết hàng"}
+                </Typography>
+              </Stack>
+            </Box>
+            {product.specifications.length > 0 && (
+              <Stack spacing={1.5}>
+                <Typography variant="body2" fontWeight={600}>
+                  Cấu hình sản phẩm
+                </Typography>
+                <Typography>{product.specifications[0].value}</Typography>
+                {product.specifications.length > 1 && (
+                  <Stack direction="row" gap={1} useFlexGap flexWrap="wrap">
+                    {product.specifications.slice(1, 4).map((spec) => (
+                      <Chip
+                        key={spec.key}
+                        label={`${spec.label}: ${spec.value}`}
+                        variant="outlined"
+                        size="small"
+                      />
+                    ))}
+                  </Stack>
+                )}
+              </Stack>
+            )}
+            <Divider />
+            <AddToCart
+              key={product.id}
+              productId={product.id}
+              stock={product.stock}
+            />
+            <Button
+              component={Link}
+              to={returnTo}
+              startIcon={<ArrowBackRounded />}
+              color="secondary"
+              sx={{ alignSelf: "flex-start" }}
+            >
+              Tiếp tục xem sản phẩm
+            </Button>
+          </Stack>
+        </Box>
+      </Paper>
+      <Stack
+        direction="row"
+        gap={1}
+        useFlexGap
+        flexWrap="wrap"
+        component="nav"
+        aria-label="Nội dung sản phẩm"
+        sx={{ borderBottom: "1px solid", borderColor: "divider", pb: 1 }}
+      >
+        <Button component="a" href="#product-specifications" color="secondary">
+          Thông số kỹ thuật
+        </Button>
+        <Button component="a" href="#product-reviews" color="secondary">
+          Đánh giá ({product.rating.count})
+        </Button>
+      </Stack>
+      <Paper
+        component="section"
+        id="product-specifications"
+        variant="outlined"
+        aria-labelledby="product-specs-title"
+        sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3 }}
+      >
+        <Typography id="product-specs-title" variant="h2" sx={{ mb: 2 }}>
           Thông số kỹ thuật
         </Typography>
         {!product.specifications.length ? (
@@ -295,23 +429,33 @@ export default function ProductDetailPage() {
             Thông số đang được cập nhật.
           </Typography>
         ) : (
-          <TableContainer component={Paper} variant="outlined">
+          <TableContainer>
             <Table aria-label="Thông số kỹ thuật" sx={{ tableLayout: "fixed" }}>
               <TableBody>
                 {product.specifications.map((spec, index) => (
-                  <TableRow key={`${spec.key}-${index}`}>
+                  <TableRow
+                    key={`${spec.key}-${index}`}
+                    sx={{
+                      bgcolor:
+                        index % 2 === 0 ? "background.default" : "transparent",
+                      "&:last-child td, &:last-child th": { borderBottom: 0 },
+                    }}
+                  >
                     <TableCell
                       component="th"
                       scope="row"
                       sx={{
-                        width: "35%",
+                        width: { xs: "38%", sm: "30%" },
+                        fontWeight: 500,
+                        color: "text.secondary",
                         overflowWrap: "anywhere",
-                        fontWeight: 600,
                       }}
                     >
                       {spec.label}
                     </TableCell>
-                    <TableCell sx={{ overflowWrap: "anywhere" }}>
+                    <TableCell
+                      sx={{ fontWeight: 500, overflowWrap: "anywhere" }}
+                    >
                       {spec.value}
                     </TableCell>
                   </TableRow>
@@ -320,8 +464,8 @@ export default function ProductDetailPage() {
             </Table>
           </TableContainer>
         )}
-      </Box>
-      <Reviews key={id} id={id} rating={product.rating} />
+      </Paper>
+      <ProductReviews key={id} id={id} rating={product.rating} />
     </Stack>
   );
 }

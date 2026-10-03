@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   MenuItem,
   Paper,
@@ -71,10 +70,6 @@ export default function OperationsOrdersPage() {
         title="Quản lý đơn hàng"
         description="Tra cứu đơn, xem chi tiết và xử lý từng bước giao hàng."
       />
-      <Alert severity="info">
-        Dữ liệu mẫu cố định. Xác nhận, đóng gói, giao và hủy chỉ đổi màn hình
-        chi tiết.
-      </Alert>
       <Stack direction={{ xs: "column", lg: "row" }} gap={2}>
         <TextField
           label="Mã đơn, người nhận hoặc số điện thoại"

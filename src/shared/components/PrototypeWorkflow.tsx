@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   Box,
   Button,
   Dialog,
@@ -35,10 +34,6 @@ export function PrototypeWorkflow<S extends string>({
       <Typography variant="h3" component="h2">
         Xử lý tiếp theo
       </Typography>
-      <Alert severity="info">
-        Thao tác chỉ minh họa trên màn hình hiện tại. Danh sách và dữ liệu ở
-        portal khác giữ nguyên.
-      </Alert>
       {available.length ? (
         available.map((action) => (
           <Button
@@ -90,8 +85,7 @@ export function PrototypeWorkflow<S extends string>({
           <DialogContent>
             <Stack spacing={2} sx={{ pt: 1 }}>
               <Typography color="text.secondary">
-                Ghi kết quả hoặc lý do xử lý để xem trạng thái và timeline minh
-                họa.
+                Ghi kết quả hoặc lý do xử lý yêu cầu.
               </Typography>
               <TextField
                 autoFocus

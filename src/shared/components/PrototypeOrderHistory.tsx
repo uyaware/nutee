@@ -1,5 +1,4 @@
 import {
-  Alert,
   Box,
   Button,
   Paper,
@@ -76,10 +75,6 @@ export function PrototypeOrderHistory({
       </Box>
       {!compact && (
         <>
-          <Alert severity="info">
-            Danh sách đơn mẫu có sẵn để xem các trạng thái. Đặt hàng, thanh toán
-            và hủy trong prototype không thay đổi danh sách này.
-          </Alert>
           <Paper variant="outlined" sx={{ minWidth: 0 }}>
             <Tabs
               value={status}
@@ -102,7 +97,7 @@ export function PrototypeOrderHistory({
             label="Tìm theo mã đơn"
             value={search}
             onChange={(event) => updateParam("q", event.target.value)}
-            placeholder="Ví dụ: demo-qr, order-5"
+            placeholder="Nhập mã đơn hàng"
             sx={{ maxWidth: 440 }}
           />
         </>
@@ -111,7 +106,7 @@ export function PrototypeOrderHistory({
         <Paper variant="outlined">
           <EmptyState
             title="Chưa có đơn trong mục này"
-            description="Chọn trạng thái khác hoặc xóa từ khóa để xem đơn mẫu."
+            description="Chọn trạng thái khác hoặc xóa từ khóa để xem đơn hàng."
           />
           <Button onClick={() => setParams({})} sx={{ m: 2 }}>
             Xem tất cả đơn hàng

@@ -37,11 +37,9 @@ export function usePrototypeWorkflow<S extends string>(
   return {
     path,
     status: path[path.length - 1],
-    preview: path
-      .slice(1)
-      .map((status) => ({
-        status,
-        note: params.get(`note-${status}`) ?? "Đã cập nhật bước xử lý mẫu.",
-      })),
+    preview: path.slice(1).map((status) => ({
+      status,
+      note: params.get(`note-${status}`) ?? "Đã cập nhật trạng thái.",
+    })),
   };
 }

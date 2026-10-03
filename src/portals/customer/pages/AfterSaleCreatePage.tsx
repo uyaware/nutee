@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   Button,
   MenuItem,
   Paper,
@@ -41,13 +40,13 @@ export default function AfterSaleCreatePage() {
       <Stack spacing={2}>
         <EmptyState
           title="Chọn sản phẩm từ đơn đã giao"
-          description="Form hậu mãi dành cho sản phẩm thuộc đơn mẫu đã giao của khách hàng."
+          description="Chọn sản phẩm thuộc đơn hàng đã giao để gửi yêu cầu hỗ trợ."
         />
         <Button component={Link} to="/account/orders?status=delivered">
           Xem đơn đã giao
         </Button>
         <Button component={Link} to="/account/after-sales/new">
-          Mở yêu cầu mẫu
+          Tạo yêu cầu
         </Button>
       </Stack>
     );
@@ -62,10 +61,6 @@ export default function AfterSaleCreatePage() {
         Quay lại hậu mãi
       </Button>
       <Typography variant="h1">Tạo yêu cầu bảo hành / đổi trả</Typography>
-      <Alert severity="info">
-        Form minh họa từ đơn đã giao. Gửi yêu cầu mở trang xác nhận, không lưu
-        hoặc gửi dữ liệu thực tế.
-      </Alert>
       <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
         <Stack
           component="form"

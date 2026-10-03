@@ -1,12 +1,4 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Divider,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Divider, Paper, Stack, Typography } from "@mui/material";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import {
   Link,
@@ -60,7 +52,7 @@ export default function PrototypeAfterSaleDetail({
     return (
       <Stack spacing={2}>
         <EmptyState
-          title="Không tìm thấy yêu cầu mẫu"
+          title="Không tìm thấy yêu cầu"
           description="Chọn một yêu cầu trong danh sách để xem chi tiết."
         />
         <Button component={Link} to={base}>
@@ -100,10 +92,9 @@ export default function PrototypeAfterSaleDetail({
         </Box>
       </Stack>
       {customer && params.get("sent") === "1" && (
-        <Alert severity="success">
-          Đã mở xác nhận gửi yêu cầu mẫu. Nội dung chỉ dùng trên màn hình này,
-          không lưu vào danh sách hoặc gửi đến nhân viên.
-        </Alert>
+        <Typography color="success.main" role="status">
+          Cảm ơn bạn. Bạn có thể theo dõi tiến trình xử lý yêu cầu tại đây.
+        </Typography>
       )}
       <Box
         sx={{
@@ -171,7 +162,7 @@ export default function PrototypeAfterSaleDetail({
                     ? []
                     : workflow.preview.map((entry) => ({
                         title: afterSaleLabels[entry.status],
-                        description: "Bước xử lý minh họa · Nhân viên vận hành",
+                        description: "Nhân viên vận hành",
                         note: entry.note,
                         negative: entry.status === "rejected",
                       }))),
@@ -195,12 +186,7 @@ export default function PrototypeAfterSaleDetail({
               </Typography>
             </Stack>
           </Paper>
-          {customer ? (
-            <Alert severity="info">
-              Nhân viên kiểm tra yêu cầu và ghi kết quả theo từng bước. Đây là
-              tiến trình mẫu, chưa có đồng bộ giữa hai portal.
-            </Alert>
-          ) : (
+          {!customer && (
             <Paper variant="outlined" sx={{ p: 3 }}>
               <PrototypeWorkflow
                 status={status}

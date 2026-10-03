@@ -1,7 +1,5 @@
 import { useState } from "react";
 import AddRounded from "@mui/icons-material/AddRounded";
-import LocationOnOutlined from "@mui/icons-material/LocationOnOutlined";
-import EditOutlined from "@mui/icons-material/EditOutlined";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import {
   Alert,
@@ -13,8 +11,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   FormControlLabel,
+  IconButton,
   Paper,
   Stack,
   TextField,
@@ -112,10 +110,7 @@ function AddressEditor({
           {address ? "Sửa địa chỉ" : "Thêm địa chỉ"}
         </DialogTitle>
         <DialogContent sx={{ px: 3, pb: 3 }}>
-          <Stack spacing={2.5} sx={{ pt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Điền thông tin người nhận và địa chỉ để giao hàng thuận tiện hơn.
-            </Typography>
+          <Stack spacing={2} sx={{ pt: 1 }}>
             <FormErrorSummary
               submitCount={submitCount}
               errors={[
@@ -141,9 +136,6 @@ function AddressEditor({
                   dung đang nhập được giữ cho đến khi bạn đóng.
                 </Alert>
               )}
-            <Typography variant="h4" component="h3">
-              Thông tin người nhận
-            </Typography>
             <Box
               sx={{
                 display: "grid",
@@ -171,12 +163,11 @@ function AddressEditor({
                 {...phoneField}
                 inputRef={phoneRef}
                 error={!!errors.phone}
-                helperText={errors.phone?.message ?? "Ví dụ: 0900000000"}
+                helperText={errors.phone?.message}
                 type="tel"
                 autoComplete="tel"
               />
             </Box>
-            <Divider />
             <TextField
               label="Địa chỉ chi tiết"
               id="address-line"
@@ -189,42 +180,28 @@ function AddressEditor({
               }
               autoComplete="street-address"
               multiline
-              minRows={3}
+              minRows={2}
               slotProps={{ htmlInput: { maxLength: 240 } }}
             />
-            <Paper
-              variant="outlined"
-              sx={{ p: 1.5, bgcolor: "background.default" }}
-            >
-              <Controller
-                name="isDefault"
-                control={control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={field.value}
-                        onChange={(_, value) => field.onChange(value)}
-                        onBlur={field.onBlur}
-                        inputRef={field.ref}
-                        disabled={address?.isDefault}
-                      />
-                    }
-                    sx={{ m: 0 }}
-                    label={
-                      <Box>
-                        <Typography variant="body2" fontWeight={600}>
-                          Đặt làm địa chỉ mặc định
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Ưu tiên sử dụng địa chỉ này khi mua hàng.
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                )}
-              />
-            </Paper>
+            <Controller
+              name="isDefault"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={field.value}
+                      onChange={(_, value) => field.onChange(value)}
+                      onBlur={field.onBlur}
+                      inputRef={field.ref}
+                      disabled={address?.isDefault}
+                    />
+                  }
+                  sx={{ m: 0 }}
+                  label="Đặt làm địa chỉ mặc định"
+                />
+              )}
+            />
           </Stack>
         </DialogContent>
         <DialogActions
@@ -291,21 +268,16 @@ export default function AddressesPage() {
     );
   const data = profile.data;
   return (
-    <Stack spacing={3} sx={{ width: "100%", maxWidth: 760 }}>
+    <Stack spacing={2} sx={{ width: "100%", maxWidth: 800 }}>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={2}
         alignItems={{ xs: "flex-start", sm: "center" }}
         justifyContent="space-between"
       >
-        <Stack spacing={1}>
+        <Stack spacing={0.5}>
           <Typography variant="h2" component="h1">
             Địa chỉ giao hàng
-          </Typography>
-          <Typography color="text.secondary">
-            {data.addresses.length
-              ? `${data.addresses.length} địa chỉ trong sổ địa chỉ của bạn.`
-              : "Thêm địa chỉ để nhận hàng thuận tiện hơn."}
           </Typography>
         </Stack>
         <Button
@@ -353,80 +325,56 @@ export default function AddressesPage() {
               overflowWrap: "anywhere",
               overflow: "hidden",
               borderColor: address.isDefault ? "primary.main" : "divider",
+              p: 2,
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "minmax(0, 1fr)",
+                sm: "minmax(0, 1fr) auto",
+              },
+              gap: { xs: 1, sm: 2 },
+              alignItems: "start",
             }}
           >
-            <Stack spacing={2.5} sx={{ p: { xs: 2, sm: 3 } }}>
-              <Stack direction="row" gap={2} alignItems="flex-start">
-                <Box
-                  sx={{
-                    display: { xs: "none", sm: "flex" },
-                    width: 44,
-                    height: 44,
-                    flexShrink: 0,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: 1.5,
-                    bgcolor: "action.selected",
-                    color: "primary.main",
-                  }}
-                >
-                  <LocationOnOutlined aria-hidden="true" />
-                </Box>
-                <Stack spacing={1.5} sx={{ minWidth: 0, flex: 1 }}>
-                  <Stack
-                    direction="row"
-                    useFlexGap
-                    flexWrap="wrap"
-                    gap={1}
-                    alignItems="center"
-                    justifyContent="space-between"
-                  >
-                    <Typography variant="h3" component="h2">
-                      {address.recipient}
-                    </Typography>
-                    {address.isDefault && (
-                      <Chip
-                        size="small"
-                        label="Mặc định"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    )}
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    Số điện thoại · {address.phone}
-                  </Typography>
-                  <Box>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 0.5 }}
-                    >
-                      Địa chỉ nhận hàng
-                    </Typography>
-                    <Typography sx={{ lineHeight: 1.8 }}>
-                      {address.line}
-                    </Typography>
-                  </Box>
-                </Stack>
+            <Stack spacing={0.75} sx={{ minWidth: 0 }}>
+              <Stack
+                direction="row"
+                useFlexGap
+                flexWrap="wrap"
+                gap={1}
+                alignItems="center"
+              >
+                <Typography component="h2" fontWeight={600}>
+                  {address.recipient}
+                </Typography>
+                {address.isDefault && (
+                  <Chip
+                    size="small"
+                    label="Mặc định"
+                    color="primary"
+                    variant="outlined"
+                    sx={{ height: 24 }}
+                  />
+                )}
               </Stack>
+              <Typography variant="body2" color="text.secondary">
+                {address.phone}
+              </Typography>
+              <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+                {address.line}
+              </Typography>
             </Stack>
             <Stack
               direction="row"
               useFlexGap
               flexWrap="wrap"
-              gap={1}
+              gap={0.5}
               sx={{
-                px: { xs: 2, sm: 3 },
-                py: 1.5,
-                borderTop: "1px solid",
-                borderColor: "divider",
-                bgcolor: "background.default",
+                alignItems: "center",
+                justifyContent: { xs: "flex-start", sm: "flex-end" },
+                maxWidth: { sm: 200 },
               }}
             >
               <Button
-                startIcon={<EditOutlined />}
-                variant="outlined"
                 disabled={action.isPending}
                 onClick={() =>
                   setEdit({
@@ -437,7 +385,7 @@ export default function AddressesPage() {
                 }
                 aria-label={`Sửa địa chỉ ${address.recipient}`}
               >
-                Chỉnh sửa
+                Sửa
               </Button>
               {!address.isDefault && (
                 <Button
@@ -447,13 +395,11 @@ export default function AddressesPage() {
                   }
                   aria-label={`Đặt ${address.recipient} làm mặc định`}
                 >
-                  Đặt làm mặc định
+                  Đặt mặc định
                 </Button>
               )}
-              <Button
+              <IconButton
                 color="error"
-                startIcon={<DeleteOutlineRounded />}
-                sx={{ ml: "auto" }}
                 disabled={action.isPending}
                 onClick={() => {
                   action.reset();
@@ -465,8 +411,8 @@ export default function AddressesPage() {
                 }}
                 aria-label={`Xóa địa chỉ ${address.recipient}`}
               >
-                Xóa địa chỉ
-              </Button>
+                <DeleteOutlineRounded fontSize="small" />
+              </IconButton>
             </Stack>
           </Paper>
         ))}

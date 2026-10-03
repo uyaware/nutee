@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Chip,
   MenuItem,
@@ -109,10 +108,6 @@ export default function PrototypeAfterSales({ portal }: { portal: Portal }) {
           </Button>
         )}
       </Stack>
-      <Alert severity="info">
-        Danh sách mẫu cho các trạng thái hậu mãi. Gửi hoặc xử lý yêu cầu không
-        cập nhật dữ liệu.
-      </Alert>
       <Paper variant="outlined" sx={{ minWidth: 0 }}>
         <Tabs
           value={status}

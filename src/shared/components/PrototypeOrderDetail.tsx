@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   Box,
   Button,
   Dialog,
@@ -65,8 +64,8 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
     return (
       <Stack spacing={2}>
         <EmptyState
-          title="Không tìm thấy đơn mẫu"
-          description="Đơn này không nằm trong danh sách dữ liệu minh họa."
+          title="Không tìm thấy đơn hàng"
+          description="Kiểm tra mã đơn hoặc quay lại danh sách đơn hàng."
         />
         <Button component={Link} to={orderBase}>
           Về danh sách đơn hàng
@@ -114,16 +113,7 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
           <StatusBadge status={status} />
         </Box>
       </Stack>
-      {cancelled ? (
-        <Alert severity="info">
-          Đơn mẫu ở trạng thái đã hủy.{" "}
-          {!customer
-            ? "Đây là trạng thái mẫu, dữ liệu đơn hàng không được cập nhật."
-            : params.get("cancelled") === "1"
-              ? "Xác nhận hủy chỉ thay đổi màn hình minh họa, không cập nhật dữ liệu."
-              : "Bạn có thể tiếp tục khám phá các sản phẩm khác."}
-        </Alert>
-      ) : (
+      {!cancelled && (
         <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
           <Stepper
             activeStep={steps.findIndex((step) => step.status === status)}
@@ -213,7 +203,7 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
                         title:
                           steps.find((step) => step.status === entry.status)
                             ?.label ?? "Đã hủy",
-                        description: "Bước xử lý minh họa · Nhân viên vận hành",
+                        description: "Nhân viên vận hành",
                         note: entry.note,
                         negative: entry.status === "cancelled",
                       }))),
@@ -223,7 +213,7 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
                     ? [
                         {
                           title: "Đã hủy",
-                          description: "Bước xử lý minh họa · Khách hàng",
+                          description: "Khách hàng",
                           note: reason,
                           negative: true,
                         },
@@ -337,8 +327,7 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
         </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 3 }}>
-            Xem trạng thái sau khi hủy đơn. Thao tác này chỉ minh họa trong
-            prototype.
+            Nhập lý do hủy trước khi xác nhận.
           </DialogContentText>
           <TextField
             label="Lý do hủy đơn"

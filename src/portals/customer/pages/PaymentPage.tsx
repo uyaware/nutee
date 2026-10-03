@@ -30,7 +30,7 @@ export default function PaymentPage() {
   if (!order || order.userId !== "customer-1")
     return (
       <EmptyState
-        title="Không tìm thấy đơn mẫu"
+        title="Không tìm thấy đơn hàng"
         description="Chọn một đơn trong lịch sử để tiếp tục."
       />
     );
@@ -63,9 +63,6 @@ export default function PaymentPage() {
           Mã đơn {order.id.toUpperCase()} · Chuyển khoản bằng mã QR
         </Typography>
       </Box>
-      <Alert severity="info">
-        Mã QR là hình minh họa. Các nút bên dưới mở trạng thái thanh toán mẫu.
-      </Alert>
       <Box
         sx={{
           display: "grid",
@@ -100,7 +97,7 @@ export default function PaymentPage() {
                 >
                   <QrCode2Rounded
                     role="img"
-                    aria-label="Hình minh họa mã QR thanh toán"
+                    aria-label="Mã QR thanh toán"
                     sx={{
                       fontSize: { xs: 180, sm: 224 },
                       display: "block",
@@ -108,7 +105,7 @@ export default function PaymentPage() {
                     }}
                   />
                   <Typography variant="caption" color="text.secondary">
-                    QR MẪU · NUTEE
+                    NUTEE
                   </Typography>
                 </Box>
                 <Typography variant="h2" component="p" color="primary.main">
@@ -116,10 +113,10 @@ export default function PaymentPage() {
                 </Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <TimerOutlined color="warning" />
-                  <Typography>Thời hạn mẫu: 15 phút</Typography>
+                  <Typography>Thời hạn: 15 phút</Typography>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  Nội dung chuyển khoản mẫu: NUTEE {order.id.toUpperCase()}
+                  Nội dung chuyển khoản: NUTEE {order.id.toUpperCase()}
                 </Typography>
               </>
             ) : (
@@ -139,8 +136,8 @@ export default function PaymentPage() {
                 </Typography>
                 <Typography color="text.secondary">
                   {status === "paid"
-                    ? "Đơn mẫu đã được ghi nhận thanh toán. Bạn có thể xem xác nhận và chi tiết đơn."
-                    : "Bạn có thể mở lại mã QR mẫu để xem luồng thử lại."}
+                    ? "Bạn có thể xem xác nhận và chi tiết đơn hàng."
+                    : "Vui lòng thử lại để tiếp tục thanh toán."}
                 </Typography>
                 <Button
                   variant="contained"
@@ -166,7 +163,7 @@ export default function PaymentPage() {
             )}
             <Divider flexItem />
             <Typography variant="body2" color="text.secondary">
-              Xem các tình huống thanh toán
+              Trạng thái thanh toán
             </Typography>
             <Stack
               direction="row"

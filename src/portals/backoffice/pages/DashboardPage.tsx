@@ -153,21 +153,6 @@ export default function DashboardPage() {
         </Button>
       </Stack>
       <OrdersPage portal="backoffice" compact />
-      <Paper
-        sx={{
-          p: 3,
-          bgcolor: "secondary.main",
-          color: "secondary.contrastText",
-        }}
-      >
-        <Typography variant="h3" component="h2">
-          Không gian vận hành mẫu
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 1 }}>
-          Số liệu được tính từ danh sách mẫu. Các thao tác xử lý đơn và hậu mãi
-          chỉ minh họa giao diện, không cập nhật dữ liệu giữa hai portal.
-        </Typography>
-      </Paper>
     </Stack>
   );
 }

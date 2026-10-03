@@ -13,7 +13,7 @@ function Image({
   const [failed, setFailed] = useState(false);
   return !src || failed ? (
     <Typography color="text.secondary" sx={{ p: 3, textAlign: "center" }}>
-      Chưa có ảnh minh họa
+      Chưa có ảnh sản phẩm
     </Typography>
   ) : (
     <Box

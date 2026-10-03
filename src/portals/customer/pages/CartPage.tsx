@@ -105,7 +105,7 @@ export default function CartPage() {
             Khám phá sản phẩm
           </Button>
           <Button component={Link} to="/checkout" variant="outlined">
-            Xem thanh toán mẫu
+            Đi đến thanh toán
           </Button>
         </Stack>
       ) : (

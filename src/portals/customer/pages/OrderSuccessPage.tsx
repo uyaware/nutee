@@ -18,7 +18,7 @@ export default function OrderSuccessPage() {
   if (!order || order.userId !== "customer-1")
     return (
       <EmptyState
-        title="Không tìm thấy đơn mẫu"
+        title="Không tìm thấy đơn hàng"
         description="Bạn có thể xem các đơn có sẵn trong lịch sử đơn hàng."
       />
     );
@@ -49,7 +49,7 @@ export default function OrderSuccessPage() {
             ? "Thanh toán khi nhận hàng. Dự kiến giao ngày 05–07/10/2026."
             : paid
               ? "Thanh toán QR thành công · Dự kiến giao ngày 05–07/10/2026."
-              : "Đơn mẫu đang chờ thanh toán QR."}
+              : "Đơn hàng đang chờ thanh toán QR."}
         </Alert>
         <Box>
           <Typography variant="h3" component="h2" sx={{ mb: 1 }}>
@@ -76,9 +76,6 @@ export default function OrderSuccessPage() {
             Tiếp tục mua sắm
           </Button>
         </Stack>
-        <Typography variant="body2" color="text.secondary" textAlign="center">
-          Đây là bản xem trước đơn hàng; thao tác không lưu đơn mới.
-        </Typography>
       </Stack>
     </Paper>
   );
