@@ -25,7 +25,7 @@ export function StorefrontFooter() {
         py: { xs: 4, md: 5 },
       }}
     >
-      <Container maxWidth="xl">
+      <Container maxWidth="lg">
         <Box
           sx={{
             display: "grid",

@@ -43,7 +43,7 @@ export function StorefrontHeader() {
         },
       }}
     >
-      <Container maxWidth="xl" sx={{ height: "100%" }}>
+      <Container maxWidth="lg" sx={{ height: "100%" }}>
         <Toolbar
           disableGutters
           sx={{

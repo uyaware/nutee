@@ -30,7 +30,7 @@ export function StorefrontLayout() {
         component="main"
         id="main-content"
         tabIndex={-1}
-        maxWidth="xl"
+        maxWidth="lg"
         sx={{ py: { xs: 2.5, md: 3 }, flex: 1 }}
       >
         {session.isError && (
