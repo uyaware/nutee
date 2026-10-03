@@ -1,13 +1,10 @@
 import { useState } from "react";
 import {
-  Box,
   Button,
   Dialog,
   DialogActions,
-  DialogContent,
   DialogTitle,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import { useLocation, useSearchParams } from "react-router-dom";
@@ -27,7 +24,6 @@ export function PrototypeWorkflow<S extends string>({
   const [selected, setSelected] = useState<{ status: S; label: string } | null>(
     null,
   );
-  const [note, setNote] = useState("");
   const available = actions[status] ?? [];
   return (
     <Stack spacing={2}>
@@ -48,10 +44,7 @@ export function PrototypeWorkflow<S extends string>({
                 ? "error"
                 : "primary"
             }
-            onClick={() => {
-              setSelected(action);
-              setNote("");
-            }}
+            onClick={() => setSelected(action)}
           >
             {action.label}
           </Button>
@@ -65,48 +58,37 @@ export function PrototypeWorkflow<S extends string>({
         open={!!selected}
         onClose={() => setSelected(null)}
         fullWidth
-        maxWidth="sm"
+        maxWidth="xs"
         aria-labelledby="workflow-title"
       >
-        <Box
-          component="form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!selected || !note.trim()) return;
-            const next = new URLSearchParams(params);
-            next.set("workflow", selected.status);
-            next.set("workflowPath", [...path, selected.status].join(","));
-            next.set(`note-${selected.status}`, note.trim());
-            setParams(next, { state: location.state });
-            setSelected(null);
-          }}
-        >
-          <DialogTitle id="workflow-title">{selected?.label}</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              <Typography color="text.secondary">
-                Ghi kết quả hoặc lý do xử lý yêu cầu.
-              </Typography>
-              <TextField
-                autoFocus
-                fullWidth
-                required
-                label="Ghi chú xử lý"
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                multiline
-                minRows={3}
-                slotProps={{ htmlInput: { maxLength: 1000 } }}
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button onClick={() => setSelected(null)}>Quay lại</Button>
-            <Button type="submit" variant="contained" disabled={!note.trim()}>
-              Xác nhận
-            </Button>
-          </DialogActions>
-        </Box>
+        <DialogTitle id="workflow-title">
+          {selected ? `${selected.label}?` : ""}
+        </DialogTitle>
+        <DialogActions sx={{ p: 2 }}>
+          <Button autoFocus onClick={() => setSelected(null)}>
+            Quay lại
+          </Button>
+          <Button
+            variant="contained"
+            color={
+              selected?.status === "cancelled" ||
+              selected?.status === "rejected"
+                ? "error"
+                : "primary"
+            }
+            onClick={() => {
+              if (!selected) return;
+              const next = new URLSearchParams(params);
+              next.set("workflow", selected.status);
+              next.set("workflowPath", [...path, selected.status].join(","));
+              next.delete(`note-${selected.status}`);
+              setParams(next, { state: location.state });
+              setSelected(null);
+            }}
+          >
+            Xác nhận
+          </Button>
+        </DialogActions>
       </Dialog>
     </Stack>
   );
