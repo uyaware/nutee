@@ -1,5 +1,4 @@
 import { lazy } from "react";
-import { Paper } from "@mui/material";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { StorefrontLayout } from "./layouts/StorefrontLayout";
 import { RequireAuth } from "../../shared/auth/RequireAuth";
@@ -15,6 +14,7 @@ const CatalogPage = lazy(() => import("./pages/CatalogPage"));
 const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const AddressesPage = lazy(() => import("./pages/AddressesPage"));
+const SecurityPage = lazy(() => import("./pages/SecurityPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const AuthDemoPage = lazy(() => import("./pages/AuthDemoPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
@@ -64,16 +64,7 @@ export default function CustomerRoutes() {
             />
             <Route path="account/profile" element={<ProfilePage />} />
             <Route path="account/addresses" element={<AddressesPage />} />
-            <Route
-              path="account/security"
-              element={
-                <Paper
-                  variant="outlined"
-                  aria-label="Bảo mật tài khoản"
-                  sx={{ minHeight: 420 }}
-                />
-              }
-            />
+            <Route path="account/security" element={<SecurityPage />} />
             <Route
               path="account/orders"
               element={<OrdersPage portal="customer" />}
