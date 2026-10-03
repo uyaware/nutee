@@ -282,9 +282,6 @@ export default function ProductDetailPage() {
               >
                 {product.brandName}
               </MuiLink>
-              <Typography variant="caption" color="text.secondary">
-                SKU: {product.sku}
-              </Typography>
             </Stack>
             <Box>
               <Typography

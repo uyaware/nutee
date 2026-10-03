@@ -45,7 +45,7 @@ export default function ProductsPage() {
   const rows = data.products
     .filter(
       (p) =>
-        `${p.name} ${p.sku}`.toLocaleLowerCase("vi").includes(search) &&
+        p.name.toLocaleLowerCase("vi").includes(search) &&
         (status === "all" ||
           (status === "out" ? p.stock === 0 : p.status === status)) &&
         (brand === "all" || p.brandId === brand) &&
@@ -92,7 +92,7 @@ export default function ProductsPage() {
       <Stack direction={{ xs: "column", lg: "row" }} gap={2}>
         <TextField
           type="search"
-          label="Tìm tên hoặc SKU"
+          label="Tìm tên sản phẩm"
           value={q}
           onChange={(e) => update("q", e.target.value)}
           sx={{ flex: 2 }}
@@ -154,7 +154,7 @@ export default function ProductsPage() {
         label="Danh sách sản phẩm"
         rows={rows}
         columns={[
-          "Sản phẩm / SKU",
+          "Sản phẩm",
           "Thương hiệu",
           "Hiển thị",
           "Tồn kho",
@@ -180,7 +180,7 @@ export default function ProductsPage() {
                 <Stack>
                   <Typography fontWeight={600}>{p.name}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {p.sku} · {productKindLabels[p.kind]}
+                    {productKindLabels[p.kind]}
                   </Typography>
                 </Stack>
               </Stack>

@@ -47,7 +47,7 @@ export function ProductCard({
         </Box>
         <CardContent sx={{ flex: 1, overflowWrap: "anywhere" }}>
           <Typography variant="caption" color="text.secondary">
-            {product.brandName} · {product.sku}
+            {product.brandName}
           </Typography>
           <Typography
             component="h3"

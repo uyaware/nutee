@@ -258,7 +258,8 @@ function PromotionEditor({ initial }: { initial: AdminPromotion }) {
                 value={data.products.filter((p) =>
                   draft.productIds.includes(p.id),
                 )}
-                getOptionLabel={(p) => `${p.name} · ${p.sku}`}
+                getOptionLabel={(p) => p.name}
+                getOptionKey={(p) => p.id}
                 isOptionEqualToValue={(a, b) => a.id === b.id}
                 onChange={(_, products) =>
                   patch({ productIds: products.map((p) => p.id) })
@@ -267,7 +268,7 @@ function PromotionEditor({ initial }: { initial: AdminPromotion }) {
                   <TextField
                     {...props}
                     label="Chọn sản phẩm"
-                    helperText="Có thể tìm theo tên hoặc SKU và chọn nhiều sản phẩm."
+                    helperText="Có thể tìm theo tên và chọn nhiều sản phẩm."
                   />
                 )}
                 sx={{

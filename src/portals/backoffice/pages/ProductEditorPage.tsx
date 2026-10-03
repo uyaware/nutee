@@ -82,17 +82,8 @@ function ProductEditor({ initial }: { initial: AdminProduct }) {
       spacing={3}
       onSubmit={(event) => {
         event.preventDefault();
-        const duplicate = data.products.some(
-          (p) =>
-            p.id !== initial.id &&
-            p.sku.toLowerCase() === draft.sku.trim().toLowerCase(),
-        );
-        if (!draft.name.trim() || !draft.sku.trim()) {
-          setError("Nhập tên sản phẩm và SKU.");
-          return;
-        }
-        if (duplicate) {
-          setError("SKU đã có trong danh sách. Hãy chọn một mã khác.");
+        if (!draft.name.trim()) {
+          setError("Nhập tên sản phẩm.");
           return;
         }
         if (!draft.categoryIds.length) {
@@ -121,11 +112,12 @@ function ProductEditor({ initial }: { initial: AdminProduct }) {
           setError("Điền đủ thông số và dùng khóa khác nhau cho từng dòng.");
           return;
         }
+        const productId = initial.id || `preview-${crypto.randomUUID()}`;
         const saved = {
           ...draft,
-          id: initial.id || `preview-${crypto.randomUUID()}`,
+          id: productId,
           name: draft.name.trim(),
-          sku: draft.sku.trim(),
+          sku: initial.sku || productId,
           updatedAt: new Date().toISOString(),
         };
         setData((current) => ({
@@ -172,29 +164,20 @@ function ProductEditor({ initial }: { initial: AdminProduct }) {
               onChange={(e) => patch({ name: e.target.value })}
               slotProps={{ htmlInput: { maxLength: 160 } }}
             />
-            <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
-              <TextField
-                required
-                label="SKU"
-                value={draft.sku}
-                onChange={(e) => patch({ sku: e.target.value })}
-                slotProps={{ htmlInput: { maxLength: 80 } }}
-              />
-              <TextField
-                select
-                label="Loại sản phẩm"
-                value={draft.kind}
-                onChange={(e) =>
-                  patch({ kind: e.target.value as AdminProduct["kind"] })
-                }
-              >
-                {Object.entries(productKindLabels).map(([value, label]) => (
-                  <MenuItem key={value} value={value}>
-                    {label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Stack>
+            <TextField
+              select
+              label="Loại sản phẩm"
+              value={draft.kind}
+              onChange={(e) =>
+                patch({ kind: e.target.value as AdminProduct["kind"] })
+              }
+            >
+              {Object.entries(productKindLabels).map(([value, label]) => (
+                <MenuItem key={value} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </TextField>
             <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
               <TextField
                 select
@@ -445,8 +428,7 @@ function ProductEditor({ initial }: { initial: AdminProduct }) {
             }}
           />
           <Typography variant="body2" color="text.secondary">
-            {data.brands.find((b) => b.id === draft.brandId)?.name} ·{" "}
-            {draft.sku || "SKU mới"}
+            {data.brands.find((b) => b.id === draft.brandId)?.name}
           </Typography>
           <Typography
             variant="h3"
