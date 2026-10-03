@@ -23,6 +23,7 @@ import { errorMessage } from "../lib/errors";
 import { safeReturnTo } from "../auth/redirect";
 import { Brand } from "./Brand";
 import { PasswordField } from "./PasswordField";
+import { tokens } from "../theme/tokens";
 
 const schema = z.object({
   email: z.email("Nhập địa chỉ email hợp lệ."),
@@ -76,7 +77,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
           flexDirection: "column",
           justifyContent: "space-between",
           p: { md: 6, lg: 9 },
-          bgcolor: "secondary.main",
+          bgcolor: tokens.color.charcoal,
           color: "primary.contrastText",
           position: "relative",
           overflow: "hidden",

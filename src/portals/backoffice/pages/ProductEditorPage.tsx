@@ -29,6 +29,7 @@ import {
   AdminSection,
 } from "../components/AdminUI";
 import { useAdminPrototype } from "../components/adminPrototypeContext";
+import { VisibilityCheckbox } from "../components/VisibilityCheckbox";
 
 const emptyProduct: AdminProduct = {
   id: "",
@@ -133,11 +134,7 @@ function ProductEditor({ initial }: { initial: AdminProduct }) {
             ? current.products.map((p) => (p.id === initial.id ? saved : p))
             : [saved, ...current.products],
         }));
-        notify(
-          initial.id
-            ? "Đã xem thử thay đổi sản phẩm"
-            : "Đã thêm sản phẩm vào bản xem thử",
-        );
+        notify(initial.id ? "Đã cập nhật sản phẩm" : "Đã thêm sản phẩm");
         navigate(backTo);
       }}
     >
@@ -273,17 +270,13 @@ function ProductEditor({ initial }: { initial: AdminProduct }) {
                 slotProps={{ htmlInput: { min: 0, max: 999999, step: 1 } }}
               />
             </Stack>
-            <TextField
-              select
-              label="Hiển thị"
-              value={draft.status}
-              onChange={(e) =>
-                patch({ status: e.target.value as AdminProduct["status"] })
+            <VisibilityCheckbox
+              checked={draft.status === "published"}
+              name="sản phẩm"
+              onChange={(checked) =>
+                patch({ status: checked ? "published" : "hidden" })
               }
-            >
-              <MenuItem value="hidden">Ẩn / bản nháp</MenuItem>
-              <MenuItem value="published">Công khai</MenuItem>
-            </TextField>
+            />
           </AdminSection>
           <AdminSection
             title="Hình ảnh"
@@ -469,7 +462,7 @@ function ProductEditor({ initial }: { initial: AdminProduct }) {
             <Chip
               size="small"
               variant="outlined"
-              label={draft.status === "published" ? "Công khai" : "Đang ẩn"}
+              label={draft.status === "published" ? "Hiển thị" : "Ẩn"}
             />
             <Chip
               size="small"
@@ -517,13 +510,13 @@ function ProductEditor({ initial }: { initial: AdminProduct }) {
             Hủy
           </Button>
           <Button variant="contained" type="submit">
-            {initial.id ? "Xem thử thay đổi" : "Thêm vào bản xem thử"}
+            {initial.id ? "Lưu thay đổi" : "Thêm sản phẩm"}
           </Button>
         </Stack>
       </Stack>
       <AdminConfirm
         open={remove}
-        title="Xóa sản phẩm khỏi bản xem thử?"
+        title="Xóa sản phẩm?"
         description={initial.name}
         label="Xóa sản phẩm"
         danger
@@ -537,7 +530,7 @@ function ProductEditor({ initial }: { initial: AdminProduct }) {
               productIds: p.productIds.filter((id) => id !== initial.id),
             })),
           }));
-          notify("Đã xóa sản phẩm khỏi bản xem thử");
+          notify("Đã xóa sản phẩm");
           navigate(backTo);
         }}
       />

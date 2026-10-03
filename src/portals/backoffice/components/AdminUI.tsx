@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import {
-  Alert,
   Box,
   Button,
   Dialog,
@@ -42,10 +41,6 @@ export function AdminPageHeader({
         <BoxTitle title={title} description={description} />
         {action && <Box sx={{ flexShrink: 0 }}>{action}</Box>}
       </Stack>
-      <Alert severity="info" variant="outlined">
-        Prototype M6 · Thay đổi chỉ dùng để xem giao diện, được đặt lại khi tải
-        lại trang.
-      </Alert>
     </Stack>
   );
 }
@@ -199,7 +194,7 @@ export function AdminMissing({ label, to }: { label: string; to: string }) {
         Không tìm thấy {label}
       </Typography>
       <Typography color="text.secondary">
-        Bản xem thử có thể đã được đặt lại khi tải lại trang.
+        Kiểm tra đường dẫn hoặc quay về danh sách để chọn lại.
       </Typography>
       <Button component={Link} to={to} sx={{ alignSelf: "flex-start" }}>
         Về danh sách

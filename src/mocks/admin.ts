@@ -1,5 +1,4 @@
 import { createSeed } from "./seed";
-import { prototypeOrders } from "./checkout";
 import type { Database, Product } from "../shared/types/database";
 
 export const ADMIN_DEMO_NOW = "2026-10-03T03:00:00.000Z";
@@ -94,15 +93,3 @@ export const promotionStatusLabels = {
   expired: "Hết hạn",
   paused: "Tạm dừng",
 };
-
-// Payment rows and dashboard use the same read-only order fixtures as M4/M5.
-export const prototypePayments = prototypeOrders.map((order, index) => ({
-  id: `payment-${index + 1}`,
-  orderId: order.id,
-  amount: order.total,
-  status: order.paymentStatus,
-  reference: `NT-DEMO-${String(index + 1).padStart(5, "0")}`,
-  createdAt: order.createdAt,
-  method: order.paymentMethod,
-  recipient: order.address.recipient,
-}));

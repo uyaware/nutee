@@ -123,7 +123,7 @@ function PromotionEditor({ initial }: { initial: AdminPromotion }) {
             ? current.promotions.map((p) => (p.id === initial.id ? saved : p))
             : [saved, ...current.promotions],
         }));
-        notify("Đã cập nhật khuyến mãi trong bản xem thử");
+        notify("Đã cập nhật khuyến mãi");
         navigate(backTo);
       }}
     >
@@ -300,8 +300,7 @@ function PromotionEditor({ initial }: { initial: AdminPromotion }) {
               />
             )}
             <Typography variant="body2" color="text.secondary">
-              Mỗi mã có một phạm vi áp dụng. Giá trị trong phần xem trước dùng
-              để minh họa điều kiện ưu đãi.
+              Mỗi mã có một phạm vi áp dụng.
             </Typography>
           </AdminSection>
         </Stack>
@@ -335,9 +334,6 @@ function PromotionEditor({ initial }: { initial: AdminPromotion }) {
                 ? ` · ${draft.userIds.length} khách hàng`
                 : ""}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Trạng thái minh họa theo dữ liệu mẫu ngày 03/10/2026.
-          </Typography>
         </AdminSection>
       </Box>
       <Stack
@@ -357,7 +353,7 @@ function PromotionEditor({ initial }: { initial: AdminPromotion }) {
             Hủy
           </Button>
           <Button variant="contained" type="submit">
-            Xem thử thay đổi
+            Lưu thay đổi
           </Button>
         </Stack>
       </Stack>
@@ -373,7 +369,7 @@ function PromotionEditor({ initial }: { initial: AdminPromotion }) {
             ...current,
             promotions: current.promotions.filter((p) => p.id !== initial.id),
           }));
-          notify("Đã xóa khuyến mãi khỏi bản xem thử");
+          notify("Đã xóa khuyến mãi");
           navigate(backTo);
         }}
       />

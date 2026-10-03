@@ -1,4 +1,4 @@
-import { createTheme } from "@mui/material/styles";
+import { alpha, createTheme } from "@mui/material/styles";
 import type { ThemeOptions } from "@mui/material/styles";
 import { tokens } from "./tokens";
 
@@ -12,7 +12,9 @@ const base: ThemeOptions = {
       contrastText: tokens.color.surface,
     },
     secondary: {
-      main: tokens.color.charcoal,
+      main: tokens.color.orangeDark,
+      light: tokens.color.orange,
+      dark: tokens.color.orangeInk,
       contrastText: tokens.color.surface,
     },
     background: { default: tokens.color.canvas, paper: tokens.color.surface },
@@ -21,6 +23,10 @@ const base: ThemeOptions = {
     success: { main: tokens.color.success },
     warning: { main: tokens.color.warning },
     error: { main: tokens.color.error },
+    action: {
+      hover: alpha(tokens.color.blue, 0.04),
+      selected: alpha(tokens.color.blue, 0.08),
+    },
   },
   typography: {
     fontFamily: tokens.typography.family,
@@ -146,7 +152,12 @@ const base: ThemeOptions = {
     MuiLink: { defaultProps: { underline: "hover" } },
     MuiCssBaseline: {
       styleOverrides: {
-        body: { margin: 0 },
+        body: {
+          margin: 0,
+          backgroundColor: tokens.color.canvas,
+          backgroundImage: `linear-gradient(135deg, ${tokens.color.canvas}, ${tokens.color.skyTint})`,
+          minHeight: "100dvh",
+        },
         "*": { boxSizing: "border-box" },
         ":focus-visible": {
           outline: `3px solid ${tokens.color.blue}`,

@@ -21,6 +21,7 @@ import {
   AdminTable,
 } from "../components/AdminUI";
 import { useAdminPrototype } from "../components/adminPrototypeContext";
+import { VisibilityCheckbox } from "../components/VisibilityCheckbox";
 
 export default function ProductsPage() {
   const { data, setData, notify } = useAdminPrototype();
@@ -70,6 +71,7 @@ export default function ProductsPage() {
             to="/management/products/new"
             startIcon={<AddRounded />}
             variant="contained"
+            color="secondary"
           >
             Thêm sản phẩm
           </Button>
@@ -103,8 +105,8 @@ export default function ProductsPage() {
           sx={{ flex: 1 }}
         >
           <MenuItem value="all">Tất cả</MenuItem>
-          <MenuItem value="published">Công khai</MenuItem>
-          <MenuItem value="hidden">Đã ẩn</MenuItem>
+          <MenuItem value="published">Hiển thị</MenuItem>
+          <MenuItem value="hidden">Ẩn</MenuItem>
           <MenuItem value="out">Hết hàng</MenuItem>
         </TextField>
         <TextField
@@ -187,11 +189,11 @@ export default function ProductsPage() {
               {data.brands.find((b) => b.id === p.brandId)?.name}
             </TableCell>
             <TableCell>
-              <Chip
-                size="small"
-                label={p.status === "published" ? "Công khai" : "Đã ẩn"}
-                color={p.status === "published" ? "success" : "default"}
-                variant="outlined"
+              <VisibilityCheckbox
+                checked={p.status === "published"}
+                name={p.name}
+                showStatus
+                onChange={() => setSelected(p)}
               />
             </TableCell>
             <TableCell>
@@ -211,9 +213,6 @@ export default function ProductsPage() {
                 >
                   Sửa
                 </Button>
-                <Button onClick={() => setSelected(p)}>
-                  {p.status === "published" ? "Ẩn" : "Xuất bản"}
-                </Button>
               </Stack>
             </TableCell>
           </>
@@ -224,9 +223,9 @@ export default function ProductsPage() {
         title={
           selected?.status === "published"
             ? "Ẩn sản phẩm?"
-            : "Xuất bản sản phẩm?"
+            : "Hiển thị sản phẩm?"
         }
-        description={`${selected?.name ?? ""} sẽ chuyển trạng thái trong bản xem thử.`}
+        description={`${selected?.name ?? ""} sẽ ${selected?.status === "published" ? "được ẩn" : "được hiển thị"}.`}
         onClose={() => setSelected(null)}
         onConfirm={() => {
           if (!selected) return;

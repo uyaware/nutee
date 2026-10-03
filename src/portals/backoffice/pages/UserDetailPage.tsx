@@ -58,7 +58,7 @@ function UserEditor({ user }: { user: User }) {
     <Stack spacing={3}>
       <AdminPageHeader
         title={`Tài khoản ${user.name}`}
-        description="Hồ sơ, vai trò và trạng thái truy cập trong bản xem thử."
+        description="Hồ sơ, vai trò và trạng thái truy cập của tài khoản."
         action={
           <Button component={Link} to={backTo}>
             Về danh sách
@@ -135,7 +135,7 @@ function UserEditor({ user }: { user: User }) {
             {role === "admin"
               ? "Quản lý dữ liệu bán hàng, tài khoản và xem báo cáo kinh doanh."
               : role === "staff"
-                ? "Xử lý đơn hàng và yêu cầu hậu mãi trong cổng vận hành."
+                ? "Xử lý đơn hàng và yêu cầu của khách hàng trong cổng vận hành."
                 : "Mua hàng và quản lý thông tin cá nhân trong cửa hàng."}
           </Typography>
           {lastAdmin && !self && blocked && (
@@ -149,7 +149,7 @@ function UserEditor({ user }: { user: User }) {
             onClick={() => setConfirm(true)}
             sx={{ alignSelf: "flex-start" }}
           >
-            Xem thử thay đổi quyền
+            Lưu thay đổi quyền
           </Button>
         </AdminSection>
       </Box>
@@ -179,14 +179,14 @@ function UserEditor({ user }: { user: User }) {
           ))
         ) : (
           <Typography color="text.secondary">
-            Tài khoản này chưa có đơn trong dữ liệu mẫu.
+            Tài khoản này chưa có đơn hàng.
           </Typography>
         )}
       </AdminSection>
       <AdminConfirm
         open={confirm}
         title="Xác nhận thay đổi quyền?"
-        description={`${user.name}: ${roleLabels[role]} · ${isActive ? "Hoạt động" : "Đã khóa"}. Thay đổi chỉ hiển thị trong prototype.`}
+        description={`${user.name}: ${roleLabels[role]} · ${isActive ? "Hoạt động" : "Đã khóa"}.`}
         danger={!isActive || role === "admin"}
         onClose={() => setConfirm(false)}
         onConfirm={() => {
@@ -197,7 +197,7 @@ function UserEditor({ user }: { user: User }) {
               u.id === user.id ? { ...u, role, isActive } : u,
             ),
           }));
-          notify("Đã xem thử thay đổi quyền tài khoản");
+          notify("Đã cập nhật quyền tài khoản");
           setConfirm(false);
         }}
       />

@@ -56,7 +56,7 @@ export default function PrototypeAfterSaleDetail({
           description="Chọn một yêu cầu trong danh sách để xem chi tiết."
         />
         <Button component={Link} to={base}>
-          Về danh sách hậu mãi
+          {customer ? "Về danh sách hậu mãi" : "Về danh sách yêu cầu"}
         </Button>
       </Stack>
     );
@@ -71,7 +71,7 @@ export default function PrototypeAfterSaleDetail({
         startIcon={<ArrowBackRounded />}
         sx={{ alignSelf: "flex-start" }}
       >
-        Quay lại hậu mãi
+        {customer ? "Quay lại hậu mãi" : "Quay lại yêu cầu"}
       </Button>
       <Stack
         direction={{ xs: "column", sm: "row" }}
@@ -149,7 +149,7 @@ export default function PrototypeAfterSaleDetail({
             <Stack spacing={2}>
               <Typography variant="h2">Tiến trình xử lý</Typography>
               <StatusHistoryStepper
-                label="Lịch sử trạng thái yêu cầu hậu mãi"
+                label="Lịch sử trạng thái yêu cầu"
                 finished={status === "completed" || status === "rejected"}
                 entries={[
                   ...request.history.map((entry) => ({

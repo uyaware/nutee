@@ -54,6 +54,7 @@ export default function PromotionsPage() {
             component={Link}
             to="/management/promotions/new"
             variant="contained"
+            color="secondary"
             startIcon={<AddRounded />}
           >
             Tạo khuyến mãi
@@ -172,7 +173,7 @@ export default function PromotionsPage() {
         title={
           selected?.isActive ? "Tạm dừng khuyến mãi?" : "Bật lại khuyến mãi?"
         }
-        description={`${selected?.code ?? ""} sẽ đổi trạng thái trong bản xem thử.`}
+        description={`${selected?.code ?? ""} sẽ ${selected?.isActive ? "tạm dừng áp dụng" : "được bật lại"}.`}
         onClose={() => setSelected(null)}
         onConfirm={() => {
           if (!selected) return;

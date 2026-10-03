@@ -89,7 +89,7 @@ export default function PrototypeAfterSales({ portal }: { portal: Portal }) {
       >
         <Stack spacing={1}>
           <Typography variant="h1">
-            {customer ? "Bảo hành & đổi trả" : "Quản lý hậu mãi"}
+            {customer ? "Bảo hành & đổi trả" : "Quản lý yêu cầu"}
           </Typography>
           <Typography color="text.secondary">
             {customer
@@ -114,7 +114,7 @@ export default function PrototypeAfterSales({ portal }: { portal: Portal }) {
           onChange={(_, value: string) => update("status", value)}
           variant="scrollable"
           scrollButtons="auto"
-          aria-label="Trạng thái yêu cầu hậu mãi"
+          aria-label="Trạng thái yêu cầu"
         >
           <Tab value="all" label="Tất cả" />
           {Object.entries(afterSaleLabels).map(([value, label]) => (
@@ -151,7 +151,7 @@ export default function PrototypeAfterSales({ portal }: { portal: Portal }) {
       </Stack>
       <Paper variant="outlined" sx={{ minWidth: 0 }}>
         <TableContainer>
-          <Table sx={{ minWidth: 740 }} aria-label="Danh sách yêu cầu hậu mãi">
+          <Table sx={{ minWidth: 740 }} aria-label="Danh sách yêu cầu">
             <TableHead>
               <TableRow>
                 {[

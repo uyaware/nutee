@@ -1,5 +1,8 @@
 import {
   Button,
+  Box,
+  InputAdornment,
+  IconButton,
   MenuItem,
   Paper,
   Stack,
@@ -12,7 +15,10 @@ import {
   TableRow,
   TextField,
 } from "@mui/material";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
+import { useAdminFilters } from "../components/useAdminFilters";
 import { prototypeOrders, paymentLabels } from "../../../mocks/checkout";
 import { BoxTitle } from "../../../shared/components/OrdersPage";
 import { StatusBadge } from "../../../shared/components/StatusBadge";
@@ -27,9 +33,17 @@ const statuses = {
   delivered: "Đã giao",
   cancelled: "Đã hủy",
 };
+const normalizeSearch = (value: string) =>
+  value
+    .toLocaleLowerCase("vi")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/đ/g, "d")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
 export default function OperationsOrdersPage() {
-  const [params, setParams] = useSearchParams();
-  const q = params.get("q") ?? "";
+  const { params, q, search, update, reset } = useAdminFilters();
+  const words = normalizeSearch(search).split(/\s+/).filter(Boolean);
   const requestedStatus = params.get("status") ?? "all";
   const status = Object.hasOwn(statuses, requestedStatus)
     ? requestedStatus
@@ -42,9 +56,11 @@ export default function OperationsOrdersPage() {
   const rows = prototypeOrders
     .filter(
       (order) =>
-        `${order.id} ${order.address.recipient} ${order.address.phone}`
-          .toLocaleLowerCase("vi")
-          .includes(q.toLocaleLowerCase("vi")) &&
+        words.every((word) =>
+          normalizeSearch(
+            `${order.id} ${order.address.recipient} ${order.address.phone}`,
+          ).includes(word),
+        ) &&
         (status === "all" || order.status === status) &&
         (payment === "all" || order.paymentStatus === payment),
     )
@@ -54,35 +70,61 @@ export default function OperationsOrdersPage() {
     );
   const size = 8;
   const page = Math.min(
-    Math.max(0, Math.floor(Number(params.get("page")) || 0)),
+    Number.isFinite(Number(params.get("page")))
+      ? Math.max(0, Math.floor(Number(params.get("page"))))
+      : 0,
     Math.max(0, Math.ceil(rows.length / size) - 1),
   );
-  const update = (key: string, value: string) => {
-    const next = new URLSearchParams(params);
-    if (value && value !== "all") next.set(key, value);
-    else next.delete(key);
-    if (key !== "page") next.delete("page");
-    setParams(next, { replace: true });
-  };
   return (
     <Stack spacing={3}>
       <BoxTitle
         title="Quản lý đơn hàng"
         description="Tra cứu đơn, xem chi tiết và xử lý từng bước giao hàng."
       />
-      <Stack direction={{ xs: "column", lg: "row" }} gap={2}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "minmax(0, 1fr)",
+            sm: "repeat(3, minmax(0, 1fr))",
+            xl: "minmax(320px, 2fr) repeat(3, minmax(0, 1fr))",
+          },
+          gap: 2,
+        }}
+      >
         <TextField
-          label="Mã đơn, người nhận hoặc số điện thoại"
+          label="Tìm đơn hàng"
+          placeholder="Mã đơn, tên người nhận hoặc số điện thoại"
           value={q}
           onChange={(event) => update("q", event.target.value)}
-          sx={{ flex: 1 }}
+          sx={{ gridColumn: { xs: "1 / -1", xl: "auto" } }}
+          slotProps={{
+            inputLabel: { shrink: true },
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchRounded fontSize="small" />
+                </InputAdornment>
+              ),
+              endAdornment: q ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="Xóa từ khóa tìm đơn hàng"
+                    onClick={() => update("q", "")}
+                    edge="end"
+                  >
+                    <CloseRounded fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : undefined,
+            },
+          }}
         />
         <TextField
           select
           label="Trạng thái đơn"
           value={status}
           onChange={(event) => update("status", event.target.value)}
-          sx={{ minWidth: 190 }}
         >
           {Object.entries(statuses).map(([value, label]) => (
             <MenuItem key={value} value={value}>
@@ -95,7 +137,6 @@ export default function OperationsOrdersPage() {
           label="Thanh toán"
           value={payment}
           onChange={(event) => update("payment", event.target.value)}
-          sx={{ minWidth: 190 }}
         >
           <MenuItem value="all">Tất cả thanh toán</MenuItem>
           {Object.entries(paymentLabels).map(([value, label]) => (
@@ -109,12 +150,11 @@ export default function OperationsOrdersPage() {
           label="Sắp xếp"
           value={sort}
           onChange={(event) => update("sort", event.target.value)}
-          sx={{ minWidth: 170 }}
         >
           <MenuItem value="newest">Mới nhất</MenuItem>
           <MenuItem value="oldest">Cũ nhất</MenuItem>
         </TextField>
-      </Stack>
+      </Box>
       <Paper variant="outlined" sx={{ minWidth: 0 }}>
         <TableContainer>
           <Table sx={{ minWidth: 820 }} aria-label="Bảng đơn hàng vận hành">
@@ -176,7 +216,7 @@ export default function OperationsOrdersPage() {
                 <TableRow>
                   <TableCell colSpan={6} align="center">
                     Không có đơn phù hợp.{" "}
-                    <Button onClick={() => setParams({})}>Xóa bộ lọc</Button>
+                    <Button onClick={reset}>Xóa bộ lọc</Button>
                   </TableCell>
                 </TableRow>
               )}

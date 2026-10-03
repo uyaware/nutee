@@ -6,7 +6,6 @@ export type Permission =
   | "operations:read"
   | "products:write"
   | "promotions:write"
-  | "payments:read"
   | "users:read";
 export const permissions: Record<Role, readonly Permission[]> = {
   customer: ["catalog:read", "profile:own", "orders:own"],
@@ -16,7 +15,6 @@ export const permissions: Record<Role, readonly Permission[]> = {
     "operations:read",
     "products:write",
     "promotions:write",
-    "payments:read",
     "users:read",
   ],
 };

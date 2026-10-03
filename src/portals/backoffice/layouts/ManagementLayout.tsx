@@ -1,10 +1,9 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
-  AppBar,
   Avatar,
   Box,
   Button,
-  Divider,
+  Collapse,
   Drawer,
   IconButton,
   List,
@@ -12,23 +11,25 @@ import {
   ListItemIcon,
   ListItemText,
   Stack,
-  Toolbar,
+  Tooltip,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import DashboardOutlined from "@mui/icons-material/DashboardOutlined";
 import ReceiptLongOutlined from "@mui/icons-material/ReceiptLongOutlined";
 import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
 import PeopleOutlineRounded from "@mui/icons-material/PeopleOutlineRounded";
 import MenuRounded from "@mui/icons-material/MenuRounded";
+import MenuOpenRounded from "@mui/icons-material/MenuOpenRounded";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
-import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
 import SupportAgentRounded from "@mui/icons-material/SupportAgentRounded";
 import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
 import SellOutlined from "@mui/icons-material/SellOutlined";
 import LocalOfferOutlined from "@mui/icons-material/LocalOfferOutlined";
-import PaymentsOutlined from "@mui/icons-material/PaymentsOutlined";
+import { alpha, useTheme } from "@mui/material/styles";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { Brand } from "../../../shared/components/Brand";
+import { tokens } from "../../../shared/theme/tokens";
 import { ErrorState } from "../../../shared/components/Feedback";
 import { useLogout, useSession } from "../../../shared/auth/useSession";
 import { hasPermission, roleLabels } from "../../../shared/auth/permissions";
@@ -37,18 +38,28 @@ import { AdminPrototypeProvider } from "../components/AdminPrototypeProvider";
 export function ManagementLayout() {
   const session = useSession("backoffice");
   const logout = useLogout("backoffice");
+  const theme = useTheme();
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const user = session.data!;
+  // Enough room for the logo and its control to remain on the same row.
+  const width = collapsed ? 112 : 264;
+  const duration = reduceMotion
+    ? 0
+    : collapsed
+      ? theme.transitions.duration.leavingScreen
+      : theme.transitions.duration.enteringScreen;
+  const transition = theme.transitions.create(["width", "padding"], {
+    duration,
+    easing: theme.transitions.easing.sharp,
+  });
   const links = [
     { to: "/management", label: "Tổng quan", icon: DashboardOutlined },
-    {
-      to: "/management/orders",
-      label: "Đơn hàng",
-      icon: ReceiptLongOutlined,
-    },
+    { to: "/management/orders", label: "Đơn hàng", icon: ReceiptLongOutlined },
     {
       to: "/management/after-sales",
-      label: "Hậu mãi",
+      label: "Yêu cầu",
       icon: SupportAgentRounded,
     },
     ...(hasPermission(user.role, "products:write")
@@ -78,148 +89,327 @@ export function ManagementLayout() {
             label: "Tài khoản",
             icon: PeopleOutlineRounded,
           },
-          {
-            to: "/management/payments",
-            label: "Giao dịch",
-            icon: PaymentsOutlined,
-          },
         ]
       : []),
   ];
-  const sidebar = (
-    <Stack sx={{ minHeight: "100%", p: 2.5 }}>
-      <Box sx={{ py: 1, mb: 4 }}>
-        <Brand management />
-      </Box>
+
+  const sidebar = (compact: boolean, mobile = false) => (
+    <Stack sx={{ minHeight: "100%", width: "100%" }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.5}
+        sx={{ height: 88, px: 1, flexShrink: 0 }}
+      >
+        <Stack
+          component={Link}
+          to="/management"
+          aria-label="NUTEE — Tổng quan"
+          direction="row"
+          alignItems="center"
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            overflow: "hidden",
+            textDecoration: "none",
+          }}
+        >
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              component="img"
+              src="/logo_nutee.png"
+              alt=""
+              sx={{
+                width: 60,
+                height: 60,
+                objectFit: "contain",
+                flexShrink: 0,
+                display: "block",
+              }}
+            />
+          </Box>
+          <Collapse
+            orientation="horizontal"
+            in={!compact}
+            timeout={duration}
+            aria-hidden={compact}
+          >
+            <Box sx={{ width: 112, pl: 1 }}>
+              <Typography
+                fontWeight={800}
+                fontSize={21}
+                color="primary.main"
+                sx={{ lineHeight: 1.2, letterSpacing: "-.04em" }}
+              >
+                NUTEE
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                WORKSPACE
+              </Typography>
+            </Box>
+          </Collapse>
+        </Stack>
+        <Tooltip
+          title={
+            mobile
+              ? "Đóng menu"
+              : compact
+                ? "Mở rộng sidebar"
+                : "Thu gọn sidebar"
+          }
+        >
+          <IconButton
+            aria-label={
+              mobile
+                ? "Đóng menu vận hành"
+                : compact
+                  ? "Mở rộng sidebar"
+                  : "Thu gọn sidebar"
+            }
+            aria-expanded={!compact}
+            onClick={() =>
+              mobile ? setOpen(false) : setCollapsed((value) => !value)
+            }
+            sx={{
+              color: "primary.main",
+              borderRadius: 0,
+              flexShrink: 0,
+              "&:hover": { bgcolor: "action.hover" },
+            }}
+          >
+            {mobile ? (
+              <CloseRounded />
+            ) : compact ? (
+              <MenuRounded />
+            ) : (
+              <MenuOpenRounded />
+            )}
+          </IconButton>
+        </Tooltip>
+      </Stack>
       <Typography
         variant="overline"
         color="text.secondary"
-        sx={{ px: 1.5, mb: 1 }}
+        aria-hidden={compact}
+        sx={{
+          height: 40,
+          px: 2,
+          display: "flex",
+          alignItems: "center",
+          opacity: compact ? 0 : 1,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          transition: theme.transitions.create("opacity", { duration }),
+        }}
       >
         VẬN HÀNH
       </Typography>
-      <List sx={{ flex: 1 }}>
+      <List
+        component="nav"
+        aria-label="Điều hướng vận hành"
+        sx={{
+          width: "100%",
+          flex: 1,
+          p: 0,
+        }}
+      >
         {links.map(({ to, label, icon: Icon }) => (
-          <ListItemButton
-            key={to}
-            component={NavLink}
-            to={to}
-            end={to === "/management"}
-            onClick={() => setOpen(false)}
-            sx={{
-              borderRadius: 2,
-              mb: 0.75,
-              minHeight: 48,
-              "&.active": {
-                bgcolor: "action.selected",
-                color: "primary.main",
+          <Tooltip key={to} title={compact ? label : ""} placement="right">
+            <ListItemButton
+              component={NavLink}
+              to={to}
+              aria-label={label}
+              end={to === "/management"}
+              onClick={() => setOpen(false)}
+              sx={{
+                width: "100%",
+                borderRadius: 0,
+                minHeight: 56,
+                m: 0,
+                px: compact ? 4.25 : 2,
+                borderBottom: "1px solid",
+                borderColor: "divider",
+                "&:last-child": { borderBottom: 0 },
+                color: "text.primary",
+                overflow: "hidden",
+                transition: `${transition}, ${theme.transitions.create(["background-color", "color"], { duration: reduceMotion ? 0 : theme.transitions.duration.shortest })}`,
                 "& .MuiListItemIcon-root": { color: "primary.main" },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <Icon />
-            </ListItemIcon>
-            <ListItemText
-              primary={label}
-              slotProps={{ primary: { fontSize: 14, fontWeight: 500 } }}
-            />
-          </ListItemButton>
+                "&:hover, &.active": {
+                  bgcolor: tokens.color.blueTint,
+                  color: "primary.main",
+                  "& .MuiListItemIcon-root": { color: "primary.main" },
+                },
+                "&.active .MuiListItemText-primary": { fontWeight: 700 },
+                "&.Mui-focusVisible": {
+                  boxShadow: `inset 0 0 0 3px ${tokens.color.cyan}`,
+                },
+              }}
+            >
+              <ListItemIcon
+                sx={{ minWidth: 44, flexShrink: 0, justifyContent: "center" }}
+              >
+                <Icon />
+              </ListItemIcon>
+              <Collapse
+                orientation="horizontal"
+                in={!compact}
+                timeout={duration}
+                aria-hidden={compact}
+              >
+                <ListItemText
+                  primary={label}
+                  sx={{ m: 0, width: 170, whiteSpace: "nowrap" }}
+                  slotProps={{ primary: { fontSize: 14, fontWeight: 500 } }}
+                />
+              </Collapse>
+            </ListItemButton>
+          </Tooltip>
         ))}
       </List>
-      <Button
-        component={Link}
-        to="/"
-        endIcon={<ArrowOutwardRounded />}
-        sx={{ mb: 2 }}
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        sx={{ px: 1.5, py: 2, mt: 2, minHeight: 80 }}
       >
-        Xem cửa hàng
-      </Button>
-      <Divider />
-      <Stack direction="row" sx={{ mt: 2 }} spacing={1.5} alignItems="center">
-        <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
-          {user.name.slice(0, 1)}
-        </Avatar>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography
-            variant="body2"
-            fontWeight={600}
-            sx={{ overflowWrap: "anywhere" }}
+        <Tooltip
+          title={compact ? `${user.name} · ${roleLabels[user.role]}` : ""}
+          placement="right"
+        >
+          <Avatar
+            alt={user.name}
+            sx={{
+              bgcolor: "primary.main",
+              width: 36,
+              height: 36,
+              flexShrink: 0,
+            }}
           >
+            {user.name.slice(0, 1)}
+          </Avatar>
+        </Tooltip>
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            overflow: "hidden",
+            display: compact ? "none" : "block",
+          }}
+        >
+          <Typography variant="body2" fontWeight={600} noWrap>
             {user.name}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" noWrap>
             {roleLabels[user.role]}
           </Typography>
         </Box>
-        <IconButton
-          aria-label="Đăng xuất vận hành"
-          onClick={() => logout.mutate()}
-          disabled={logout.isPending}
-        >
-          <LogoutRounded fontSize="small" />
-        </IconButton>
+        <Tooltip title="Đăng xuất">
+          <span>
+            <IconButton
+              aria-label="Đăng xuất vận hành"
+              onClick={() => logout.mutate()}
+              disabled={logout.isPending}
+              sx={{
+                color: "primary.main",
+                borderRadius: 0,
+                "&:hover": { bgcolor: "action.hover" },
+              }}
+            >
+              <LogoutRounded fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
       </Stack>
     </Stack>
   );
+
   return (
     <AdminPrototypeProvider key={user.id}>
-      <Box sx={{ display: "flex", minHeight: "100dvh" }}>
+      <Box
+        sx={{
+          display: "flex",
+          minHeight: "100dvh",
+          bgcolor: "background.default",
+          backgroundImage: `radial-gradient(ellipse at top right, ${alpha(tokens.color.cyan, 0.035)}, transparent 55%)`,
+        }}
+      >
         <Drawer
           variant="permanent"
+          open={!collapsed}
           sx={{
             display: { xs: "none", md: "block" },
-            width: 264,
+            width,
             flexShrink: 0,
-            "& .MuiDrawer-paper": { width: 264, boxSizing: "border-box" },
+            transition,
+            "& .MuiDrawer-paper": {
+              width,
+              transition,
+              boxSizing: "border-box",
+              overflowX: "hidden",
+              bgcolor: "background.paper",
+              color: "text.primary",
+              backgroundImage: "none",
+              borderRight: "1px solid",
+              borderColor: "divider",
+            },
           }}
         >
-          {sidebar}
+          {sidebar(collapsed)}
         </Drawer>
         <Drawer
           open={open}
           onClose={() => setOpen(false)}
-          sx={{ "& .MuiDrawer-paper": { width: 288 } }}
+          transitionDuration={reduceMotion ? 0 : undefined}
+          sx={{
+            "& .MuiDrawer-paper": {
+              width: 288,
+              maxWidth: "100vw",
+              bgcolor: "background.paper",
+              color: "text.primary",
+              backgroundImage: "none",
+            },
+          }}
         >
-          {sidebar}
+          {sidebar(false, true)}
         </Drawer>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <AppBar
-            color="inherit"
-            position="sticky"
-            elevation={0}
-            sx={{ borderBottom: "1px solid", borderColor: "divider" }}
+        <Box
+          component="main"
+          id="main-content"
+          tabIndex={-1}
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            p: { xs: 2.5, md: 4 },
+            maxWidth: 1600,
+            mx: "auto",
+          }}
+        >
+          <Button
+            startIcon={<MenuRounded />}
+            onClick={() => setOpen(true)}
+            aria-label="Mở menu vận hành"
+            aria-expanded={open}
+            sx={{
+              display: { xs: "inline-flex", md: "none" },
+              mb: 2,
+              bgcolor: "common.white",
+              borderRadius: 0,
+            }}
           >
-            <Toolbar
-              sx={{
-                justifyContent: "space-between",
-                minHeight: "76px !important",
-              }}
-            >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <IconButton
-                  aria-label="Mở menu vận hành"
-                  onClick={() => setOpen(true)}
-                  sx={{ display: { md: "none" } }}
-                >
-                  <MenuRounded />
-                </IconButton>
-                <Typography fontWeight={600}>NUTEE Workspace</Typography>
-              </Stack>
-              <Typography variant="caption" color="text.secondary">
-                Cổng vận hành
-              </Typography>
-            </Toolbar>
-          </AppBar>
-          <Box
-            component="main"
-            id="main-content"
-            tabIndex={-1}
-            sx={{ p: { xs: 2.5, md: 4 }, maxWidth: 1600, mx: "auto" }}
-          >
-            {logout.isError && <ErrorState error={logout.error} />}
-            <Outlet />
-          </Box>
+            Menu
+          </Button>
+          {logout.isError && <ErrorState error={logout.error} />}
+          <Outlet />
         </Box>
       </Box>
     </AdminPrototypeProvider>

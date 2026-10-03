@@ -22,7 +22,7 @@ export function AdminPrototypeProvider({ children }: { children: ReactNode }) {
           onClose={() => setMessage("")}
           sx={{ width: "100%" }}
         >
-          {message} · Bản xem thử
+          {message}
         </Alert>
       </Snackbar>
     </AdminPrototypeContext.Provider>

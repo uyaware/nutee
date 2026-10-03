@@ -18,6 +18,8 @@ import { useSession } from "../../../shared/auth/useSession";
 import { StatusBadge } from "../../../shared/components/StatusBadge";
 import { AdminPageHeader, AdminSection } from "../components/AdminUI";
 import { useAdminPrototype } from "../components/adminPrototypeContext";
+import { tokens } from "../../../shared/theme/tokens";
+import { alpha } from "@mui/material/styles";
 
 export default function AdminDashboardPage() {
   const { data } = useAdminPrototype();
@@ -56,7 +58,7 @@ export default function AdminDashboardPage() {
       note: "Cần tiếp nhận và xác nhận",
     },
     {
-      label: "Hậu mãi cần xử lý",
+      label: "Yêu cầu cần xử lý",
       value: requests.length,
       note: "Tất cả yêu cầu chờ / đang kiểm tra",
     },
@@ -120,9 +122,9 @@ export default function AdminDashboardPage() {
         }
       />
       <Typography variant="body2" color="text.secondary">
-        Dữ liệu mẫu tại {new Date(ADMIN_DEMO_NOW).toLocaleDateString("vi-VN")}.
-        Chỉ số đơn hàng theo ngày tạo đơn; hậu mãi và danh mục thể hiện toàn bộ
-        bản xem thử.
+        Số liệu đến ngày {new Date(ADMIN_DEMO_NOW).toLocaleDateString("vi-VN")}.
+        Chỉ số đơn hàng theo ngày tạo đơn; yêu cầu và danh mục hiển thị tất cả
+        dữ liệu.
       </Typography>
       <Box
         sx={{
@@ -130,7 +132,7 @@ export default function AdminDashboardPage() {
           gridTemplateColumns: {
             xs: "1fr",
             sm: "repeat(2, minmax(0, 1fr))",
-            xl: "repeat(4, minmax(0, 1fr))",
+            lg: "repeat(4, minmax(0, 1fr))",
           },
           gap: 2,
         }}
@@ -139,22 +141,60 @@ export default function AdminDashboardPage() {
           <Paper
             key={m.label}
             variant="outlined"
-            sx={{ p: 3, ...(i === 0 ? { bgcolor: "action.selected" } : {}) }}
+            sx={{
+              p: { xs: 2, xl: 3 },
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              ...(i === 0
+                ? {
+                    backgroundImage: `linear-gradient(135deg, ${tokens.color.blue}, ${tokens.color.deepBlue})`,
+                    color: "common.white",
+                    borderColor: "primary.main",
+                    boxShadow: `0 12px 28px ${alpha(tokens.color.blue, 0.18)}`,
+                  }
+                : i === 2
+                  ? {
+                      bgcolor: tokens.color.orangeTint,
+                      borderColor: alpha(tokens.color.orange, 0.28),
+                    }
+                  : {}),
+            }}
           >
-            <Typography color="text.secondary">{m.label}</Typography>
+            <Typography
+              variant="body2"
+              sx={{ minHeight: "3.2em" }}
+              color={
+                i === 0 ? alpha(tokens.color.surface, 0.85) : "text.secondary"
+              }
+            >
+              {m.label}
+            </Typography>
             <Typography
               component="p"
               sx={{
-                fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
+                fontSize: "clamp(1.25rem, 2vw, 2rem)",
                 fontWeight: 700,
-                color: i === 0 ? "primary.main" : "text.primary",
+                color:
+                  i === 0
+                    ? "common.white"
+                    : i === 2
+                      ? "secondary.main"
+                      : "text.primary",
                 my: 1.5,
                 fontVariantNumeric: "tabular-nums",
+                overflowWrap: "anywhere",
               }}
             >
               {m.value}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              sx={{ mt: "auto" }}
+              color={
+                i === 0 ? alpha(tokens.color.surface, 0.85) : "text.secondary"
+              }
+            >
               {m.note}
             </Typography>
           </Paper>
@@ -229,16 +269,15 @@ export default function AdminDashboardPage() {
               variant="caption"
               color="text.secondary"
             >
-              Biểu đồ dữ liệu mẫu · Mỗi hàng là{" "}
-              {bucketDays === 1 ? "một ngày" : "5 ngày"}.
+              Mỗi hàng tổng hợp {bucketDays === 1 ? "một ngày" : "5 ngày"}.
             </Typography>
           </Stack>
           <Button
             component={Link}
-            to="/management/payments?status=paid"
+            to="/management/orders?payment=paid"
             sx={{ alignSelf: "flex-start" }}
           >
-            Xem giao dịch đã thanh toán
+            Xem đơn đã thanh toán
           </Button>
         </AdminSection>
         <AdminSection title="Trạng thái đơn trong kỳ">
@@ -265,8 +304,9 @@ export default function AdminDashboardPage() {
             component={Link}
             to="/management/after-sales?status=pending"
             variant="outlined"
+            color="secondary"
           >
-            Tiếp nhận hậu mãi
+            Tiếp nhận yêu cầu
           </Button>
         </AdminSection>
       </Box>
@@ -292,13 +332,13 @@ export default function AdminDashboardPage() {
             { to: "categories", label: "Danh mục" },
             { to: "promotions", label: "Khuyến mãi" },
             { to: "users", label: "Tài khoản" },
-            { to: "payments", label: "Giao dịch" },
           ].map((link) => (
             <Button
               key={link.to}
               component={Link}
               to={`/management/${link.to}`}
               variant="outlined"
+              color={link.to === "products/new" ? "secondary" : "primary"}
             >
               {link.label}
             </Button>
@@ -355,7 +395,7 @@ export default function AdminDashboardPage() {
         </AdminSection>
         <AdminSection
           title="Sản phẩm tồn thấp"
-          description="Sản phẩm công khai còn tối đa 10 chiếc trong bản xem thử."
+          description="Sản phẩm công khai còn tối đa 10 chiếc."
         >
           {lowStock.length ? (
             lowStock.slice(0, 5).map((p) => (

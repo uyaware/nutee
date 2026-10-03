@@ -43,7 +43,6 @@ const managementTitles: Record<string, string> = {
   "/management/promotions": "Khuyến mãi",
   "/management/promotions/new": "Tạo khuyến mãi",
   "/management/users": "Tài khoản",
-  "/management/payments": "Giao dịch thanh toán",
 };
 
 export default function App() {
@@ -80,7 +79,9 @@ export default function App() {
         : location.pathname.includes("login")
           ? "Đăng nhập"
           : location.pathname.includes("/after-sales")
-            ? "Hậu mãi"
+            ? location.pathname.startsWith("/management")
+              ? "Yêu cầu"
+              : "Hậu mãi"
             : location.pathname.startsWith("/management")
               ? (managementTitles[location.pathname] ??
                 (location.pathname.startsWith("/management/products/")

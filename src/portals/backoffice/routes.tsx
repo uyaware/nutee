@@ -15,7 +15,6 @@ const TaxonomyPage = lazy(() => import("./pages/TaxonomyPage"));
 const PromotionsPage = lazy(() => import("./pages/PromotionsPage"));
 const PromotionEditorPage = lazy(() => import("./pages/PromotionEditorPage"));
 const UserDetailPage = lazy(() => import("./pages/UserDetailPage"));
-const PaymentsPage = lazy(() => import("./pages/PaymentsPage"));
 const OperationsOrdersPage = lazy(() => import("./pages/OperationsOrdersPage"));
 const AfterSalesPage = lazy(
   () => import("../../shared/components/PrototypeAfterSales"),
@@ -77,13 +76,6 @@ export default function BackofficeRoutes() {
               <Route path="promotions" element={<PromotionsPage />} />
               <Route path="promotions/new" element={<PromotionEditorPage />} />
               <Route path="promotions/:id" element={<PromotionEditorPage />} />
-            </Route>
-            <Route
-              element={
-                <RequireAuth portal="backoffice" permission="payments:read" />
-              }
-            >
-              <Route path="payments" element={<PaymentsPage />} />
             </Route>
             <Route path="403" element={<SystemPage forbidden management />} />
             <Route path="*" element={<SystemPage management />} />

@@ -4,7 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -23,6 +22,7 @@ import {
 } from "../components/AdminUI";
 import { useAdminPrototype } from "../components/adminPrototypeContext";
 import type { AdminBrand, AdminCategory } from "../../../mocks/admin";
+import { VisibilityCheckbox } from "../components/VisibilityCheckbox";
 
 export default function TaxonomyPage({
   kind,
@@ -93,6 +93,7 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
           <Button
             startIcon={<AddRounded />}
             variant="contained"
+            color="secondary"
             onClick={() => {
               setError("");
               setDraft({ id: "", name: "", parentId: "", isActive: true });
@@ -116,8 +117,8 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
           sx={{ maxWidth: { sm: 240 } }}
         >
           <MenuItem value="all">Tất cả</MenuItem>
-          <MenuItem value="active">Đang hiển thị</MenuItem>
-          <MenuItem value="hidden">Đã ẩn</MenuItem>
+          <MenuItem value="active">Hiển thị</MenuItem>
+          <MenuItem value="hidden">Ẩn</MenuItem>
         </TextField>
       </Stack>
       <AdminTable
@@ -148,11 +149,28 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
             )}
             <TableCell>{count(row.id)}</TableCell>
             <TableCell>
-              <Chip
-                size="small"
-                variant="outlined"
-                color={row.isActive ? "success" : "default"}
-                label={row.isActive ? "Đang hiển thị" : "Đã ẩn"}
+              <VisibilityCheckbox
+                checked={row.isActive}
+                name={row.name}
+                showStatus
+                onChange={(isActive) => {
+                  setData((current) =>
+                    isCategory
+                      ? {
+                          ...current,
+                          categories: current.categories.map((c) =>
+                            c.id === row.id ? { ...c, isActive } : c,
+                          ),
+                        }
+                      : {
+                          ...current,
+                          brands: current.brands.map((b) =>
+                            b.id === row.id ? { ...b, isActive } : b,
+                          ),
+                        },
+                  );
+                  notify(`Đã ${isActive ? "hiển thị" : "ẩn"} ${label}`);
+                }}
               />
             </TableCell>
             <TableCell>
@@ -272,13 +290,20 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
                   <TextField
                     select
                     label="Danh mục cha"
-                    value={draft.parentId}
+                    value={draft.parentId || "__root__"}
                     onChange={(e) =>
-                      setDraft({ ...draft, parentId: e.target.value })
+                      setDraft({
+                        ...draft,
+                        parentId:
+                          e.target.value === "__root__" ? "" : e.target.value,
+                      })
                     }
-                    helperText="Danh mục con không thể làm cha của chính nó."
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    helperText="Chọn danh mục cha hoặc để ở danh mục gốc. Không được chọn chính nó hay danh mục con."
                   >
-                    <MenuItem value="">Không có — danh mục gốc</MenuItem>
+                    <MenuItem value="__root__">
+                      Không có — danh mục gốc
+                    </MenuItem>
                     {data.categories
                       .filter((c) => !draft.id || !isDescendant(c.id, draft.id))
                       .map((c) => (
@@ -288,26 +313,17 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
                       ))}
                   </TextField>
                 )}
-                <TextField
-                  select
-                  label="Hiển thị"
-                  value={String(draft.isActive)}
-                  onChange={(e) =>
-                    setDraft({ ...draft, isActive: e.target.value === "true" })
-                  }
-                >
-                  <MenuItem value="true">Đang hiển thị</MenuItem>
-                  <MenuItem value="false">Ẩn</MenuItem>
-                </TextField>
-                <Typography variant="body2" color="text.secondary">
-                  Thay đổi chỉ xuất hiện trong bản xem thử này.
-                </Typography>
+                <VisibilityCheckbox
+                  checked={draft.isActive}
+                  name={label}
+                  onChange={(isActive) => setDraft({ ...draft, isActive })}
+                />
               </Stack>
             </DialogContent>
             <DialogActions sx={{ p: 2 }}>
               <Button onClick={() => setDraft(null)}>Hủy</Button>
               <Button variant="contained" type="submit">
-                Xem thử thay đổi
+                Lưu thay đổi
               </Button>
             </DialogActions>
           </Box>

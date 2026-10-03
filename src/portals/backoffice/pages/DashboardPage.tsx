@@ -39,7 +39,7 @@ export default function DashboardPage() {
       note: "Đơn đang chờ xác nhận",
     },
     {
-      label: "Hậu mãi cần xem",
+      label: "Yêu cầu cần xem",
       value: data.afterSales,
       note: "Yêu cầu đang chờ hoặc đang được kiểm tra",
     },
@@ -79,7 +79,7 @@ export default function DashboardPage() {
           gridTemplateColumns: {
             xs: "1fr",
             sm: "repeat(2, 1fr)",
-            xl: `repeat(${metrics.length}, 1fr)`,
+            lg: `repeat(${metrics.length}, minmax(0, 1fr))`,
           },
           gap: 2.5,
         }}
@@ -126,7 +126,7 @@ export default function DashboardPage() {
           to="/management/after-sales?status=pending"
           variant="outlined"
         >
-          Tiếp nhận hậu mãi
+          Tiếp nhận yêu cầu
         </Button>
       </Stack>
       <OrdersPage portal="backoffice" compact />
