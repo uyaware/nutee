@@ -5,11 +5,20 @@ export type Permission =
   | "orders:own"
   | "operations:read"
   | "products:write"
+  | "promotions:write"
+  | "payments:read"
   | "users:read";
 export const permissions: Record<Role, readonly Permission[]> = {
   customer: ["catalog:read", "profile:own", "orders:own"],
   staff: ["catalog:read", "operations:read"],
-  admin: ["catalog:read", "operations:read", "products:write", "users:read"],
+  admin: [
+    "catalog:read",
+    "operations:read",
+    "products:write",
+    "promotions:write",
+    "payments:read",
+    "users:read",
+  ],
 };
 export const hasPermission = (role: Role, permission: Permission) =>
   permissions[role].includes(permission);

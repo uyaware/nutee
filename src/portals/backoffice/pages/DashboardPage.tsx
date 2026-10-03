@@ -1,4 +1,4 @@
-import { Box, Button, Paper, Stack, Typography } from "@mui/material";
+﻿import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import { Link } from "react-router-dom";
 import { prototypeOrders } from "../../../mocks/checkout";
@@ -6,11 +6,12 @@ import { prototypeAfterSales } from "../../../mocks/operations";
 import { useSession } from "../../../shared/auth/useSession";
 import { roleLabels } from "../../../shared/auth/permissions";
 import { OrdersPage } from "../../../shared/components/OrdersPage";
-import { money } from "../../../shared/lib/format";
 import { tokens } from "../../../shared/theme/tokens";
+import AdminDashboardPage from "./AdminDashboardPage";
 
 export default function DashboardPage() {
   const session = useSession("backoffice");
+  if (session.data?.role === "admin") return <AdminDashboardPage />;
   const data = {
     orders: prototypeOrders.length,
     pending: prototypeOrders.filter((order) => order.status === "pending")
@@ -26,47 +27,23 @@ export default function DashboardPage() {
       )
       .reduce((sum, order) => sum + order.total, 0),
   };
-  const metrics =
-    session.data?.role === "admin"
-      ? [
-          {
-            label: "Doanh thu đã thanh toán",
-            value: money(data.paidRevenue ?? 0),
-            note: "Đơn đã thanh toán, không gồm đơn hủy",
-          },
-          {
-            label: "Tổng đơn hàng",
-            value: data.orders,
-            note: "Tất cả đơn hàng",
-          },
-          {
-            label: "Chờ xác nhận",
-            value: data.pending,
-            note: "Đơn đang chờ xác nhận",
-          },
-          {
-            label: "Hậu mãi cần xem",
-            value: data.afterSales,
-            note: "Yêu cầu chờ tiếp nhận hoặc đang kiểm tra",
-          },
-        ]
-      : [
-          {
-            label: "Tổng đơn vận hành",
-            value: data.orders,
-            note: "Toàn bộ đơn hàng",
-          },
-          {
-            label: "Chờ xác nhận",
-            value: data.pending,
-            note: "Đơn đang chờ xác nhận",
-          },
-          {
-            label: "Hậu mãi cần xem",
-            value: data.afterSales,
-            note: "Yêu cầu đang chờ hoặc đang được kiểm tra",
-          },
-        ];
+  const metrics = [
+    {
+      label: "Tổng đơn vận hành",
+      value: data.orders,
+      note: "Toàn bộ đơn hàng",
+    },
+    {
+      label: "Chờ xác nhận",
+      value: data.pending,
+      note: "Đơn đang chờ xác nhận",
+    },
+    {
+      label: "Hậu mãi cần xem",
+      value: data.afterSales,
+      note: "Yêu cầu đang chờ hoặc đang được kiểm tra",
+    },
+  ];
   return (
     <Stack spacing={4}>
       <Stack

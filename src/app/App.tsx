@@ -33,6 +33,18 @@ const customerTitles: Record<string, string> = {
   "/forgot-password": "Quên mật khẩu",
   "/reset-password": "Đặt lại mật khẩu",
 };
+const managementTitles: Record<string, string> = {
+  "/management": "Tổng quan",
+  "/management/orders": "Quản lý đơn hàng",
+  "/management/products": "Quản lý sản phẩm",
+  "/management/products/new": "Thêm sản phẩm",
+  "/management/brands": "Thương hiệu",
+  "/management/categories": "Danh mục",
+  "/management/promotions": "Khuyến mãi",
+  "/management/promotions/new": "Tạo khuyến mãi",
+  "/management/users": "Tài khoản",
+  "/management/payments": "Giao dịch thanh toán",
+};
 
 export default function App() {
   const client = useQueryClient();
@@ -70,7 +82,14 @@ export default function App() {
           : location.pathname.includes("/after-sales")
             ? "Hậu mãi"
             : location.pathname.startsWith("/management")
-              ? "Workspace"
+              ? (managementTitles[location.pathname] ??
+                (location.pathname.startsWith("/management/products/")
+                  ? "Chỉnh sửa sản phẩm"
+                  : location.pathname.startsWith("/management/promotions/")
+                    ? "Chi tiết khuyến mãi"
+                    : location.pathname.startsWith("/management/users/")
+                      ? "Chi tiết tài khoản"
+                      : "Workspace"))
               : location.pathname === "/products"
                 ? "Sản phẩm"
                 : location.pathname.startsWith("/products/")

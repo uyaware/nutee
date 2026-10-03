@@ -10,6 +10,12 @@ import { ManagementLayout } from "./layouts/ManagementLayout";
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const ProductsPage = lazy(() => import("./pages/ProductsPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
+const ProductEditorPage = lazy(() => import("./pages/ProductEditorPage"));
+const TaxonomyPage = lazy(() => import("./pages/TaxonomyPage"));
+const PromotionsPage = lazy(() => import("./pages/PromotionsPage"));
+const PromotionEditorPage = lazy(() => import("./pages/PromotionEditorPage"));
+const UserDetailPage = lazy(() => import("./pages/UserDetailPage"));
+const PaymentsPage = lazy(() => import("./pages/PaymentsPage"));
 const OperationsOrdersPage = lazy(() => import("./pages/OperationsOrdersPage"));
 const AfterSalesPage = lazy(
   () => import("../../shared/components/PrototypeAfterSales"),
@@ -44,6 +50,13 @@ export default function BackofficeRoutes() {
               }
             >
               <Route path="products" element={<ProductsPage />} />
+              <Route path="products/new" element={<ProductEditorPage />} />
+              <Route path="products/:id/edit" element={<ProductEditorPage />} />
+              <Route path="brands" element={<TaxonomyPage kind="brands" />} />
+              <Route
+                path="categories"
+                element={<TaxonomyPage kind="categories" />}
+              />
             </Route>
             <Route
               element={
@@ -51,6 +64,26 @@ export default function BackofficeRoutes() {
               }
             >
               <Route path="users" element={<UsersPage />} />
+              <Route path="users/:id" element={<UserDetailPage />} />
+            </Route>
+            <Route
+              element={
+                <RequireAuth
+                  portal="backoffice"
+                  permission="promotions:write"
+                />
+              }
+            >
+              <Route path="promotions" element={<PromotionsPage />} />
+              <Route path="promotions/new" element={<PromotionEditorPage />} />
+              <Route path="promotions/:id" element={<PromotionEditorPage />} />
+            </Route>
+            <Route
+              element={
+                <RequireAuth portal="backoffice" permission="payments:read" />
+              }
+            >
+              <Route path="payments" element={<PaymentsPage />} />
             </Route>
             <Route path="403" element={<SystemPage forbidden management />} />
             <Route path="*" element={<SystemPage management />} />

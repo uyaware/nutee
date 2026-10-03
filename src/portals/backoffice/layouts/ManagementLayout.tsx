@@ -23,11 +23,16 @@ import MenuRounded from "@mui/icons-material/MenuRounded";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import SupportAgentRounded from "@mui/icons-material/SupportAgentRounded";
+import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
+import SellOutlined from "@mui/icons-material/SellOutlined";
+import LocalOfferOutlined from "@mui/icons-material/LocalOfferOutlined";
+import PaymentsOutlined from "@mui/icons-material/PaymentsOutlined";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { Brand } from "../../../shared/components/Brand";
 import { ErrorState } from "../../../shared/components/Feedback";
 import { useLogout, useSession } from "../../../shared/auth/useSession";
 import { hasPermission, roleLabels } from "../../../shared/auth/permissions";
+import { AdminPrototypeProvider } from "../components/AdminPrototypeProvider";
 
 export function ManagementLayout() {
   const session = useSession("backoffice");
@@ -54,15 +59,35 @@ export function ManagementLayout() {
             icon: Inventory2Outlined,
           },
           {
+            to: "/management/brands",
+            label: "Thương hiệu",
+            icon: SellOutlined,
+          },
+          {
+            to: "/management/categories",
+            label: "Danh mục",
+            icon: CategoryOutlined,
+          },
+          {
+            to: "/management/promotions",
+            label: "Khuyến mãi",
+            icon: LocalOfferOutlined,
+          },
+          {
             to: "/management/users",
             label: "Tài khoản",
             icon: PeopleOutlineRounded,
+          },
+          {
+            to: "/management/payments",
+            label: "Giao dịch",
+            icon: PaymentsOutlined,
           },
         ]
       : []),
   ];
   const sidebar = (
-    <Stack sx={{ height: "100%", p: 2.5 }}>
+    <Stack sx={{ minHeight: "100%", p: 2.5 }}>
       <Box sx={{ py: 1, mb: 4 }}>
         <Brand management />
       </Box>
@@ -138,63 +163,65 @@ export function ManagementLayout() {
     </Stack>
   );
   return (
-    <Box sx={{ display: "flex", minHeight: "100dvh" }}>
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: "none", md: "block" },
-          width: 264,
-          flexShrink: 0,
-          "& .MuiDrawer-paper": { width: 264, boxSizing: "border-box" },
-        }}
-      >
-        {sidebar}
-      </Drawer>
-      <Drawer
-        open={open}
-        onClose={() => setOpen(false)}
-        sx={{ "& .MuiDrawer-paper": { width: 288 } }}
-      >
-        {sidebar}
-      </Drawer>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <AppBar
-          color="inherit"
-          position="sticky"
-          elevation={0}
-          sx={{ borderBottom: "1px solid", borderColor: "divider" }}
+    <AdminPrototypeProvider key={user.id}>
+      <Box sx={{ display: "flex", minHeight: "100dvh" }}>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: "none", md: "block" },
+            width: 264,
+            flexShrink: 0,
+            "& .MuiDrawer-paper": { width: 264, boxSizing: "border-box" },
+          }}
         >
-          <Toolbar
-            sx={{
-              justifyContent: "space-between",
-              minHeight: "76px !important",
-            }}
+          {sidebar}
+        </Drawer>
+        <Drawer
+          open={open}
+          onClose={() => setOpen(false)}
+          sx={{ "& .MuiDrawer-paper": { width: 288 } }}
+        >
+          {sidebar}
+        </Drawer>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <AppBar
+            color="inherit"
+            position="sticky"
+            elevation={0}
+            sx={{ borderBottom: "1px solid", borderColor: "divider" }}
           >
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <IconButton
-                aria-label="Mở menu vận hành"
-                onClick={() => setOpen(true)}
-                sx={{ display: { md: "none" } }}
-              >
-                <MenuRounded />
-              </IconButton>
-              <Typography fontWeight={600}>NUTEE Workspace</Typography>
-            </Stack>
-            <Typography variant="caption" color="text.secondary">
-              Cổng vận hành
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Box
-          component="main"
-          id="main-content"
-          tabIndex={-1}
-          sx={{ p: { xs: 2.5, md: 4 }, maxWidth: 1600, mx: "auto" }}
-        >
-          {logout.isError && <ErrorState error={logout.error} />}
-          <Outlet />
+            <Toolbar
+              sx={{
+                justifyContent: "space-between",
+                minHeight: "76px !important",
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <IconButton
+                  aria-label="Mở menu vận hành"
+                  onClick={() => setOpen(true)}
+                  sx={{ display: { md: "none" } }}
+                >
+                  <MenuRounded />
+                </IconButton>
+                <Typography fontWeight={600}>NUTEE Workspace</Typography>
+              </Stack>
+              <Typography variant="caption" color="text.secondary">
+                Cổng vận hành
+              </Typography>
+            </Toolbar>
+          </AppBar>
+          <Box
+            component="main"
+            id="main-content"
+            tabIndex={-1}
+            sx={{ p: { xs: 2.5, md: 4 }, maxWidth: 1600, mx: "auto" }}
+          >
+            {logout.isError && <ErrorState error={logout.error} />}
+            <Outlet />
+          </Box>
         </Box>
       </Box>
-    </Box>
+    </AdminPrototypeProvider>
   );
 }
