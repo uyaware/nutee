@@ -1,6 +1,7 @@
 import { LocalStorageRepository } from "../repositories/local/LocalStorageRepository";
 import { createServices } from "./createServices";
 import { createApiAuth } from "./apiAuth";
+import { createApiClient } from "./apiClient";
 import { mergeGuestItems } from "./cart";
 import { createId } from "../shared/lib/id";
 import type { SessionRepository } from "../repositories/contracts";
@@ -8,6 +9,14 @@ import type { Portal, Session } from "../shared/types/database";
 
 // Authentication uses the backend. Other domains still use their existing local adapters.
 export const localRepository = new LocalStorageRepository();
+// Remove tokens saved by the previous browser-storage implementation.
+for (const storage of [window.localStorage, window.sessionStorage]) {
+  for (const portal of ["customer", "backoffice"])
+    storage.removeItem(`nutee:auth:${portal}`);
+}
+export const api = createApiClient({
+  baseUrl: import.meta.env.VITE_API_BASE_URL ?? "/api/v1",
+});
 // Keep the prototype's actor in the same tab as its actual API session.
 const actors = new Map<Portal, Session>();
 const sessions: SessionRepository = {
@@ -22,9 +31,7 @@ const sessions: SessionRepository = {
 };
 const localServices = createServices(localRepository, sessions);
 const auth = createApiAuth({
-  baseUrl: import.meta.env.VITE_API_BASE_URL ?? "/api/v1",
-  persistent: () => window.localStorage,
-  temporary: () => window.sessionStorage,
+  api,
   async onUser(user, portal, expiresAt, newLogin) {
     const db = await localRepository.read();
     const existing = db.users.find((item) => item.id === user.id);
@@ -73,10 +80,7 @@ export const services = {
   demo: {
     ...localServices.demo,
     async reset() {
-      await Promise.allSettled([
-        auth.logout("customer"),
-        auth.logout("backoffice"),
-      ]);
+      await auth.logout("customer");
       await localServices.demo.reset();
     },
   },

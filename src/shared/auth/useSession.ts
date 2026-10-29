@@ -17,7 +17,9 @@ export function useLogout(portal: Portal) {
     onSuccess: async () => {
       await client.cancelQueries({ queryKey: [portal] });
       client.removeQueries({ queryKey: [portal] });
-      client.setQueryData(["session", portal], null);
+      client.setQueryData(["session", "customer"], null);
+      client.setQueryData(["session", "backoffice"], null);
+      await client.invalidateQueries({ queryKey: ["session"] });
     },
   });
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { createApiAuth, authStorageKey } from "./apiAuth";
-import { MemoryStorage } from "../mocks/testing/MemoryStorage";
+import { createApiAuth } from "./apiAuth";
+import { createApiClient } from "./apiClient";
 
 const user = {
   id: "remote-id",
@@ -9,37 +9,33 @@ const user = {
   fullName: "Tester",
   role: "CUSTOMER",
 };
-const pair = (suffix = "", expiresIn = 900) => ({
-  accessToken: `access${suffix}`,
-  refreshToken: `refresh${suffix}`,
-  expiresIn,
-  refreshExpiresIn: 604800,
-  user,
-});
+const session = { expiresIn: 900, refreshExpiresIn: 604800, user };
 const response = (body: unknown, status = 200) =>
-  new Response(status === 204 ? null : JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
+  new Response(status === 204 ? null : JSON.stringify(body), { status });
 function setup() {
-  const persistent = new MemoryStorage();
-  const temporary = new MemoryStorage();
-  const fetch = vi.fn<typeof globalThis.fetch>();
+  const fetch = vi.fn<typeof globalThis.fetch>(async (url) => {
+    const path = new URL(String(url), "http://localhost").pathname;
+    if (path.endsWith("/csrf"))
+      return response({ token: "csrf", headerName: "X-XSRF-TOKEN" });
+    if (path.endsWith("/me")) return response(user);
+    if (path.endsWith("/google/nonce")) return response({ nonce: "nonce" });
+    if (path.endsWith("/forgot-password")) return response({ message: "Sent" });
+    if (path.endsWith("/logout") || path.endsWith("/reset-password"))
+      return response(null, 204);
+    return response(session);
+  });
   const onUser = vi.fn(async () => {});
   const onClear = vi.fn();
   const auth = createApiAuth({
-    fetch,
-    persistent: () => persistent,
-    temporary: () => temporary,
+    api: createApiClient({ fetch }),
     onUser,
     onClear,
   });
-  return { auth, fetch, persistent, temporary, onUser, onClear };
+  return { auth, fetch, onUser, onClear };
 }
-describe("backend authentication", () => {
-  it("registers without local credentials and uses the versioned endpoint", async () => {
-    const { auth, fetch, temporary, persistent } = setup();
-    fetch.mockResolvedValue(response(pair()));
+describe("JWT authentication via HttpOnly cookies", () => {
+  it("registers with credentials only and relies on HttpOnly cookies", async () => {
+    const { auth, fetch, onUser } = setup();
     await expect(
       auth.register(user.email, "Password12345!"),
     ).resolves.toMatchObject({ role: "customer", name: "Tester" });
@@ -50,103 +46,101 @@ describe("backend authentication", () => {
         credentials: "include",
       }),
     );
-    expect(temporary.getItem(authStorageKey("customer"))).toContain("refresh");
-    expect(persistent.getItem(authStorageKey("customer"))).toBeNull();
-    expect(temporary.getItem(authStorageKey("customer"))).not.toContain(
-      "Password12345!",
+    expect(onUser).toHaveBeenCalledWith(
+      expect.objectContaining({ id: user.id }),
+      "customer",
+      expect.any(Number),
+      true,
     );
+    for (const [, init] of fetch.mock.calls)
+      expect(init?.headers ?? {}).not.toHaveProperty("Authorization");
   });
-  it("persists only when remember login is selected and reloads /me from the server", async () => {
-    const { auth, fetch, temporary, persistent } = setup();
-    fetch
-      .mockResolvedValueOnce(response(pair()))
-      .mockResolvedValueOnce(response(user));
+  it("sends the remember preference to the server and /me does not need token headers", async () => {
+    const { auth, fetch } = setup();
     await auth.login("customer", user.email, "Password12345!", true);
-    expect(persistent.getItem(authStorageKey("customer"))).toContain("refresh");
-    expect(temporary.getItem(authStorageKey("customer"))).toBeNull();
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/v1/auth/login",
+      expect.objectContaining({
+        body: JSON.stringify({
+          identifier: user.email,
+          password: "Password12345!",
+          remember: true,
+        }),
+      }),
+    );
     expect(await auth.currentUser("customer")).toMatchObject({ id: user.id });
     expect(fetch).toHaveBeenLastCalledWith(
       "/api/v1/auth/me",
-      expect.objectContaining({ headers: { Authorization: "Bearer access" } }),
+      expect.objectContaining({ headers: {}, credentials: "include" }),
     );
   });
-  it("serializes refresh calls and replaces the entire token pair", async () => {
-    const { auth, fetch, temporary } = setup();
-    fetch.mockResolvedValueOnce(response(pair("", -1)));
-    await auth.login("customer", user.email, "Password12345!");
-    fetch.mockImplementation(async (url) =>
-      String(url).endsWith("/refresh") ? response(pair("new")) : response(user),
-    );
-    const results = await Promise.all([
+  it("shares concurrent /me reads without mixing portal roles", async () => {
+    const { auth, fetch } = setup();
+    const [customer, backoffice] = await Promise.all([
       auth.currentUser("customer"),
-      auth.currentUser("customer"),
+      auth.currentUser("backoffice"),
     ]);
-    expect(results.every((result) => result?.id === user.id)).toBe(true);
+    expect(customer?.id).toBe(user.id);
+    expect(backoffice).toBeNull();
     expect(
-      fetch.mock.calls.filter(([url]) => String(url).endsWith("/refresh")),
+      fetch.mock.calls.filter(([url]) => String(url).endsWith("/me")),
     ).toHaveLength(1);
-    expect(temporary.getItem(authStorageKey("customer"))).toContain(
-      "refreshnew",
-    );
+    expect(
+      fetch.mock.calls.some(([url]) => String(url).endsWith("/logout")),
+    ).toBe(false);
   });
-  it("clears an invalid refresh but preserves credentials on network errors", async () => {
-    const { auth, fetch, temporary } = setup();
-    fetch.mockResolvedValueOnce(response(pair("", -1)));
-    await auth.login("customer", user.email, "Password12345!");
-    fetch.mockRejectedValueOnce(new TypeError("offline"));
-    await expect(auth.currentUser("customer")).rejects.toMatchObject({
-      code: "NETWORK",
-    });
-    expect(temporary.getItem(authStorageKey("customer"))).not.toBeNull();
-    fetch.mockResolvedValueOnce(response({}, 401));
-    expect(await auth.currentUser("customer")).toBeNull();
-    expect(temporary.getItem(authStorageKey("customer"))).toBeNull();
-  });
-  it("rejects the wrong portal and revokes the newly issued refresh token", async () => {
-    const { auth, fetch, persistent, temporary } = setup();
-    fetch
-      .mockResolvedValueOnce(response(pair()))
-      .mockResolvedValueOnce(response(null, 204));
+  it("rejects wrong-portal login and logs out without sending a refresh token", async () => {
+    const { auth, fetch } = setup();
     await expect(
       auth.login("backoffice", user.email, "Password12345!"),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(fetch).toHaveBeenLastCalledWith(
       "/api/v1/auth/logout",
-      expect.objectContaining({
-        body: JSON.stringify({ refreshToken: "refresh" }),
-      }),
+      expect.objectContaining({ method: "POST", credentials: "include" }),
     );
-    expect(persistent.data.size + temporary.data.size).toBe(0);
+    const logout = fetch.mock.calls.find(([url]) =>
+      String(url).endsWith("/logout"),
+    )?.[1];
+    expect(logout?.body).toBeUndefined();
   });
-  it("sends Google credentials and reset requests to public endpoints without bearer headers", async () => {
+  it("Google and password recovery use the cookie-aware client", async () => {
     const { auth, fetch } = setup();
-    fetch
-      .mockResolvedValueOnce(response({ nonce: "nonce" }))
-      .mockResolvedValueOnce(response(pair()))
-      .mockResolvedValueOnce(response({ message: "Sent" }))
-      .mockResolvedValueOnce(response(null, 204));
     await auth.googleNonce();
     await auth.google("google-id-token");
     await auth.forgotPassword(user.email);
     await auth.resetPassword("reset-token", "Password12345!");
-    expect(fetch.mock.calls.map(([url]) => url)).toEqual([
-      "/api/v1/auth/google/nonce",
-      "/api/v1/auth/google",
-      "/api/v1/auth/forgot-password",
-      "/api/v1/auth/reset-password",
-    ]);
-    for (const [, init] of fetch.mock.calls)
-      expect(init?.headers).not.toHaveProperty("Authorization");
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual(
+      expect.arrayContaining([
+        "/api/v1/auth/social/google/nonce",
+        "/api/v1/auth/social/google?remember=false",
+        "/api/v1/auth/forgot-password",
+        "/api/v1/auth/reset-password",
+      ]),
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/v1/auth/social/google?remember=false",
+      expect.objectContaining({
+        body: JSON.stringify({ credential: "google-id-token" }),
+      }),
+    );
   });
-  it("logout revokes the current token and clears only that portal", async () => {
-    const { auth, fetch, temporary, onClear } = setup();
-    fetch
-      .mockResolvedValueOnce(response(pair()))
-      .mockResolvedValueOnce(response(null, 204));
-    await auth.login("customer", user.email, "Password12345!");
+  it("logout clears both portal views and sends no body", async () => {
+    const { auth, fetch, onClear } = setup();
     await auth.logout("customer");
-    expect(temporary.getItem(authStorageKey("customer"))).toBeNull();
     expect(onClear).toHaveBeenCalledWith("customer");
-    expect(await auth.currentUser("customer")).toBeNull();
+    expect(onClear).toHaveBeenCalledWith("backoffice");
+    expect(fetch).toHaveBeenLastCalledWith(
+      "/api/v1/auth/logout",
+      expect.objectContaining({ method: "POST", credentials: "include" }),
+    );
+    expect(fetch.mock.calls.at(-1)?.[1]?.body).toBeUndefined();
+  });
+  it("offline logout reports failure because JavaScript cannot delete HttpOnly cookies", async () => {
+    const { auth, fetch, onClear } = setup();
+    fetch.mockRejectedValue(new TypeError("offline"));
+    await expect(auth.logout("customer")).rejects.toMatchObject({
+      code: "NETWORK",
+    });
+    expect(onClear).not.toHaveBeenCalled();
   });
 });
