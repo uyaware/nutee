@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { services } from "@/app/services";
-import type { Portal } from "@/shared/types/database";
+import type { Portal } from "@/modules/auth/model/types";
 
 export function useSession(portal: Portal) {
   return useQuery({
@@ -15,8 +15,7 @@ export function useLogout(portal: Portal) {
   return useMutation({
     mutationFn: () => services.auth.logout(portal),
     onSuccess: async () => {
-      await client.cancelQueries({ queryKey: [portal] });
-      client.removeQueries({ queryKey: [portal] });
+      await client.cancelQueries({ queryKey: ["session"] });
       client.setQueryData(["session", "customer"], null);
       client.setQueryData(["session", "backoffice"], null);
       await client.invalidateQueries({ queryKey: ["session"] });

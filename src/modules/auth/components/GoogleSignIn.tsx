@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Box, Button, CircularProgress, Stack } from "@mui/material";
 import { services } from "@/app/services";
-import type { User } from "@/shared/types/database";
+import type { User } from "@/modules/auth/model/types";
 import { errorMessage } from "@/shared/lib/errors";
 
 type GoogleId = {

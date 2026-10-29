@@ -1,22 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box } from "@mui/material";
 import { Route, Routes, useLocation } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { services, localRepository } from "@/app/services";
-import {
-  OWNED_KEYS,
-  SESSION_KEYS,
-} from "@/shared/storage/LocalStorageRepository";
 import { LoadingState } from "@/shared/components/Feedback";
-import { DataRecovery } from "@/shared/components/DataRecovery";
-import { errorMessage } from "@/shared/lib/errors";
 const CustomerRoutes = lazy(() => import("@/app/routes/CustomerRoutes"));
 const BackofficeRoutes = lazy(() => import("@/app/routes/BackofficeRoutes"));
 const customerTitles: Record<string, string> = {
@@ -46,32 +31,7 @@ const managementTitles: Record<string, string> = {
 };
 
 export default function App() {
-  const client = useQueryClient();
   const location = useLocation();
-  const ready = useQuery({
-    queryKey: ["demo", "boot"],
-    queryFn: services.demo.stats,
-  });
-  useEffect(() => {
-    const unsubscribe = localRepository.subscribe(() => {
-      void client.invalidateQueries();
-    });
-    const onStorage = (event: StorageEvent) => {
-      if (event.key !== null && !OWNED_KEYS.includes(event.key)) return;
-      for (const portal of ["customer", "backoffice"] as const) {
-        if (event.key === null || event.key === SESSION_KEYS[portal]) {
-          void client.cancelQueries({ queryKey: [portal] });
-          client.removeQueries({ queryKey: [portal] });
-        }
-      }
-      localRepository.notifyExternalChange();
-    };
-    window.addEventListener("storage", onStorage);
-    return () => {
-      unsubscribe();
-      window.removeEventListener("storage", onStorage);
-    };
-  }, [client]);
   useEffect(() => {
     const name =
       location.pathname === "/"
@@ -128,35 +88,12 @@ export default function App() {
       >
         Đi đến nội dung chính
       </Box>
-      {ready.isPending ? (
-        <LoadingState />
-      ) : ready.isError ? (
-        <Container
-          component="main"
-          id="main-content"
-          tabIndex={-1}
-          maxWidth="sm"
-          sx={{ py: 8 }}
-        >
-          <Stack spacing={3}>
-            <Typography variant="h2" component="h1">
-              Cần khôi phục dữ liệu
-            </Typography>
-            <Alert severity="error">{errorMessage(ready.error)}</Alert>
-            <Button onClick={() => void ready.refetch()} variant="outlined">
-              Thử đọc lại dữ liệu
-            </Button>
-            <DataRecovery />
-          </Stack>
-        </Container>
-      ) : (
-        <Suspense fallback={<LoadingState />}>
-          <Routes>
-            <Route path="/management/*" element={<BackofficeRoutes />} />
-            <Route path="/*" element={<CustomerRoutes />} />
-          </Routes>
-        </Suspense>
-      )}
+      <Suspense fallback={<LoadingState />}>
+        <Routes>
+          <Route path="/management/*" element={<BackofficeRoutes />} />
+          <Route path="/*" element={<CustomerRoutes />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }

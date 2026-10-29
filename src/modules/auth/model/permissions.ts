@@ -1,4 +1,4 @@
-import type { Portal, Role } from "@/shared/types/database";
+import type { Portal, Role } from "@/modules/auth/model/types";
 export type Permission =
   | "catalog:read"
   | "profile:own"

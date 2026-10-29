@@ -42,7 +42,9 @@ export default function PrototypeAfterSaleDetail({
     id === "demo-request"
       ? customer && state?.request?.id === id
         ? state.request
-        : demoAfterSale
+        : demoAfterSale.id === id
+          ? demoAfterSale
+          : undefined
       : prototypeAfterSales.find((entry) => entry.id === id);
   const workflow = usePrototypeWorkflow(
     request?.status ?? "pending",

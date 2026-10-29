@@ -46,8 +46,8 @@ export default function CustomerRoutes() {
   return (
     <Routes>
       <Route path="login" element={<LoginPage portal="customer" />} />
+      <Route path="register" element={<RegisterPage />} />
       <Route element={<StorefrontLayout />}>
-        <Route path="register" element={<RegisterPage />} />
         <Route
           path="verify-email"
           element={<AuthDemoPage mode="verify-email" />}

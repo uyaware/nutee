@@ -1,48 +1,25 @@
 import type { AuthService } from "@/modules/auth/model/contracts";
-import type { Portal, User } from "@/shared/types/database";
+import type { Portal, User } from "@/modules/auth/model/types";
 import { belongsToPortal } from "@/modules/auth/model/permissions";
 import { ServiceError } from "@/shared/lib/errors";
 import type { ApiClient } from "@/shared/api/apiClient";
 
-interface ApiUser {
-  id: string;
-  username: string;
-  email: string;
-  fullName: string | null;
+interface ApiUser extends Omit<User, "name" | "role"> {
   role: string;
 }
 interface AuthResponse {
-  expiresIn: number;
-  refreshExpiresIn: number;
   user: ApiUser;
 }
-export interface ApiAuthService extends AuthService {
-  googleNonce(): Promise<{ nonce: string }>;
-  google(credential: string, remember?: boolean): Promise<User>;
-  forgotPassword(email: string): Promise<{ message: string }>;
-  resetPassword(token: string, password: string): Promise<void>;
-}
 
-export function createApiAuth(options: {
-  api: ApiClient;
-  onUser?: (
-    user: User,
-    portal: Portal,
-    expiresAt: number,
-    newLogin: boolean,
-  ) => Promise<void>;
-  onClear?: (portal: Portal) => void;
-}): ApiAuthService {
+/** Gọi API xác thực; backend quản lý phiên bằng cookie HttpOnly. */
+export function createApiAuth(options: { api: ApiClient }): AuthService {
   const { api } = options;
   let generation = 0;
-  let expiresAt = Number.MAX_SAFE_INTEGER;
   let current: Promise<ApiUser> | undefined;
 
   function clear() {
     generation++;
     current = undefined;
-    options.onClear?.("customer");
-    options.onClear?.("backoffice");
   }
   function mapUser(user: ApiUser): User {
     const role = user.role.toLowerCase();
@@ -50,12 +27,9 @@ export function createApiAuth(options: {
       throw new ServiceError("FORBIDDEN", "Vai trò tài khoản không hợp lệ.");
     }
     return {
-      id: user.id,
-      email: user.email,
-      name: (user.fullName ?? user.username).slice(0, 80),
+      ...user,
+      name: user.fullName?.trim() || user.username,
       role,
-      isActive: true,
-      profileCompleted: true,
     };
   }
   async function establish(response: AuthResponse, portal: Portal) {
@@ -73,8 +47,6 @@ export function createApiAuth(options: {
         "Tài khoản không có quyền truy cập khu vực này.",
       );
     }
-    expiresAt = Date.now() + response.refreshExpiresIn * 1000;
-    await options.onUser?.(user, portal, expiresAt, true);
     return user;
   }
   function me() {
@@ -115,17 +87,14 @@ export function createApiAuth(options: {
         const user = mapUser(await me());
         if (observed !== generation) return null;
         if (!belongsToPortal(user.role, portal)) {
-          options.onClear?.(portal);
           return null;
         }
-        await options.onUser?.(user, portal, expiresAt, false);
         return observed === generation ? user : null;
       } catch (error) {
         if (
           error instanceof ServiceError &&
           ["UNAUTHORIZED", "FORBIDDEN"].includes(error.code)
         ) {
-          if (observed === generation) options.onClear?.(portal);
           return null;
         }
         throw error;

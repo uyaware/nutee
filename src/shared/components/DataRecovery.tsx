@@ -13,7 +13,7 @@ import RestartAltRounded from "@mui/icons-material/RestartAltRounded";
 import DownloadRounded from "@mui/icons-material/DownloadRounded";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { services, localRepository } from "@/app/services";
+import { unavailable, unavailableMessage } from "@/shared/api/unavailable";
 import { errorMessage } from "@/shared/lib/errors";
 
 export function DataRecovery() {
@@ -22,7 +22,7 @@ export function DataRecovery() {
   const client = useQueryClient();
   const navigate = useNavigate();
   const reset = useMutation({
-    mutationFn: services.demo.reset,
+    mutationFn: unavailable,
     onSuccess: async () => {
       await client.cancelQueries();
       client.clear();
@@ -37,20 +37,7 @@ export function DataRecovery() {
           variant="outlined"
           startIcon={<DownloadRounded />}
           onClick={() => {
-            try {
-              const blob = new Blob([localRepository.exportRaw()], {
-                type: "application/json",
-              });
-              const url = URL.createObjectURL(blob);
-              const anchor = document.createElement("a");
-              anchor.href = url;
-              anchor.download = "nutee-backup.json";
-              anchor.click();
-              URL.revokeObjectURL(url);
-              setExportError("");
-            } catch (error) {
-              setExportError(errorMessage(error));
-            }
+            setExportError(unavailableMessage);
           }}
         >
           Xuất dữ liệu hiện tại

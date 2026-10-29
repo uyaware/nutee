@@ -1,4 +1,4 @@
-import { Button, Stack, TextField, Typography } from "@mui/material";
+import { Button, Divider, Stack, TextField, Typography } from "@mui/material";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ import { FormErrorSummary } from "@/shared/components/FormErrorSummary";
 import { PasswordField } from "@/shared/components/PasswordField";
 import { RegistrationFrame } from "@/modules/auth/components/RegistrationFrame";
 import { GoogleSignIn } from "@/modules/auth/components/GoogleSignIn";
+import type { User } from "@/modules/auth/model/types";
 
 export default function RegisterPage() {
   const [params] = useSearchParams();
@@ -33,25 +34,32 @@ export default function RegisterPage() {
     shouldFocusError: false,
     defaultValues: { email: "", password: "", confirmPassword: "" },
   });
+  /** Dùng phiên backend vừa cấp để mở hồ sơ hoặc trang đích của khách hàng. */
+  const onRegistered = async (user: User) => {
+    await client.cancelQueries({ queryKey: ["session"] });
+    client.setQueryData(["session", "backoffice"], null);
+    client.setQueryData(["session", "customer"], user);
+    navigate(returnTo, { replace: true });
+  };
   const create = useMutation({
     mutationFn: (fields: RegistrationInput) =>
       services.auth.register(fields.email, fields.password),
     onSuccess: async (user) => {
       reset();
-      await client.cancelQueries({ queryKey: ["customer"] });
-      client.removeQueries({ queryKey: ["customer"] });
-      client.setQueryData(["session", "customer"], user);
-      navigate(
-        user.profileCompleted === false
-          ? `/account/setup?${new URLSearchParams({ returnTo })}`
-          : returnTo,
-        {
-          replace: true,
-          state: { cartMergeNotices: user.cartMergeNotices },
-        },
-      );
+      await onRegistered(user);
     },
     onError: (error) => {
+      if (error instanceof ServiceError && error.code === "CONFLICT") {
+        setError(
+          "email",
+          {
+            message:
+              "Email đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.",
+          },
+          { shouldFocus: true },
+        );
+        return;
+      }
       if (error instanceof ServiceError && error.fieldErrors)
         for (const field of ["email", "password"] as const)
           if (error.fieldErrors[field])
@@ -61,18 +69,16 @@ export default function RegisterPage() {
   const { ref: emailRef, ...emailField } = register("email");
   const { ref: passwordRef, ...passwordField } = register("password");
   const { ref: confirmRef, ...confirmField } = register("confirmPassword");
-  if (
-    session.data?.profileCompleted !== false &&
-    session.data &&
-    !create.isPending
-  )
+  if (session.data && !create.isPending)
     return <Navigate replace to={returnTo} />;
   return (
-    <RegistrationFrame step={0}>
+    <RegistrationFrame>
       <Stack
         component="form"
         spacing={3}
         noValidate
+        aria-label="Đăng ký khách hàng"
+        aria-busy={create.isPending}
         onSubmit={handleSubmit((fields) => {
           if (!create.isPending) create.mutate(fields);
         })}
@@ -99,6 +105,7 @@ export default function RegisterPage() {
           id="registration-email"
           type="email"
           autoComplete="email"
+          disabled={create.isPending}
           {...emailField}
           inputRef={emailRef}
           error={!!errors.email}
@@ -108,6 +115,7 @@ export default function RegisterPage() {
           label="Mật khẩu"
           id="registration-password"
           autoComplete="new-password"
+          disabled={create.isPending}
           {...passwordField}
           inputRef={passwordRef}
           error={!!errors.password}
@@ -120,12 +128,17 @@ export default function RegisterPage() {
           label="Xác nhận mật khẩu"
           id="registration-confirm-password"
           autoComplete="new-password"
+          disabled={create.isPending}
           {...confirmField}
           inputRef={confirmRef}
           error={!!errors.confirmPassword}
           helperText={errors.confirmPassword?.message}
         />
-        {create.isError && <ErrorState error={create.error} />}
+        {create.isError &&
+          !(
+            create.error instanceof ServiceError &&
+            create.error.code === "CONFLICT"
+          ) && <ErrorState error={create.error} />}
         <Button
           type="submit"
           variant="contained"
@@ -145,19 +158,17 @@ export default function RegisterPage() {
           <Typography color="text.secondary">Đã có tài khoản?</Typography>
           <Button
             component={Link}
-            to={`/login?${new URLSearchParams({ returnTo })}`}
+            to={
+              params.has("returnTo")
+                ? `/login?${new URLSearchParams({ returnTo })}`
+                : "/login"
+            }
           >
             Đăng nhập
           </Button>
         </Stack>
-        <GoogleSignIn
-          onSuccess={async (user) => {
-            await client.cancelQueries({ queryKey: ["customer"] });
-            client.removeQueries({ queryKey: ["customer"] });
-            client.setQueryData(["session", "customer"], user);
-            navigate(returnTo, { replace: true });
-          }}
-        />
+        <Divider>hoặc</Divider>
+        <GoogleSignIn onSuccess={onRegistered} />
       </Stack>
     </RegistrationFrame>
   );

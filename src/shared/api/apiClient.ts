@@ -155,7 +155,12 @@ export function createApiClient(
       } catch (error) {
         if (!(error instanceof ApiError) || error.status !== 401) throw error;
       }
-      await send("/auth/refresh", { method: "POST", authenticated: false });
+      try {
+        await send("/auth/refresh", { method: "POST", authenticated: false });
+      } finally {
+        // Refresh thất bại có thể xóa cookie CSRF; lần ghi tiếp theo phải lấy token mới.
+        csrf = undefined;
+      }
     }
     const pending = withSessionLock(rotate).finally(() => {
       if (refreshing === pending) refreshing = undefined;

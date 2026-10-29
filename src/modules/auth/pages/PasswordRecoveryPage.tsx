@@ -58,9 +58,9 @@ export default function PasswordRecoveryPage({
     onSuccess: async () => {
       resetForm.reset();
       await services.auth.logout("customer");
-      await client.cancelQueries({ queryKey: ["customer"] });
-      client.removeQueries({ queryKey: ["customer"] });
+      await client.cancelQueries({ queryKey: ["session"] });
       client.setQueryData(["session", "customer"], null);
+      client.setQueryData(["session", "backoffice"], null);
     },
   });
   const isReset = mode === "reset-password";

@@ -42,7 +42,7 @@ const AfterSaleDetailPage = lazy(
 );
 export default function BackofficeRoutes() {
   return (
-    <ThemeProvider theme={backofficeTheme}>
+    <ThemeProvider theme={backofficeTheme} storageManager={null}>
       <Routes>
         <Route path="login" element={<LoginPage portal="backoffice" />} />
         <Route element={<RequireAuth portal="backoffice" />}>

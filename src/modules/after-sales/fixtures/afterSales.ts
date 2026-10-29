@@ -1,4 +1,3 @@
-import { createSeed } from "@/shared/storage/seed";
 import { prototypeOrders } from "@/modules/orders/fixtures/orders";
 import type { Database } from "@/shared/types/database";
 
@@ -25,43 +24,18 @@ export const afterSaleActions: Partial<
   processing: [{ status: "completed", label: "Hoàn tất xử lý" }],
 };
 
-// Fixed, read-only fixtures shared by both prototype portals.
-const seed = createSeed(new Date("2026-10-03T03:00:00.000Z"));
-export const prototypeAfterSales: AfterSaleRequest[] =
-  seed.afterSaleRequests.map((request, index) => ({
-    ...request,
-    type: index % 2 ? "return" : "warranty",
-    reason:
-      index % 2
-        ? "Sản phẩm không phù hợp nhu cầu sử dụng."
-        : "Thiết bị hoạt động không ổn định, cần kiểm tra.",
-    history: [
-      {
-        status: "pending",
-        at: request.createdAt,
-        actorId: request.userId,
-        note: "Khách hàng gửi yêu cầu.",
-      },
-      ...(request.status === "pending" ? [] : request.history),
-    ],
-  }));
+export const prototypeAfterSales: AfterSaleRequest[] = [];
+// Giá trị ban đầu cho form, không phải yêu cầu đã được tạo.
 export const demoAfterSale: AfterSaleRequest = {
-  id: "demo-request",
-  userId: "customer-1",
-  orderItemId: "oi-5",
+  id: "",
+  userId: "",
+  orderItemId: "",
   type: "warranty",
   quantity: 1,
-  reason: "Thiết bị hoạt động không ổn định, cần kiểm tra.",
+  reason: "",
   status: "pending",
-  createdAt: "2026-10-03T03:00:00.000Z",
-  history: [
-    {
-      status: "pending",
-      at: "2026-10-03T03:00:00.000Z",
-      actorId: "customer-1",
-      note: "Khách hàng gửi yêu cầu.",
-    },
-  ],
+  createdAt: "",
+  history: [],
 };
 
 export function requestProduct(request: AfterSaleRequest) {

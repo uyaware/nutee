@@ -6,6 +6,8 @@ const user = {
   email: "api@example.com",
   fullName: "API Tester",
   role: "CUSTOMER",
+  emailVerified: true,
+  imageUrl: null,
 };
 const session = { expiresIn: 900, refreshExpiresIn: 604800, user };
 test.beforeEach(async ({ page, context }) => {
@@ -170,35 +172,52 @@ test("login uses HttpOnly cookies, automatically refreshes, and logs out without
   ).toBe(false);
 });
 
-test("registration uses API cookies and never stores JWTs or the real password in browser storage", async ({
-  page,
-  context,
-}) => {
-  await page.goto("/register?returnTo=%2Fcart");
-  await page.getByLabel("Email", { exact: true }).fill(user.email);
-  await page.getByLabel("Mật khẩu", { exact: true }).fill("StrongPassword123!");
-  await page
-    .getByLabel("Xác nhận mật khẩu", { exact: true })
-    .fill("StrongPassword123!");
-  const request = page.waitForRequest("**/api/v1/auth/register");
-  await page
-    .getByRole("button", { name: "Tạo tài khoản", exact: true })
-    .click();
-  expect((await request).postDataJSON()).toEqual({
-    email: user.email,
-    password: "StrongPassword123!",
+for (const destination of ["/cart", "/account/profile"]) {
+  test(`registration uses API cookies and redirects to ${destination}`, async ({
+    page,
+    context,
+  }) => {
+    if (destination === "/cart") {
+      await page.goto("/register?returnTo=%2Fcart");
+    } else {
+      await page.goto("/login");
+      await page
+        .getByRole("link", { name: "Tạo tài khoản", exact: true })
+        .click();
+      await expect(page).toHaveURL(/\/register$/);
+      await expect(
+        page.getByRole("heading", { name: "Tạo tài khoản NUTEE" }),
+      ).toBeVisible();
+    }
+    await page.getByLabel("Email", { exact: true }).fill(user.email);
+    await page
+      .getByLabel("Mật khẩu", { exact: true })
+      .fill("StrongPassword123!");
+    await page
+      .getByLabel("Xác nhận mật khẩu", { exact: true })
+      .fill("StrongPassword123!");
+    const request = page.waitForRequest("**/api/v1/auth/register");
+    await page
+      .getByRole("button", { name: "Tạo tài khoản", exact: true })
+      .click();
+    expect((await request).postDataJSON()).toEqual({
+      email: user.email,
+      password: "StrongPassword123!",
+    });
+    await expect(page).toHaveURL(new URL(destination, page.url()).href);
+    expect(
+      await page.evaluate(() => localStorage.getItem("nutee:db:v1") ?? ""),
+    ).not.toContain("StrongPassword123!");
+    expect(
+      await page.evaluate(() => sessionStorage.getItem("nutee:auth:customer")),
+    ).toBeNull();
+    expect(
+      (await context.cookies()).find(
+        (cookie) => cookie.name === "refreshToken",
+      ),
+    ).toMatchObject({ httpOnly: true, expires: -1 });
   });
-  await expect(page).toHaveURL(/\/cart$/);
-  expect(
-    await page.evaluate(() => localStorage.getItem("nutee:db:v1")),
-  ).not.toContain("StrongPassword123!");
-  expect(
-    await page.evaluate(() => sessionStorage.getItem("nutee:auth:customer")),
-  ).toBeNull();
-  expect(
-    (await context.cookies()).find((cookie) => cookie.name === "refreshToken"),
-  ).toMatchObject({ httpOnly: true, expires: -1 });
-});
+}
 
 test("forgot and reset password submit API shapes with CSRF and reject mismatched confirmation", async ({
   page,
@@ -233,11 +252,21 @@ test("forgot and reset password submit API shapes with CSRF and reject mismatche
   await expect(page.getByRole("alert")).toContainText("Đã đổi mật khẩu");
 });
 
-test("Google callback establishes an HttpOnly cookie session", async ({
+test("Google login and API profile work when browser storage is blocked", async ({
   page,
   context,
 }) => {
-  await page.goto("/login?returnTo=%2Fcart");
+  await page.addInitScript(() => {
+    for (const key of ["localStorage", "sessionStorage"]) {
+      Object.defineProperty(window, key, {
+        configurable: true,
+        get() {
+          throw new Error("Browser storage must not be used");
+        },
+      });
+    }
+  });
+  await page.goto("/login");
   const request = page.waitForRequest(
     "**/api/v1/auth/social/google?remember=false",
   );
@@ -245,11 +274,18 @@ test("Google callback establishes an HttpOnly cookie session", async ({
   expect((await request).postDataJSON()).toEqual({
     credential: "google-test-credential",
   });
-  await expect(page).toHaveURL(/\/cart$/);
+  await expect(page).toHaveURL(/\/account\/profile$/);
+  await expect(page.getByLabel("Email", { exact: true })).toHaveValue(
+    user.email,
+  );
   expect(
     (await context.cookies()).find((cookie) => cookie.name === "accessToken")
       ?.httpOnly,
   ).toBe(true);
+  await page.reload();
+  await expect(page.getByLabel("Email", { exact: true })).toHaveValue(
+    user.email,
+  );
 });
 
 test("invalid credentials stay on login and show the API error", async ({
@@ -266,4 +302,37 @@ test("invalid credentials stay on login and show the API error", async ({
     "Thông tin đăng nhập không hợp lệ",
   );
   await expect(page).toHaveURL(/\/login$/);
+});
+
+test("preserves storefront and management screens with empty data", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: /Công nghệ cho/ }),
+  ).toBeVisible();
+  await page.goto("/products");
+  await expect(
+    page.getByText("Không tìm thấy sản phẩm", { exact: true }),
+  ).toBeVisible();
+  await page.goto("/cart");
+  await expect(
+    page.getByRole("heading", { name: "Giỏ hàng của bạn" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Giỏ hàng đang trống", { exact: true }),
+  ).toBeVisible();
+  await page.route("**/api/v1/auth/me", (route) =>
+    route.fulfill({ json: { ...user, role: "ADMIN" } }),
+  );
+  await page.goto("/management/products");
+  await expect(
+    page.getByRole("heading", { name: "Sản phẩm", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Không có dữ liệu phù hợp.", { exact: true }),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
 });

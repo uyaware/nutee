@@ -1,4 +1,4 @@
-import type { Portal } from "@/shared/types/database";
+import type { Portal } from "@/modules/auth/model/types";
 export function safeReturnTo(value: string | null, portal: Portal): string {
   const fallback = portal === "customer" ? "/account/profile" : "/management";
   if (

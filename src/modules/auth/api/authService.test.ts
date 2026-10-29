@@ -8,6 +8,8 @@ const user = {
   email: "test@example.com",
   fullName: "Tester",
   role: "CUSTOMER",
+  emailVerified: true,
+  imageUrl: null,
 };
 const session = { expiresIn: 900, refreshExpiresIn: 604800, user };
 const response = (body: unknown, status = 200) =>
@@ -24,18 +26,14 @@ function setup() {
       return response(null, 204);
     return response(session);
   });
-  const onUser = vi.fn(async () => {});
-  const onClear = vi.fn();
   const auth = createApiAuth({
     api: createApiClient({ fetch }),
-    onUser,
-    onClear,
   });
-  return { auth, fetch, onUser, onClear };
+  return { auth, fetch };
 }
 describe("JWT authentication via HttpOnly cookies", () => {
   it("registers with credentials only and relies on HttpOnly cookies", async () => {
-    const { auth, fetch, onUser } = setup();
+    const { auth, fetch } = setup();
     await expect(
       auth.register(user.email, "Password12345!"),
     ).resolves.toMatchObject({ role: "customer", name: "Tester" });
@@ -45,12 +43,6 @@ describe("JWT authentication via HttpOnly cookies", () => {
         body: JSON.stringify({ email: user.email, password: "Password12345!" }),
         credentials: "include",
       }),
-    );
-    expect(onUser).toHaveBeenCalledWith(
-      expect.objectContaining({ id: user.id }),
-      "customer",
-      expect.any(Number),
-      true,
     );
     for (const [, init] of fetch.mock.calls)
       expect(init?.headers ?? {}).not.toHaveProperty("Authorization");
@@ -89,6 +81,19 @@ describe("JWT authentication via HttpOnly cookies", () => {
       fetch.mock.calls.some(([url]) => String(url).endsWith("/logout")),
     ).toBe(false);
   });
+  it("uses username when the API has no display name", async () => {
+    for (const fullName of [null, "", "   "]) {
+      const { auth, fetch } = setup();
+      fetch.mockImplementation(async (url) =>
+        String(url).endsWith("/csrf")
+          ? response({ token: "csrf", headerName: "X-XSRF-TOKEN" })
+          : response({ ...session, user: { ...user, fullName } }),
+      );
+      expect(await auth.register(user.email, "Password12345!")).toMatchObject({
+        name: user.username,
+      });
+    }
+  });
   it("rejects wrong-portal login and logs out without sending a refresh token", async () => {
     const { auth, fetch } = setup();
     await expect(
@@ -124,11 +129,9 @@ describe("JWT authentication via HttpOnly cookies", () => {
       }),
     );
   });
-  it("logout clears both portal views and sends no body", async () => {
-    const { auth, fetch, onClear } = setup();
+  it("logout calls the backend and sends no body", async () => {
+    const { auth, fetch } = setup();
     await auth.logout("customer");
-    expect(onClear).toHaveBeenCalledWith("customer");
-    expect(onClear).toHaveBeenCalledWith("backoffice");
     expect(fetch).toHaveBeenLastCalledWith(
       "/api/v1/auth/logout",
       expect.objectContaining({ method: "POST", credentials: "include" }),
@@ -136,11 +139,10 @@ describe("JWT authentication via HttpOnly cookies", () => {
     expect(fetch.mock.calls.at(-1)?.[1]?.body).toBeUndefined();
   });
   it("offline logout reports failure because JavaScript cannot delete HttpOnly cookies", async () => {
-    const { auth, fetch, onClear } = setup();
+    const { auth, fetch } = setup();
     fetch.mockRejectedValue(new TypeError("offline"));
     await expect(auth.logout("customer")).rejects.toMatchObject({
       code: "NETWORK",
     });
-    expect(onClear).not.toHaveBeenCalled();
   });
 });

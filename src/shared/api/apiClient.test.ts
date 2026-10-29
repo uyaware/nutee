@@ -88,6 +88,17 @@ describe("shared API client", () => {
     expect(
       fetch.mock.calls.filter(([url]) => String(url).endsWith("/refresh")),
     ).toHaveLength(1);
+    fetch
+      .mockResolvedValueOnce(response({ ...csrf, token: "fresh-csrf" }))
+      .mockResolvedValueOnce(response({ ok: true }, 201));
+    await api.request("/auth/register", {
+      method: "POST",
+      body: {},
+      authenticated: false,
+    });
+    expect(fetch.mock.calls.at(-1)?.[1]?.headers).toMatchObject({
+      "X-XSRF-TOKEN": "fresh-csrf",
+    });
   });
   it("renews a rotated CSRF token but does not retry ordinary forbidden errors", async () => {
     let csrfRequests = 0,

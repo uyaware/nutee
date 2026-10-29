@@ -1,5 +1,4 @@
-import { createSeed } from "@/shared/storage/seed";
-import type { Database, Product } from "@/shared/types/database";
+import type { Database, Product, User } from "@/shared/types/database";
 
 export const ADMIN_DEMO_NOW = "2026-10-03T03:00:00.000Z";
 export type AdminProduct = Product & {
@@ -17,60 +16,25 @@ export type AdminPromotion = Database["promotions"][number] & {
   userIds: string[];
 };
 
-// Each workspace gets a fresh fixture. M6 changes live only in React state.
-export function createAdminPrototype() {
-  const seed = createSeed(new Date(ADMIN_DEMO_NOW));
+export interface AdminPrototype {
+  products: AdminProduct[];
+  brands: AdminBrand[];
+  categories: AdminCategory[];
+  promotions: AdminPromotion[];
+  users: User[];
+}
+
+/** Giữ cấu trúc giao diện quản trị với dữ liệu rỗng, không seed hoặc lưu trữ. */
+export function createAdminPrototype(): AdminPrototype {
   return {
-    products: seed.products.map(
-      (product): AdminProduct => ({
-        ...product,
-        images: seed.productImages
-          .filter((image) => image.productId === product.id)
-          .sort((a, b) => a.position - b.position)
-          .map(({ url, alt }) => ({ url, alt })),
-        categoryIds: seed.productCategories
-          .filter((relation) => relation.productId === product.id)
-          .map((relation) => relation.categoryId),
-      }),
-    ),
-    brands: seed.brands.map(
-      (brand): AdminBrand => ({ ...brand, isActive: true }),
-    ),
-    categories: seed.categories.map(
-      (category): AdminCategory => ({
-        ...category,
-        parentId:
-          seed.categoryRelations.find((r) => r.childId === category.id)
-            ?.parentId ?? "",
-        isActive: true,
-      }),
-    ),
-    promotions: seed.promotions.map(
-      (promotion): AdminPromotion => ({
-        ...promotion,
-        isActive: true,
-        productIds: seed.promotionProducts
-          .filter((r) => r.promotionId === promotion.id)
-          .map((r) => r.productId),
-        userIds: seed.promotionUsers
-          .filter((r) => r.promotionId === promotion.id)
-          .map((r) => r.userId),
-      }),
-    ),
-    users: [
-      ...seed.users,
-      {
-        id: "customer-locked",
-        email: "locked@nutee.demo",
-        name: "Thu Hà",
-        role: "customer" as const,
-        isActive: false,
-      },
-    ],
+    products: [],
+    brands: [],
+    categories: [],
+    promotions: [],
+    users: [],
   };
 }
 
-export type AdminPrototype = ReturnType<typeof createAdminPrototype>;
 export const productKindLabels = {
   laptop: "Laptop",
   smartphone: "Điện thoại",

@@ -1,4 +1,5 @@
-import type { Database, User } from "@/shared/types/database";
+import type { Database } from "@/shared/types/database";
+import type { User } from "@/modules/auth/model/types";
 import type {
   AddressInput,
   ProfileSetupInput,
@@ -6,7 +7,7 @@ import type {
 
 export interface ProfileService {
   get(): Promise<{
-    user: User;
+    user: User & { phone?: string; profileCompleted?: boolean };
     addresses: Database["addresses"];
     revision: number;
   }>;

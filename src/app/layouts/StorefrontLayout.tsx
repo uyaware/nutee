@@ -6,10 +6,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useLogout, useSession } from "@/modules/auth/hooks/useSession";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
-import { safeReturnTo } from "@/modules/auth/model/redirect";
 import { StorefrontHeader } from "@/app/layouts/components/StorefrontHeader";
 import { StorefrontFooter } from "@/app/layouts/components/StorefrontFooter";
 
@@ -52,18 +51,7 @@ export function StorefrontLayout() {
             </Stack>
           </Alert>
         )}
-        {session.isPending ? (
-          <LoadingState />
-        ) : session.data?.profileCompleted === false &&
-          location.pathname !== "/account/setup" ? (
-          <Navigate
-            replace
-            to={`/account/setup?${new URLSearchParams({ returnTo: safeReturnTo(location.pathname === "/register" ? new URLSearchParams(location.search).get("returnTo") : location.pathname + location.search, "customer") })}`}
-            state={location.state}
-          />
-        ) : (
-          <Outlet />
-        )}
+        {session.isPending ? <LoadingState /> : <Outlet />}
       </Container>
       <StorefrontFooter />
     </Box>

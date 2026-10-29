@@ -3,11 +3,9 @@ export type ErrorCode =
   | "VALIDATION"
   | "UNAUTHORIZED"
   | "FORBIDDEN"
-  | "NOT_FOUND"
   | "CONFLICT"
-  | "STORAGE"
-  | "CORRUPT_DATA"
-  | "UNSUPPORTED_VERSION";
+  | "NOT_FOUND"
+  | "CORRUPT_DATA";
 export class ServiceError extends Error {
   constructor(
     public code: ErrorCode,

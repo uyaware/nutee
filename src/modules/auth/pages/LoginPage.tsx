@@ -17,14 +17,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Portal } from "@/shared/types/database";
+import type { Portal } from "@/modules/auth/model/types";
 import { services } from "@/app/services";
 import { errorMessage } from "@/shared/lib/errors";
 import { safeReturnTo } from "@/modules/auth/model/redirect";
 import { Brand } from "@/shared/components/Brand";
 import { PasswordField } from "@/shared/components/PasswordField";
 import { GoogleSignIn } from "@/modules/auth/components/GoogleSignIn";
-import type { User } from "@/shared/types/database";
+import type { User } from "@/modules/auth/model/types";
 
 const schema = z.object({
   email: z.email("Nhập địa chỉ email hợp lệ."),
@@ -45,20 +45,11 @@ export function LoginPage({ portal }: { portal: Portal }) {
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
-  const onSignedIn = async (user: User & { cartMergeNotices?: string[] }) => {
-    await client.cancelQueries({ queryKey: [portal] });
-    client.removeQueries({ queryKey: [portal] });
+  const onSignedIn = async (user: User) => {
+    await client.cancelQueries({ queryKey: ["session"] });
     client.setQueryData(["session", portal], user);
     const returnTo = safeReturnTo(params.get("returnTo"), portal);
-    navigate(
-      portal === "customer" && user.profileCompleted === false
-        ? `/account/setup?${new URLSearchParams({ returnTo })}`
-        : returnTo,
-      {
-        replace: true,
-        state: { cartMergeNotices: user.cartMergeNotices },
-      },
-    );
+    navigate(returnTo, { replace: true });
   };
   const login = useMutation({
     mutationFn: (fields: Fields) =>
@@ -225,7 +216,11 @@ export function LoginPage({ portal }: { portal: Portal }) {
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Button
               component={Link}
-              to={`/register?${new URLSearchParams({ returnTo: safeReturnTo(params.get("returnTo"), portal) })}`}
+              to={
+                params.has("returnTo")
+                  ? `/register?${new URLSearchParams({ returnTo: safeReturnTo(params.get("returnTo"), portal) })}`
+                  : "/register"
+              }
             >
               Tạo tài khoản
             </Button>

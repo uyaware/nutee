@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import type { Portal } from "@/shared/types/database";
+import type { Portal } from "@/modules/auth/model/types";
 import type { Permission } from "@/modules/auth/model/permissions";
 import { hasPermission } from "@/modules/auth/model/permissions";
 import { useSession } from "@/modules/auth/hooks/useSession";

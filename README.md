@@ -2,138 +2,107 @@
 
 React, Vite, TypeScript, Material UI, TanStack Query và React Hook Form/Zod.
 
-## Chạy local
+Giữ giao diện HTML/JSX, CSS, component, router và JS của các module. Chức năng đã có API
+gọi backend trực tiếp. Không dùng service localStorage/sessionStorage hoặc database trình duyệt.
+Dữ liệu người dùng từ API chỉ giữ trong bộ nhớ giao diện, không đồng bộ xuống browser storage.
 
-Yêu cầu Node 22.12+ và backend Java 21 chạy tại http://localhost:8080.
+## Chạy ứng dụng
+
+Yêu cầu Node 22.12+ và backend Java 21 đang chạy tại http://localhost:8080.
 
 ```powershell
 npm.cmd install
 npm.cmd run dev
 ```
 
-Vite chuyển tiếp `/api/v1` tới backend. Frontend mặc định chạy tại http://localhost:5173.
-Login, register, forgot/reset password, Google login, refresh và logout sử dụng API thật.
-Đăng ký chỉ cần email và mật khẩu; backend tự tạo username và gán CUSTOMER.
-Mật khẩu cần ít nhất 12 ký tự và tối đa 72 byte UTF-8.
-
+Vite chạy tại http://localhost:5173, proxy `/api/v1` tới backend.
 Sao chép `.env.example` thành `.env.local` khi cần tùy chỉnh:
 
-| Biến                  | Giá trị                                                    |
-| --------------------- | ---------------------------------------------------------- |
-| VITE_API_BASE_URL     | `/api/v1`                                                  |
-| VITE_GOOGLE_CLIENT_ID | Google OAuth Web Client ID, giống backend GOOGLE_CLIENT_ID |
+```dotenv
+VITE_API_BASE_URL=/api/v1
+VITE_GOOGLE_CLIENT_ID=
+```
 
-Google cần `GOOGLE_AUTH_ENABLED=true` và `GOOGLE_CLIENT_ID` ở backend;
-Google Cloud phải cho phép đúng JavaScript origin của frontend. Khởi động lại Vite
-sau khi thay đổi `.env.local`. Tài khoản email có sẵn cần được liên kết Google
-qua API có xác thực `/api/v1/auth/social/google/link`; hệ thống không tự gộp tài khoản.
+Client ID phải giống `GOOGLE_CLIENT_ID` ở backend, với `GOOGLE_AUTH_ENABLED=true`.
+Restart backend và Vite sau khi đổi cấu hình. Xem [hướng dẫn Google Auth](https://github.com/uyaware/nutee_be/blob/main/docs/google-auth.md)
+(trong workspace: `backend/docs/google-auth.md`).
 
-Frontend gọi `/api/v1/auth/social/google/nonce` và gửi `{ credential }` tới
-`/api/v1/auth/social/google?remember=...` theo Strategy Google của backend.
-Phản hồi `AuthResponse` gồm thông tin người dùng và thời hạn, không chứa JWT.
+## Chức năng đang hỗ trợ
 
-Để thử quên mật khẩu, chạy `docker compose up -d mailpit` trong backend và mở
-http://localhost:8025 để đọc email local. Đặt `PASSWORD_RESET_ENABLED=true` ở backend
-khi đã sẵn sàng thử gửi email. Backend gửi liên kết tới `PASSWORD_RESET_URL`
-(mặc định http://localhost:5173/reset-password).
-Mã dùng một lần và hết hạn sau 15 phút. SMTP thật được cấu hình trong
-`backend/.env`, không đặt bí mật trong biến VITE.
+| Chức năng               | API backend                                                               |
+| ----------------------- | ------------------------------------------------------------------------- |
+| Đăng ký                 | POST `/api/v1/auth/register`                                              |
+| Đăng nhập               | POST `/api/v1/auth/login`                                                 |
+| Google login            | GET `/api/v1/auth/social/google/nonce`, POST `/api/v1/auth/social/google` |
+| Hồ sơ và phiên hiện tại | GET `/api/v1/auth/me`                                                     |
+| Quên/đặt lại mật khẩu   | POST `/api/v1/auth/forgot-password`, POST `/api/v1/auth/reset-password`   |
+| Refresh và đăng xuất    | POST `/api/v1/auth/refresh`, POST `/api/v1/auth/logout`                   |
 
-Backend đặt accessToken và refreshToken vào cookie HttpOnly, Path=/api/v1.
-Trình duyệt tự gửi cookie khi API client dùng credentials:include. Frontend không
-lưu JWT vào localStorage/sessionStorage, không đọc JWT bằng JavaScript và không
-gửi JWT trong Authorization hay body. “Ghi nhớ đăng nhập” điều khiển Max-Age của
-cookie; bỏ chọn thì dùng cookie phiên trình duyệt.
+Đăng ký chỉ cần email và mật khẩu; backend tạo CUSTOMER và cấp cookie đăng nhập.
+Mật khẩu từ 12 ký tự, tối đa 72 byte UTF-8. Sau đăng ký, chuyển tới hồ sơ hoặc
+trang đích hợp lệ đã chọn. Hồ sơ chỉ hiển thị dữ liệu `/auth/me`; chưa có API cập nhật hồ sơ.
 
-Cookie dùng chung một tài khoản giữa các tab và hai portal. Đăng nhập tài khoản
-mới thay phiên hiện tại; đăng xuất xóa phiên ở cả customer và backoffice.
-Quyền vẫn do backend kiểm tra.
+Các màn hình sản phẩm, giỏ hàng, đơn hàng, địa chỉ, thanh toán và nghiệp vụ quản trị
+giữ nguyên giao diện với dữ liệu rỗng vì backend chưa có API tương ứng. Các model rỗng
+chỉ phục vụ hiển thị, không phải API giả hay fallback khi API lỗi. Thao tác lưu chưa hỗ trợ
+phải báo lỗi, không ghi vào trình duyệt hoặc giả lập thành công. Hồ sơ đọc từ `/auth/me`;
+form cập nhật vẫn được giữ nhưng chờ API cập nhật tương ứng. Luồng khôi phục mật khẩu gọi API thật.
+Để thử gửi email, cấu hình SMTP rồi bật `PASSWORD_RESET_ENABLED=true` ở backend.
 
-Mọi module API mới dùng client chung để tự gửi cookie, CSRF và refresh/retry khi 401:
+## Xác thực và HTTP client
+
+Backend đặt `accessToken`, `refreshToken` trong cookie HttpOnly, Path=/api/v1.
+Client luôn gửi `credentials: include`; refresh/logout không có token trong body.
+Client lấy CSRF từ `/auth/csrf`, tự gửi header và refresh/retry khi access token hết hạn.
+Login/logout được tuần tự hóa, kể cả giữa các tab khi trình duyệt hỗ trợ Web Locks.
 
 ```typescript
 import { api } from "@/app/services";
 
-const orders = await api.request("/orders");
-await api.request("/orders", { method: "POST", body: { productId: "..." } });
-// Refresh/logout không cần body:
-await api.request("/auth/refresh", { method: "POST", authenticated: false });
+const user = await api.request("/auth/me");
 await api.request("/auth/logout", { method: "POST", authenticated: false });
 ```
 
-Client lấy CSRF tại GET /api/v1/auth/csrf và đính kèm X-XSRF-TOKEN cho POST/PUT/PATCH/DELETE.
-Refresh được tuần tự hóa với login/logout, kể cả giữa các tab khi có Web Locks.
-Nếu CSRF bị xoay ở tab khác, client lấy lại CSRF và thử lại một lần.
-Cấu hình production cần HTTPS, AUTH_SECURE_COOKIE=true; mặc định SameSite=Lax.
+API lỗi hiển thị trên giao diện, không chuyển sang local. Google credential chỉ dùng
+để đổi lấy phiên NUTEE. Email đã đăng ký cần đăng nhập bằng mật khẩu trước khi liên kết
+qua `/api/v1/auth/social/google/link`; hiện chưa có UI liên kết.
 
-Catalog, giỏ hàng, hồ sơ, đơn hàng và backoffice vẫn dùng adapter/fixture local.
-Dữ liệu người dùng an toàn từ backend được nối vào adapter local để các màn hình
-này tiếp tục hoạt động; thay đổi hồ sơ ở prototype chưa ghi về backend.
-Các tài khoản seed demo không đăng nhập được backend.
-
-## Cấu trúc module
+## Cấu trúc
 
 ```text
 src/
-  app/                  # Router, layout, khởi tạo dịch vụ
-    routes/             # CustomerRoutes, BackofficeRoutes
-    layouts/            # Layout và header/footer của ứng dụng
-    services.ts         # Ghép API auth với các adapter local hiện có
-    createLocalServices.ts
+  app/                  # Router, layout và khởi tạo API client
+    services.ts         # Client, auth/profile API và model rỗng cho UI chưa có API
   modules/
-    auth/               # Login, register, Google, phiên đăng nhập
-    catalog/            # Trang chủ, danh mục, sản phẩm, đánh giá
-    cart/               # Giỏ hàng và thao tác thêm/xóa sản phẩm
-    account/            # Hồ sơ, địa chỉ, thiết lập tài khoản
-    checkout/           # Checkout, thanh toán, trang thành công
-    orders/             # Đơn hàng của khách và màn hình vận hành
-    after-sales/        # Yêu cầu bảo hành, đổi trả
-    management/         # UI/model quản trị dùng chung
-      products/         # Quản lý sản phẩm
-      promotions/       # Quản lý khuyến mãi
-      users/            # Quản lý tài khoản
-      taxonomy/         # Thương hiệu, danh mục
-      dashboard/        # Tổng quan vận hành/admin
+    auth/               # API, form, Google SDK, route guard, session hook
+    account/            # Giữ giao diện tài khoản, hồ sơ đọc từ /auth/me
+    catalog/            # Giữ trang chủ, tìm kiếm, danh mục và chi tiết sản phẩm
+    cart/               # Giữ giao diện giỏ hàng, dữ liệu rỗng
+    checkout/           # Giữ giao diện checkout/thanh toán
+    orders/             # Giữ giao diện đơn hàng, dữ liệu rỗng
+    after-sales/        # Giữ giao diện bảo hành/đổi trả, dữ liệu rỗng
+    management/         # Giữ giao diện quản trị, dữ liệu rỗng
   shared/
-    api/                # HTTP client: cookie JWT, CSRF, refresh
+    api/                # Cookie JWT, CSRF và refresh
     components/         # UI dùng chung
-    storage/            # Repository local và dữ liệu seed
     theme/              # Theme và design tokens
-    lib/                # Format, lỗi và tiện ích chung
-    types/              # Schema database local dùng chung
-    testing/            # Tiện ích phục vụ test hiện có
+    lib/                # Tiện ích
 ```
 
-Tìm một chức năng trong `modules/<tên>`; page ở `pages`, component ở `components`,
-gọi API hoặc adapter ở `api`, type/schema ở `model`, dữ liệu mẫu ở `fixtures`.
-Ví dụ: đăng nhập nằm ở `modules/auth/pages/LoginPage.tsx`, API Google nằm ở
-`modules/auth/api/authService.ts`, hồ sơ ở `modules/account/api/profileService.ts`.
-Import nội bộ dùng `@/` thay cho đường dẫn `../../..`. Test unit nằm cạnh service;
-test phối hợp nhiều module ở `app`, E2E vẫn ở `tests/e2e`.
+Quy tắc làm việc: [AGENTS.md](AGENTS.md). Bỏ service browser storage không đồng nghĩa xóa giao diện.
 
-Các adapter local được tách theo module; `app/createLocalServices.ts` chỉ ghép chúng.
-Auth runtime tiếp tục gọi backend JWT. Refactor này giữ UI, route, key localStorage
-và các chức năng đang có. Quy tắc làm việc nằm trong [AGENTS.md](AGENTS.md).
-
-## Chạy kiểm tra
+## Kiểm tra
 
 ```powershell
 npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd test
 npm.cmd run build
-# E2E mới giả lập API và Google SDK:
 $env:VITE_GOOGLE_CLIENT_ID='e2e-test-client'
-npm.cmd exec -- playwright test tests/e2e/auth-api.spec.ts
+npm.cmd exec -- playwright test
 ```
 
-Các E2E prototype cũ dùng local auth và chưa được chuyển sang API. Unit test local
-adapter vẫn kiểm tra catalog, giỏ hàng và hồ sơ. Google thật cần kiểm tra bằng
-Client ID của bạn; bộ E2E không gọi tài khoản Google.
-
-Bộ E2E catalog/search cũ còn một số selector không khớp UI hiện tại, như tìm
-`textbox` thay vì `searchbox` và tên nút gallery cũ. Đợt chuyển module giữ nguyên
-phần xử lý/JSX của giao diện; các selector này cần được đồng bộ riêng.
-
-Production cần SPA fallback về index.html và reverse proxy `/api/v1` tới backend,
-hoặc đặt VITE_API_BASE_URL là URL backend cùng CORS_ALLOWED_ORIGINS phù hợp.
+Test dùng HTTP/Google SDK giả lập. Test Google cũng chạy khi truy cập
+localStorage/sessionStorage bị chặn. Google thật cần tài khoản và cấu hình Console.
+Production cần HTTPS, `AUTH_SECURE_COOKIE=true`, SPA fallback và reverse proxy
+`/api/v1` tới backend; origin API riêng cần cấu hình CORS chính xác.

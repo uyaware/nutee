@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Box, Button, Divider, Paper, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Divider,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import LockOutlined from "@mui/icons-material/LockOutlined";
 import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
 import { Link } from "react-router-dom";
@@ -40,6 +48,7 @@ export default function SecurityPage() {
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors, submitCount },
   } = useForm<PasswordChangeInput>({
     resolver: zodResolver(passwordChangeSchema),
@@ -64,6 +73,9 @@ export default function SecurityPage() {
           Quản lý mật khẩu đăng nhập của bạn.
         </Typography>
       </Stack>
+      {errors.root?.message && (
+        <Alert severity="warning">{errors.root.message}</Alert>
+      )}
       <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
         {complete ? (
           <Stack
@@ -138,7 +150,10 @@ export default function SecurityPage() {
               onSubmit={handleSubmit(() => {
                 // Prototype confirmation only: credentials never enter storage or the URL.
                 reset();
-                setComplete(true);
+                setError("root", {
+                  message:
+                    "Chức năng đổi mật khẩu hiện chưa được hỗ trợ. Bạn có thể dùng liên kết quên mật khẩu.",
+                });
               })}
               spacing={0}
             >

@@ -80,19 +80,6 @@ export const databaseSchema = z
     revision: z.number().int().nonnegative(),
     seededAt: date,
     users: z.array(userSchema),
-    credentials: z
-      .array(
-        z.object({
-          id,
-          userId: id,
-          // Older local credentials without plaintext use the demo password.
-          password: z.string().min(8).max(128).default("12345678"),
-        }),
-      )
-      .default([]),
-    externalIdentities: z.array(
-      z.object({ id, userId: id, provider: id, providerUserId: id }),
-    ),
     addresses: z.array(addressSchema),
     brands: z.array(z.object({ id, name: id })),
     categories: z.array(z.object({ id, name: id })),
@@ -216,15 +203,6 @@ export const databaseSchema = z
     ] as const) {
       if (new Set(values).size !== values.length) fail(`${label} trùng`);
     }
-    db.externalIdentities.forEach((r) =>
-      fk(db.users, r.userId, "identity.user"),
-    );
-    db.credentials.forEach((r) => fk(db.users, r.userId, "credential.user"));
-    if (
-      new Set(db.credentials.map((r) => r.userId)).size !==
-      db.credentials.length
-    )
-      fail("Nhiều mật khẩu cho một user");
     db.users.forEach((u) => {
       if (u.profileCompleted !== false && !u.name.trim())
         fail("Hồ sơ thiếu tên");
