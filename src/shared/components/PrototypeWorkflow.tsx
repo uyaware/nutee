@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useLocation, useSearchParams } from "react-router-dom";
-import type { WorkflowActions } from "../lib/usePrototypeWorkflow";
+import type { WorkflowActions } from "@/shared/lib/usePrototypeWorkflow";
 
 export function PrototypeWorkflow<S extends string>({
   status,

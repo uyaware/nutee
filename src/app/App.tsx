@@ -9,16 +9,16 @@ import {
 } from "@mui/material";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { services, localRepository } from "../services";
+import { services, localRepository } from "@/app/services";
 import {
   OWNED_KEYS,
   SESSION_KEYS,
-} from "../repositories/local/LocalStorageRepository";
-import { LoadingState } from "../shared/components/Feedback";
-import { DataRecovery } from "../shared/components/DataRecovery";
-import { errorMessage } from "../shared/lib/errors";
-const CustomerRoutes = lazy(() => import("../portals/customer/routes"));
-const BackofficeRoutes = lazy(() => import("../portals/backoffice/routes"));
+} from "@/shared/storage/LocalStorageRepository";
+import { LoadingState } from "@/shared/components/Feedback";
+import { DataRecovery } from "@/shared/components/DataRecovery";
+import { errorMessage } from "@/shared/lib/errors";
+const CustomerRoutes = lazy(() => import("@/app/routes/CustomerRoutes"));
+const BackofficeRoutes = lazy(() => import("@/app/routes/BackofficeRoutes"));
 const customerTitles: Record<string, string> = {
   "/cart": "Giỏ hàng",
   "/checkout": "Thanh toán",

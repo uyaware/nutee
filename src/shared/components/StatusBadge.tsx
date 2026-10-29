@@ -1,5 +1,5 @@
 import { Chip } from "@mui/material";
-import type { Order } from "../types/database";
+import type { Order } from "@/shared/types/database";
 const statusLabels: Record<Order["status"], string> = {
   pending: "Chờ xác nhận",
   confirmed: "Đã xác nhận",

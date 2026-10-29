@@ -13,8 +13,8 @@ import RestartAltRounded from "@mui/icons-material/RestartAltRounded";
 import DownloadRounded from "@mui/icons-material/DownloadRounded";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { services, localRepository } from "../../services";
-import { errorMessage } from "../lib/errors";
+import { services, localRepository } from "@/app/services";
+import { errorMessage } from "@/shared/lib/errors";
 
 export function DataRecovery() {
   const [open, setOpen] = useState(false);

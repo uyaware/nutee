@@ -52,7 +52,7 @@ Quyền vẫn do backend kiểm tra.
 Mọi module API mới dùng client chung để tự gửi cookie, CSRF và refresh/retry khi 401:
 
 ```typescript
-import { api } from "./services";
+import { api } from "@/app/services";
 
 const orders = await api.request("/orders");
 await api.request("/orders", { method: "POST", body: { productId: "..." } });
@@ -71,7 +71,51 @@ Dữ liệu người dùng an toàn từ backend được nối vào adapter loc
 này tiếp tục hoạt động; thay đổi hồ sơ ở prototype chưa ghi về backend.
 Các tài khoản seed demo không đăng nhập được backend.
 
-## Kiểm tra
+## Cấu trúc module
+
+```text
+src/
+  app/                  # Router, layout, khởi tạo dịch vụ
+    routes/             # CustomerRoutes, BackofficeRoutes
+    layouts/            # Layout và header/footer của ứng dụng
+    services.ts         # Ghép API auth với các adapter local hiện có
+    createLocalServices.ts
+  modules/
+    auth/               # Login, register, Google, phiên đăng nhập
+    catalog/            # Trang chủ, danh mục, sản phẩm, đánh giá
+    cart/               # Giỏ hàng và thao tác thêm/xóa sản phẩm
+    account/            # Hồ sơ, địa chỉ, thiết lập tài khoản
+    checkout/           # Checkout, thanh toán, trang thành công
+    orders/             # Đơn hàng của khách và màn hình vận hành
+    after-sales/        # Yêu cầu bảo hành, đổi trả
+    management/         # UI/model quản trị dùng chung
+      products/         # Quản lý sản phẩm
+      promotions/       # Quản lý khuyến mãi
+      users/            # Quản lý tài khoản
+      taxonomy/         # Thương hiệu, danh mục
+      dashboard/        # Tổng quan vận hành/admin
+  shared/
+    api/                # HTTP client: cookie JWT, CSRF, refresh
+    components/         # UI dùng chung
+    storage/            # Repository local và dữ liệu seed
+    theme/              # Theme và design tokens
+    lib/                # Format, lỗi và tiện ích chung
+    types/              # Schema database local dùng chung
+    testing/            # Tiện ích phục vụ test hiện có
+```
+
+Tìm một chức năng trong `modules/<tên>`; page ở `pages`, component ở `components`,
+gọi API hoặc adapter ở `api`, type/schema ở `model`, dữ liệu mẫu ở `fixtures`.
+Ví dụ: đăng nhập nằm ở `modules/auth/pages/LoginPage.tsx`, API Google nằm ở
+`modules/auth/api/authService.ts`, hồ sơ ở `modules/account/api/profileService.ts`.
+Import nội bộ dùng `@/` thay cho đường dẫn `../../..`. Test unit nằm cạnh service;
+test phối hợp nhiều module ở `app`, E2E vẫn ở `tests/e2e`.
+
+Các adapter local được tách theo module; `app/createLocalServices.ts` chỉ ghép chúng.
+Auth runtime tiếp tục gọi backend JWT. Refactor này giữ UI, route, key localStorage
+và các chức năng đang có. Quy tắc làm việc nằm trong [AGENTS.md](AGENTS.md).
+
+## Chạy kiểm tra
 
 ```powershell
 npm.cmd run typecheck
@@ -86,6 +130,10 @@ npm.cmd exec -- playwright test tests/e2e/auth-api.spec.ts
 Các E2E prototype cũ dùng local auth và chưa được chuyển sang API. Unit test local
 adapter vẫn kiểm tra catalog, giỏ hàng và hồ sơ. Google thật cần kiểm tra bằng
 Client ID của bạn; bộ E2E không gọi tài khoản Google.
+
+Bộ E2E catalog/search cũ còn một số selector không khớp UI hiện tại, như tìm
+`textbox` thay vì `searchbox` và tên nút gallery cũ. Đợt chuyển module giữ nguyên
+phần xử lý/JSX của giao diện; các selector này cần được đồng bộ riêng.
 
 Production cần SPA fallback về index.html và reverse proxy `/api/v1` tới backend,
 hoặc đặt VITE_API_BASE_URL là URL backend cùng CORS_ALLOWED_ORIGINS phù hợp.

@@ -6,7 +6,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { errorMessage } from "../lib/errors";
+import { errorMessage } from "@/shared/lib/errors";
 
 export function LoadingState() {
   return (

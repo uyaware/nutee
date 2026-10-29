@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tokens } from "./tokens";
+import { tokens } from "@/shared/theme/tokens";
 function luminance(hex: string) {
   const channels = hex
     .slice(1)

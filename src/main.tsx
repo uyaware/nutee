@@ -7,8 +7,8 @@ import "@fontsource/be-vietnam-pro/400.css";
 import "@fontsource/be-vietnam-pro/500.css";
 import "@fontsource/be-vietnam-pro/600.css";
 import "@fontsource/be-vietnam-pro/700.css";
-import { storefrontTheme } from "./shared/theme";
-import App from "./app/App";
+import { storefrontTheme } from "@/shared/theme";
+import App from "@/app/App";
 const client = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 15000, retry: false, refetchOnWindowFocus: "always" },
