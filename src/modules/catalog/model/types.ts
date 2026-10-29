@@ -1,4 +1,10 @@
 import type { Database, Page, ProductSummary } from "@/shared/types/database";
+export interface ProductVariant {
+  id: number;
+  sku: string;
+  price: number;
+  quantity: number;
+}
 
 export const catalogSorts = [
   "featured",
@@ -34,6 +40,8 @@ export interface ProductReview {
   createdAt: string;
 }
 export interface ProductDetail extends ProductSummary {
+  description: string;
+  variants: ProductVariant[];
   images: Database["productImages"];
   categories: Database["categories"];
   breadcrumb: Database["categories"];

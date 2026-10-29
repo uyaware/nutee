@@ -27,9 +27,11 @@ class ApiError extends ServiceError {
           ? "FORBIDDEN"
           : status === 409
             ? "CONFLICT"
-            : status >= 500
-              ? "NETWORK"
-              : "VALIDATION",
+            : status === 404
+              ? "NOT_FOUND"
+              : status >= 500
+                ? "NETWORK"
+                : "VALIDATION",
       status === 401
         ? "Thông tin đăng nhập không hợp lệ."
         : (detail ?? "Yêu cầu không thành công. Vui lòng thử lại."),

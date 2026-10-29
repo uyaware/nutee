@@ -23,6 +23,10 @@ import {
 import { tokens } from "@/shared/theme/tokens";
 
 export default function HomePage() {
+  const categories = useQuery({
+    queryKey: ["catalog", "categories"],
+    queryFn: services.catalog.categories,
+  });
   const products = useQuery({
     queryKey: ["catalog", "featured"],
     queryFn: services.catalog.featured,
@@ -128,26 +132,32 @@ export default function HomePage() {
           {
             icon: LaptopMacRounded,
             title: "Laptop",
-            category: "laptop",
+            category: categories.data?.find(
+              (category) => category.name === "Laptop",
+            )?.id,
             desc: "Làm việc & sáng tạo",
           },
           {
             icon: SmartphoneRounded,
             title: "Điện thoại",
-            category: "smartphone",
+            category: categories.data?.find(
+              (category) => category.name === "Điện thoại",
+            )?.id,
             desc: "Kết nối mỗi ngày",
           },
           {
             icon: KeyboardRounded,
             title: "Bàn phím",
-            category: "keyboard",
+            category: categories.data?.find(
+              (category) => category.name === "Bàn phím",
+            )?.id,
             desc: "Hoàn thiện góc làm việc",
           },
         ].map(({ icon: Icon, title, desc, category }) => (
           <Paper key={title} variant="outlined" sx={{ overflow: "hidden" }}>
             <CardActionArea
               component={Link}
-              to={`/products?category=${category}`}
+              to={category ? `/products?category=${category}` : "/products"}
               sx={{
                 p: 2,
                 display: "flex",

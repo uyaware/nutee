@@ -45,7 +45,7 @@ export const productSchema = z.object({
   price: money,
   stock: z.number().int().nonnegative(),
   status: z.enum(["published", "hidden"]),
-  kind: z.enum(["laptop", "smartphone", "keyboard"]),
+  kind: z.enum(["laptop", "smartphone", "keyboard", "other"]),
   specifications: z.array(z.object({ key: id, label: id, value: id })),
   updatedAt: date,
 });

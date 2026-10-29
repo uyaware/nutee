@@ -36,6 +36,7 @@ export function createAdminPrototype(): AdminPrototype {
 }
 
 export const productKindLabels = {
+  other: "Khác",
   laptop: "Laptop",
   smartphone: "Điện thoại",
   keyboard: "Bàn phím",

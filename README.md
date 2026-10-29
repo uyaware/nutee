@@ -42,8 +42,16 @@ Restart backend và Vite sau khi đổi cấu hình. Xem [hướng dẫn Google 
 Mật khẩu từ 12 ký tự, tối đa 72 byte UTF-8. Sau đăng ký, chuyển tới hồ sơ hoặc
 trang đích hợp lệ đã chọn. Hồ sơ chỉ hiển thị dữ liệu `/auth/me`; chưa có API cập nhật hồ sơ.
 
-Các màn hình sản phẩm, giỏ hàng, đơn hàng, địa chỉ, thanh toán và nghiệp vụ quản trị
-giữ nguyên giao diện với dữ liệu rỗng vì backend chưa có API tương ứng. Các model rỗng
+Trang chủ, danh sách và chi tiết sản phẩm đã nối API catalog thật, giữ giao diện hiện có.
+Chọn variant đổi giá/tồn kho theo SKU từ backend. Brand, category và bộ lọc lấy từ API;
+tìm kiếm, lọc và phân trang xử lý ở backend. Không còn `emptyCatalog`.
+Các API chính: GET `/api/v1/products`, `/products/{id}`, `/products/facets`,
+`/products/{id}/variants`, `/products/{id}/reviews`, `/brands`, `/categories`.
+Seed và tài liệu: [Catalog API](https://github.com/uyaware/nutee_be/blob/main/docs/catalog-api.md)
+(workspace: `backend/docs/catalog-api.md`).
+
+Các màn hình giỏ hàng, đơn hàng, địa chỉ, thanh toán và nghiệp vụ quản trị
+giữ nguyên giao diện với dữ liệu rỗng vì backend chưa có API nghiệp vụ tương ứng. Các model rỗng
 chỉ phục vụ hiển thị, không phải API giả hay fallback khi API lỗi. Thao tác lưu chưa hỗ trợ
 phải báo lỗi, không ghi vào trình duyệt hoặc giả lập thành công. Hồ sơ đọc từ `/auth/me`;
 form cập nhật vẫn được giữ nhưng chờ API cập nhật tương ứng. Luồng khôi phục mật khẩu gọi API thật.
@@ -72,11 +80,11 @@ qua `/api/v1/auth/social/google/link`; hiện chưa có UI liên kết.
 ```text
 src/
   app/                  # Router, layout và khởi tạo API client
-    services.ts         # Client, auth/profile API và model rỗng cho UI chưa có API
+    services.ts         # Client, auth/profile/catalog API và model rỗng cho UI chưa có API
   modules/
     auth/               # API, form, Google SDK, route guard, session hook
     account/            # Giữ giao diện tài khoản, hồ sơ đọc từ /auth/me
-    catalog/            # Giữ trang chủ, tìm kiếm, danh mục và chi tiết sản phẩm
+    catalog/            # API cho trang chủ, tìm kiếm, bộ lọc, chi tiết và variants
     cart/               # Giữ giao diện giỏ hàng, dữ liệu rỗng
     checkout/           # Giữ giao diện checkout/thanh toán
     orders/             # Giữ giao diện đơn hàng, dữ liệu rỗng

@@ -1,6 +1,6 @@
 import { createApiAuth } from "@/modules/auth/api/authService";
 import { createApiClient } from "@/shared/api/apiClient";
-import { emptyCatalog } from "@/modules/catalog/model/emptyCatalog";
+import { createCatalogService } from "@/modules/catalog/api/catalogService";
 import { emptyCart } from "@/modules/cart/model/emptyCart";
 import { createProfileService } from "@/modules/account/api/profileService";
 
@@ -12,6 +12,6 @@ const auth = createApiAuth({ api });
 export const services = {
   auth,
   profile: createProfileService(auth),
-  catalog: emptyCatalog,
+  catalog: createCatalogService(api),
   cart: emptyCart,
 };

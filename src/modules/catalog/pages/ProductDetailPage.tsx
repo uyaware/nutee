@@ -12,6 +12,8 @@ import {
   Link as MuiLink,
   Paper,
   Rating,
+  MenuItem,
+  TextField,
   Stack,
   Table,
   TableBody,
@@ -190,6 +192,7 @@ function ProductGallery({ product }: { product: ProductDetail }) {
 }
 
 export default function ProductDetailPage() {
+  const [variantId, setVariantId] = useState<number | null>(null);
   const { id = "" } = useParams();
   const location = useLocation();
   const query = useQuery({
@@ -225,7 +228,17 @@ export default function ProductDetailPage() {
         </Button>
       </Stack>
     );
-  const product = query.data;
+  const detail = query.data;
+  const variant =
+    detail.variants.find((item) => item.id === variantId) ??
+    detail.variants.find((item) => item.quantity > 0) ??
+    detail.variants[0];
+  const product = {
+    ...detail,
+    price: variant?.price ?? detail.price,
+    stock: variant?.quantity ?? detail.stock,
+    sku: variant?.sku ?? detail.sku,
+  };
   return (
     <Stack spacing={3} sx={{ maxWidth: 1240, mx: "auto" }}>
       <Breadcrumbs
@@ -317,6 +330,26 @@ export default function ProductDetailPage() {
                 </MuiLink>
               </Stack>
             </Box>
+            {product.description && (
+              <Typography color="text.secondary">
+                {product.description}
+              </Typography>
+            )}
+            {detail.variants.length > 0 && (
+              <TextField
+                select
+                label="Phiên bản"
+                value={variant?.id ?? ""}
+                onChange={(event) => setVariantId(Number(event.target.value))}
+              >
+                {detail.variants.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.sku} · {money(item.price)}
+                    {item.quantity === 0 ? " · Hết hàng" : ""}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
             <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: "action.selected" }}>
               <Typography variant="body2" color="text.secondary">
                 Giá bán

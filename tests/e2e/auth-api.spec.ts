@@ -11,6 +11,22 @@ const user = {
 };
 const session = { expiresIn: 900, refreshExpiresIn: 604800, user };
 test.beforeEach(async ({ page, context }) => {
+  await page.route(
+    (url) =>
+      ["/api/v1/products", "/api/v1/categories", "/api/v1/brands"].some(
+        (path) => url.pathname.startsWith(path),
+      ),
+    (route) => {
+      const path = new URL(route.request().url()).pathname;
+      return route.fulfill({
+        json: path.endsWith("/facets")
+          ? { brands: [], categories: [], specifications: [] }
+          : path.endsWith("/brands") || path.endsWith("/categories")
+            ? []
+            : { content: [], page: 0, size: 12, totalElements: 0 },
+      });
+    },
+  );
   await page.route("https://accounts.google.com/gsi/client", (route) =>
     route.fulfill({
       contentType: "application/javascript",
