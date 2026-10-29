@@ -24,6 +24,8 @@ export const OWNED_KEYS = [
   SESSION_KEYS.customer,
   SESSION_KEYS.backoffice,
   GUEST_CART_KEY,
+  "nutee:auth:customer",
+  "nutee:auth:backoffice",
 ];
 const sessionSchema = z.object({
   userId: z.string().min(1),

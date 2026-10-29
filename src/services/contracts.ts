@@ -25,6 +25,7 @@ export interface AuthService {
     portal: Portal,
     email: string,
     password: string,
+    remember?: boolean,
   ): Promise<User & { cartMergeNotices?: string[] }>;
   currentUser(portal: Portal): Promise<User | null>;
   logout(portal: Portal): Promise<void>;

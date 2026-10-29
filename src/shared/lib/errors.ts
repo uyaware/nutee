@@ -1,4 +1,5 @@
 export type ErrorCode =
+  | "NETWORK"
   | "VALIDATION"
   | "UNAUTHORIZED"
   | "FORBIDDEN"

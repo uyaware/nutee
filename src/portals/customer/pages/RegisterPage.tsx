@@ -14,6 +14,7 @@ import { ErrorState } from "../../../shared/components/Feedback";
 import { FormErrorSummary } from "../../../shared/components/FormErrorSummary";
 import { PasswordField } from "../../../shared/components/PasswordField";
 import { RegistrationFrame } from "../components/RegistrationFrame";
+import { GoogleSignIn } from "../../../shared/components/GoogleSignIn";
 
 export default function RegisterPage() {
   const [params] = useSearchParams();
@@ -40,10 +41,15 @@ export default function RegisterPage() {
       await client.cancelQueries({ queryKey: ["customer"] });
       client.removeQueries({ queryKey: ["customer"] });
       client.setQueryData(["session", "customer"], user);
-      navigate(`/account/setup?${new URLSearchParams({ returnTo })}`, {
-        replace: true,
-        state: { cartMergeNotices: user.cartMergeNotices },
-      });
+      navigate(
+        user.profileCompleted === false
+          ? `/account/setup?${new URLSearchParams({ returnTo })}`
+          : returnTo,
+        {
+          replace: true,
+          state: { cartMergeNotices: user.cartMergeNotices },
+        },
+      );
     },
     onError: (error) => {
       if (error instanceof ServiceError && error.fieldErrors)
@@ -105,7 +111,10 @@ export default function RegisterPage() {
           {...passwordField}
           inputRef={passwordRef}
           error={!!errors.password}
-          helperText={errors.password?.message ?? "Sử dụng từ 8 đến 128 ký tự."}
+          helperText={
+            errors.password?.message ??
+            "Ít nhất 12 ký tự, tối đa 72 byte UTF-8."
+          }
         />
         <PasswordField
           label="Xác nhận mật khẩu"
@@ -141,6 +150,14 @@ export default function RegisterPage() {
             Đăng nhập
           </Button>
         </Stack>
+        <GoogleSignIn
+          onSuccess={async (user) => {
+            await client.cancelQueries({ queryKey: ["customer"] });
+            client.removeQueries({ queryKey: ["customer"] });
+            client.setQueryData(["session", "customer"], user);
+            navigate(returnTo, { replace: true });
+          }}
+        />
       </Stack>
     </RegistrationFrame>
   );

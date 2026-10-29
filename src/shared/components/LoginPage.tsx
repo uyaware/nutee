@@ -23,6 +23,8 @@ import { errorMessage } from "../lib/errors";
 import { safeReturnTo } from "../auth/redirect";
 import { Brand } from "./Brand";
 import { PasswordField } from "./PasswordField";
+import { GoogleSignIn } from "./GoogleSignIn";
+import type { User } from "../types/database";
 
 const schema = z.object({
   email: z.email("Nhập địa chỉ email hợp lệ."),
@@ -43,24 +45,25 @@ export function LoginPage({ portal }: { portal: Portal }) {
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
+  const onSignedIn = async (user: User & { cartMergeNotices?: string[] }) => {
+    await client.cancelQueries({ queryKey: [portal] });
+    client.removeQueries({ queryKey: [portal] });
+    client.setQueryData(["session", portal], user);
+    const returnTo = safeReturnTo(params.get("returnTo"), portal);
+    navigate(
+      portal === "customer" && user.profileCompleted === false
+        ? `/account/setup?${new URLSearchParams({ returnTo })}`
+        : returnTo,
+      {
+        replace: true,
+        state: { cartMergeNotices: user.cartMergeNotices },
+      },
+    );
+  };
   const login = useMutation({
     mutationFn: (fields: Fields) =>
-      services.auth.login(portal, fields.email, fields.password),
-    onSuccess: async (user) => {
-      await client.cancelQueries({ queryKey: [portal] });
-      client.removeQueries({ queryKey: [portal] });
-      client.setQueryData(["session", portal], user);
-      const returnTo = safeReturnTo(params.get("returnTo"), portal);
-      navigate(
-        portal === "customer" && user.profileCompleted === false
-          ? `/account/setup?${new URLSearchParams({ returnTo })}`
-          : returnTo,
-        {
-          replace: true,
-          state: { cartMergeNotices: user.cartMergeNotices },
-        },
-      );
-    },
+      services.auth.login(portal, fields.email, fields.password, rememberLogin),
+    onSuccess: onSignedIn,
   });
   return (
     <Box
@@ -215,6 +218,9 @@ export function LoginPage({ portal }: { portal: Portal }) {
             {login.isPending ? "Đang đăng nhập…" : "Đăng nhập"}
           </Button>
         </Stack>
+        {!management && (
+          <GoogleSignIn remember={rememberLogin} onSuccess={onSignedIn} />
+        )}
         {!management && (
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Button

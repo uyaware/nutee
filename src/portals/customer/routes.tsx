@@ -17,6 +17,7 @@ const AddressesPage = lazy(() => import("./pages/AddressesPage"));
 const SecurityPage = lazy(() => import("./pages/SecurityPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const AuthDemoPage = lazy(() => import("./pages/AuthDemoPage"));
+const PasswordRecoveryPage = lazy(() => import("./pages/PasswordRecoveryPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const ProfileSetupPage = lazy(() => import("./pages/ProfileSetupPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
@@ -42,11 +43,11 @@ export default function CustomerRoutes() {
         />
         <Route
           path="forgot-password"
-          element={<AuthDemoPage mode="forgot-password" />}
+          element={<PasswordRecoveryPage mode="forgot-password" />}
         />
         <Route
           path="reset-password"
-          element={<AuthDemoPage mode="reset-password" />}
+          element={<PasswordRecoveryPage mode="reset-password" />}
         />
         <Route path="cart" element={<CartPage />} />
         <Route index element={<HomePage />} />
