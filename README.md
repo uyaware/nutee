@@ -43,12 +43,20 @@ Mật khẩu từ 12 ký tự, tối đa 72 byte UTF-8. Sau đăng ký, chuyển
 trang đích hợp lệ đã chọn. Hồ sơ chỉ hiển thị dữ liệu `/auth/me`; chưa có API cập nhật hồ sơ.
 
 Trang chủ, danh sách và chi tiết sản phẩm đã nối API catalog thật, giữ giao diện hiện có.
-Chọn variant đổi giá/tồn kho theo SKU từ backend. Brand, category và bộ lọc lấy từ API;
+Trang chi tiết chọn `defaultVariantId` từ backend; đổi variant sẽ đổi giá, tồn kho,
+ảnh theo `imageId`, thông số riêng và đặt lại số lượng. SKU là mã hiển thị, variant ID
+là định danh nội bộ. Thẻ sản phẩm hiển thị cấu hình ứng với giá backend trả về.
+Brand, category và bộ lọc lấy từ API;
 tìm kiếm, lọc và phân trang xử lý ở backend. Không còn `emptyCatalog`.
 Các API chính: GET `/api/v1/products`, `/products/{id}`, `/products/facets`,
 `/products/{id}/variants`, `/products/{id}/reviews`, `/brands`, `/categories`.
 Seed và tài liệu: [Catalog API](https://github.com/uyaware/nutee_be/blob/main/docs/catalog-api.md)
 (workspace: `backend/docs/catalog-api.md`).
+
+Seed mới tạo 100 sản phẩm và 300 variants trong PostgreSQL; frontend không chứa
+seed hoặc bản sao catalog trong browser storage. Chạy seed từ repository backend
+sau khi Flyway khởi tạo schema. Test trình duyệt kiểm tra đổi variant, biến thể mặc
+định hết hàng và hoạt động khi localStorage/sessionStorage bị chặn.
 
 Các màn hình giỏ hàng, đơn hàng, địa chỉ, thanh toán và nghiệp vụ quản trị
 giữ nguyên giao diện với dữ liệu rỗng vì backend chưa có API nghiệp vụ tương ứng. Các model rỗng
