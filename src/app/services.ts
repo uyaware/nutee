@@ -1,17 +1,17 @@
 import { createApiAuth } from "@/modules/auth/api/authService";
 import { createApiClient } from "@/shared/api/apiClient";
 import { createCatalogService } from "@/modules/catalog/api/catalogService";
-import { emptyCart } from "@/modules/cart/model/emptyCart";
+import { createCartService } from "@/modules/cart/api/cartService";
 import { createProfileService } from "@/modules/account/api/profileService";
 
 export const api = createApiClient({
-  baseUrl: import.meta.env.VITE_API_BASE_URL ?? "/api/v1",
+    baseUrl: import.meta.env.VITE_API_BASE_URL ?? "/api/v1",
 });
 
 const auth = createApiAuth({ api });
 export const services = {
-  auth,
-  profile: createProfileService(auth),
-  catalog: createCatalogService(api),
-  cart: emptyCart,
+    auth,
+    profile: createProfileService(auth),
+    catalog: createCatalogService(api),
+    cart: createCartService(api),
 };

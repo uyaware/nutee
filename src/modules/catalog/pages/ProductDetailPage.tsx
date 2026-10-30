@@ -237,7 +237,14 @@ export default function ProductDetailPage() {
         );
     const detail = query.data;
     const variant =
-        detail.variants.find((item) => item.id === variantId) ??
+        detail.variants.find(
+            (item) =>
+                item.id ===
+                (variantId ??
+                    Number(
+                        new URLSearchParams(location.search).get("variant"),
+                    )),
+        ) ??
         detail.variants.find((item) => item.id === detail.defaultVariantId) ??
         detail.variants.find((item) => item.quantity > 0) ??
         detail.variants[0];
@@ -488,8 +495,8 @@ export default function ProductDetailPage() {
                         <Divider />
                         <AddToCart
                             key={`${product.id}:${variant?.id}`}
-                            productId={product.id}
-                            stock={product.stock}
+                            variantId={variant ? String(variant.id) : undefined}
+                            stock={variant?.quantity ?? 0}
                         />
                         <Button
                             component={Link}

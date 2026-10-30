@@ -3,22 +3,24 @@ import { services } from "@/app/services";
 import type { Portal } from "@/modules/auth/model/types";
 
 export function useSession(portal: Portal) {
-  return useQuery({
-    queryKey: ["session", portal],
-    queryFn: () => services.auth.currentUser(portal),
-    staleTime: 0,
-    refetchInterval: 30000,
-  });
+    return useQuery({
+        queryKey: ["session", portal],
+        queryFn: () => services.auth.currentUser(portal),
+        staleTime: 0,
+        refetchInterval: 30000,
+    });
 }
 export function useLogout(portal: Portal) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: () => services.auth.logout(portal),
-    onSuccess: async () => {
-      await client.cancelQueries({ queryKey: ["session"] });
-      client.setQueryData(["session", "customer"], null);
-      client.setQueryData(["session", "backoffice"], null);
-      await client.invalidateQueries({ queryKey: ["session"] });
-    },
-  });
+    const client = useQueryClient();
+    return useMutation({
+        mutationFn: () => services.auth.logout(portal),
+        onSuccess: async () => {
+            await client.cancelQueries({ queryKey: ["session"] });
+            await client.cancelQueries({ queryKey: ["customer"] });
+            client.removeQueries({ queryKey: ["customer"] });
+            client.setQueryData(["session", "customer"], null);
+            client.setQueryData(["session", "backoffice"], null);
+            await client.invalidateQueries({ queryKey: ["session"] });
+        },
+    });
 }

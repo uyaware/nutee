@@ -37,6 +37,7 @@ Restart backend và Vite sau khi đổi cấu hình. Xem [hướng dẫn Google 
 | Hồ sơ và phiên hiện tại | GET `/api/v1/auth/me`                                                     |
 | Quên/đặt lại mật khẩu   | POST `/api/v1/auth/forgot-password`, POST `/api/v1/auth/reset-password`   |
 | Refresh và đăng xuất    | POST `/api/v1/auth/refresh`, POST `/api/v1/auth/logout`                   |
+| Giỏ hàng                | GET/DELETE `/api/v1/cart`, POST `/api/v1/cart/items`, PUT/DELETE `/api/v1/cart/items/{variantId}` |
 
 Đăng ký chỉ cần email và mật khẩu; backend tạo CUSTOMER và cấp cookie đăng nhập.
 Mật khẩu từ 12 ký tự, tối đa 72 byte UTF-8. Sau đăng ký, chuyển tới hồ sơ hoặc
@@ -58,7 +59,18 @@ seed hoặc bản sao catalog trong browser storage. Chạy seed từ repository
 sau khi Flyway khởi tạo schema. Test trình duyệt kiểm tra đổi variant, biến thể mặc
 định hết hàng và hoạt động khi localStorage/sessionStorage bị chặn.
 
-Các màn hình giỏ hàng, đơn hàng, địa chỉ, thanh toán và nghiệp vụ quản trị
+Giỏ hàng đã nối API thật theo tài khoản đăng nhập: thêm đúng variant đang chọn,
+cộng số lượng cùng variant, giữ riêng các cấu hình của cùng sản phẩm, đổi số lượng,
+xóa từng dòng hoặc toàn bộ giỏ sau xác nhận. Header cập nhật tổng số lượng;
+chọn/bỏ chọn từng variant sẽ cập nhật tạm tính và danh sách chuyển sang checkout.
+Giá, ảnh, SKU và tồn kho lấy từ backend. Các dòng hết hàng/ngừng bán vẫn hiển thị
+để kiểm tra và xóa. Khách chưa đăng nhập được chuyển tới login với variant đã chọn
+trong URL quay lại; không có guest cart trong browser storage.
+Tài liệu: [Cart API](https://github.com/uyaware/nutee_be/blob/main/docs/cart-api.md).
+Checkout chỉ hiển thị các variant đã chọn; chức năng đặt hàng đang chờ API,
+không tạo đơn hoặc báo thành công giả.
+
+Các màn hình đơn hàng, địa chỉ, thanh toán và nghiệp vụ quản trị
 giữ nguyên giao diện với dữ liệu rỗng vì backend chưa có API nghiệp vụ tương ứng. Các model rỗng
 chỉ phục vụ hiển thị, không phải API giả hay fallback khi API lỗi. Thao tác lưu chưa hỗ trợ
 phải báo lỗi, không ghi vào trình duyệt hoặc giả lập thành công. Hồ sơ đọc từ `/auth/me`;
@@ -93,7 +105,7 @@ src/
     auth/               # API, form, Google SDK, route guard, session hook
     account/            # Giữ giao diện tài khoản, hồ sơ đọc từ /auth/me
     catalog/            # API cho trang chủ, tìm kiếm, bộ lọc, chi tiết và variants
-    cart/               # Giữ giao diện giỏ hàng, dữ liệu rỗng
+    cart/               # API giỏ theo variant, số lượng, chọn dòng, xóa và trạng thái tồn kho
     checkout/           # Giữ giao diện checkout/thanh toán
     orders/             # Giữ giao diện đơn hàng, dữ liệu rỗng
     after-sales/        # Giữ giao diện bảo hành/đổi trả, dữ liệu rỗng
