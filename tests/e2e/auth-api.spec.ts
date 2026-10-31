@@ -11,6 +11,16 @@ const user = {
 };
 const session = { expiresIn: 900, refreshExpiresIn: 604800, user };
 test.beforeEach(async ({ page, context }) => {
+    await page.route("**/api/v1/account/profile", (route) =>
+        route.fulfill({
+            json: {
+                user,
+                phone: "0912345678",
+                googleLinked: false,
+                addresses: [],
+            },
+        }),
+    );
     await page.route("**/api/v1/cart", (route) =>
         route.fulfill({
             json: {

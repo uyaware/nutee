@@ -11,7 +11,7 @@ export const api = createApiClient({
 const auth = createApiAuth({ api });
 export const services = {
     auth,
-    profile: createProfileService(auth),
+    profile: createProfileService(api),
     catalog: createCatalogService(api),
     cart: createCartService(api),
 };
