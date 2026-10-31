@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     createOrderSchema,
     type CreateOrder,
+    type CustomerOrder,
 } from "@/modules/orders/model/api";
 import { errorMessage, ServiceError } from "@/shared/lib/errors";
 import { money } from "@/shared/lib/format";
@@ -41,12 +42,16 @@ import { useCart } from "@/modules/cart/hooks/useCart";
 import { useProfile } from "@/modules/account/hooks/useProfile";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
 import { tokens } from "@/shared/theme/tokens";
+import { PaymentPanel } from "@/modules/checkout/pages/PaymentPage";
 
 export default function CheckoutPage() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const [params, setParams] = useSearchParams();
     const [submitted, setSubmitted] = useState<CreateOrder | null>(null);
     const [validation, setValidation] = useState("");
+    const [createdOrder, setCreatedOrder] = useState<CustomerOrder | null>(null);
+    const profile = useProfile();
     const config = useQuery({
         queryKey: ["checkout-config"],
         queryFn: services.orders.config,
@@ -66,16 +71,22 @@ export default function CheckoutPage() {
             }
         },
         onSuccess: (order) => {
-            navigate(
-                `/orders/${order.id}/${order.paymentMethod === "qr" && order.paymentStatus !== "paid" ? "payment" : "success"}`,
-                { replace: true },
-            );
+            if (order.paymentMethod === "qr" && order.paymentStatus !== "paid") {
+                if (order.payment) {
+                    queryClient.setQueryData(
+                        ["customer", profile.data?.user.id, "payments", order.id],
+                        order.payment,
+                    );
+                }
+                setCreatedOrder(order);
+                setParams({ order: String(order.id) }, { replace: true });
+            } else {
+                navigate(`/orders/${order.id}/success`, { replace: true });
+            }
             void queryClient.invalidateQueries({ queryKey: ["customer"] });
         },
     });
-    const [params] = useSearchParams();
     const cart = useCart();
-    const profile = useProfile();
     const [step, setStep] = useState(0);
     const [selection, setSelection] = useState<{
         ownerId: string;
@@ -135,6 +146,10 @@ export default function CheckoutPage() {
             note,
             paymentMethod: method,
         });
+    const paymentOrderId = createdOrder?.id ?? Number(params.get("order"));
+    if (Number.isSafeInteger(paymentOrderId) && paymentOrderId > 0) {
+        return <PaymentPanel id={paymentOrderId} initialError={createdOrder?.paymentError} />;
+    }
     if (profile.isPending) return <LoadingState />;
     if (profile.isError)
         return (

@@ -29,6 +29,8 @@ export interface CustomerOrder {
     note: string | null;
     createdAt: string;
     paymentExpiresAt: string | null;
+    payment?: Payment | null;
+    paymentError?: string | null;
     items: {
         id: number;
         productId: number;
@@ -47,6 +49,11 @@ export interface Payment {
     status: string;
     amount: number;
     checkoutUrl: string | null;
+    qrCode: string | null;
+    bankBin: string | null;
+    accountNumber: string | null;
+    accountName: string | null;
+    transferContent: string | null;
     expiresAt: string | null;
 }
 export const paymentLabels: Record<string, string> = {

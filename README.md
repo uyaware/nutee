@@ -68,8 +68,8 @@ Giá, ảnh, SKU và tồn kho lấy từ backend. Các dòng hết hàng/ngừn
 để kiểm tra và xóa. Khách chưa đăng nhập được chuyển tới login với variant đã chọn
 trong URL quay lại; không có guest cart trong browser storage.
 Tài liệu: [Cart API](https://github.com/uyaware/nutee_be/blob/main/docs/cart-api.md).
-Checkout chỉ dùng các variant đã chọn, tạo đơn qua API với khóa idempotency và
-chuyển tới xác nhận COD hoặc trang thanh toán payOS.
+Checkout chỉ dùng các variant đã chọn, tạo đơn qua API với khóa idempotency.
+COD chuyển tới xác nhận; payOS tạo và hiển thị mã QR ngay trong checkout.
 
 Sổ địa chỉ đã nối API thật: thêm/sửa tỉnh/thành, phường/xã,
 số nhà/tên đường; chọn mặc định và xóa sau xác nhận. Địa chỉ đầu tiên tự làm mặc định;
@@ -153,8 +153,11 @@ localStorage/sessionStorage bị chặn. Google thật cần tài khoản và c�
 Production cần HTTPS, `AUTH_SECURE_COOKIE=true`, SPA fallback và reverse proxy
 `/api/v1` tới backend; origin API riêng cần cấu hình CORS chính xác.
 
-Thanh toán dùng `PaymentGateway`/`PayOSAdapter` ở backend; frontend chỉ nhận hosted link và
-trạng thái do backend xác nhận. Phí giao mặc định 25.000đ, cấu hình backend bằng
+Thanh toán dùng `PaymentGateway`/`PayOSAdapter` ở backend; frontend hiển thị mã
+VietQR tại checkout cùng số tài khoản, chủ tài khoản, BIN ngân hàng, số tiền và nội dung
+chuyển khoản từ API. Nội dung cho QR mới là mã đơn; tải lại trang vẫn lấy dữ liệu
+đã lưu trên `orders`. Thông tin chuyển khoản ẩn khi đơn hết hạn hoặc đã kết thúc.
+Phí giao mặc định 25.000đ, cấu hình backend bằng
 `CHECKOUT_SHIPPING_FEE` hoặc `app.payment.shipping-fee`. Không đưa API/checksum key vào Vite.
 Hướng dẫn kênh merchant và webhook: `backend/docs/payments-api.md` trong workspace.
 QR chỉ khả dụng khi backend bật và cấu hình payOS; COD vẫn hoạt động. Query `payment=paid`

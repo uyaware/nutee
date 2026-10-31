@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
 import TimerOutlined from "@mui/icons-material/TimerOutlined";
+import { QRCodeSVG } from "qrcode.react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,12 +28,22 @@ import {
 import { OrderTotals } from "@/modules/checkout/components/CheckoutSummary";
 
 export default function PaymentPage() {
+    const id = Number(useParams().id);
+    return <PaymentPanel id={id} />;
+}
+
+export function PaymentPanel({
+    id,
+    initialError,
+}: {
+    id: number;
+    initialError?: string | null;
+}) {
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
         const timer = window.setInterval(() => setNow(Date.now()), 1000);
         return () => window.clearInterval(timer);
     }, []);
-    const id = Number(useParams().id);
     const [params] = useSearchParams();
     const returnedFromPayOS = params.has("orderCode") && params.has("id");
     const checkedReturn = useRef<number | null>(null);
@@ -82,7 +93,13 @@ export default function PaymentPage() {
             checkedReturn.current = id;
             refreshPayment("refresh");
         }
-    }, [returnedFromPayOS, id, orderQuery.data, paymentQuery.data, refreshPayment]);
+    }, [
+        returnedFromPayOS,
+        id,
+        orderQuery.data,
+        paymentQuery.data,
+        refreshPayment,
+    ]);
 
     if (!Number.isSafeInteger(id) || id < 1)
         return (
@@ -187,33 +204,61 @@ export default function PaymentPage() {
                         {order.paymentMethod === "qr" && !terminal && (
                             <>
                                 <Typography color="text.secondary">
-                                    Mở trang payOS để quét mã QR bằng ứng dụng
-                                    ngân hàng. Trạng thái sẽ tự cập nhật sau khi
-                                    hệ thống xác nhận giao dịch.
+                                    Quét mã QR bằng ứng dụng ngân hàng để thanh
+                                    toán. Trạng thái sẽ cập nhật sau khi hệ
+                                    thống xác nhận.
                                 </Typography>
-                                {payment?.checkoutUrl && !expired ? (
-                                    <Button
-                                        component="a"
-                                        href={payment.checkoutUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        variant="contained"
+                                {payment?.qrCode && !expired ? (
+                                    <Box
+                                        sx={{
+                                            bgcolor: "white",
+                                            p: 2,
+                                            maxWidth: "100%",
+                                        }}
                                     >
-                                        Mở trang thanh toán payOS
-                                    </Button>
+                                        <QRCodeSVG
+                                            value={payment.qrCode}
+                                            size={256}
+                                            marginSize={4}
+                                            role="img"
+                                            aria-label="Mã QR thanh toán payOS"
+                                            style={{
+                                                maxWidth: "100%",
+                                                height: "auto",
+                                            }}
+                                        />
+                                    </Box>
+                                ) : !expired && payment?.checkoutUrl ? (
+                                    <Alert severity="warning">
+                                        Chưa thể lấy lại mã QR của phiên thanh
+                                        toán này. Vui lòng liên hệ cửa hàng và
+                                        cung cấp mã đơn.
+                                    </Alert>
                                 ) : (
-                                    !expired && (
-                                        <Button
-                                            variant="contained"
-                                            disabled={action.isPending}
-                                            onClick={() =>
-                                                action.mutate("create")
-                                            }
-                                        >
-                                            {status === "creating"
-                                                ? "Kiểm tra link đang tạo"
-                                                : "Tạo link thanh toán payOS"}
-                                        </Button>
+                                    !expired &&
+                                    !paymentQuery.isPending && (
+                                        <>
+                                            {initialError &&
+                                                !action.isSuccess && (
+                                                    <Alert severity="warning">
+                                                        {initialError}
+                                                    </Alert>
+                                                )}
+                                            <Button
+                                                variant="contained"
+                                                disabled={
+                                                    action.isPending ||
+                                                    status === "creating"
+                                                }
+                                                onClick={() =>
+                                                    action.mutate("create")
+                                                }
+                                            >
+                                                {status === "creating"
+                                                    ? "Đang tạo mã QR"
+                                                    : "Thử lại tạo mã QR"}
+                                            </Button>
+                                        </>
                                     )
                                 )}
                                 {expired && (
@@ -224,6 +269,69 @@ export default function PaymentPage() {
                                         thanh toán.
                                     </Alert>
                                 )}
+                                {!expired &&
+                                    payment?.accountNumber &&
+                                    payment.accountName &&
+                                    payment.transferContent && (
+                                        <Stack
+                                            spacing={1.5}
+                                            sx={{ overflowWrap: "anywhere" }}
+                                        >
+                                            <Typography
+                                                variant="h3"
+                                                component="h2"
+                                            >
+                                                Thông tin chuyển khoản
+                                            </Typography>
+                                            {[
+                                                [
+                                                    "Số tài khoản",
+                                                    payment.accountNumber,
+                                                ],
+                                                [
+                                                    "Chủ tài khoản",
+                                                    payment.accountName,
+                                                ],
+                                                [
+                                                    "Mã ngân hàng (BIN)",
+                                                    payment.bankBin,
+                                                ],
+                                                [
+                                                    "Số tiền",
+                                                    money(payment.amount),
+                                                ],
+                                                [
+                                                    "Nội dung chuyển khoản",
+                                                    payment.transferContent,
+                                                ],
+                                            ]
+                                                .filter(([, value]) => value)
+                                                .map(([label, value]) => (
+                                                    <Box key={label}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            color="text.secondary"
+                                                        >
+                                                            {label}
+                                                        </Typography>
+                                                        <Typography
+                                                            fontWeight={600}
+                                                            sx={{
+                                                                userSelect:
+                                                                    "all",
+                                                            }}
+                                                        >
+                                                            {value}
+                                                        </Typography>
+                                                    </Box>
+                                                ))}
+                                            <Alert severity="info">
+                                                Chuyển đúng số tiền và giữ
+                                                nguyên nội dung chuyển khoản để
+                                                hệ thống xác nhận đơn hàng.
+                                            </Alert>
+                                        </Stack>
+                                    )}
                             </>
                         )}
                         {status === "review" && (
