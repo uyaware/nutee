@@ -71,6 +71,8 @@ function summary(item: ApiProduct): ProductSummary {
         brandName: item.brands[0]?.name ?? "",
         sku: variant?.sku ?? "",
         price: item.price,
+        originalPrice: variant?.originalPrice ?? item.price,
+        promotionCode: variant?.promotionCode ?? null,
         stock: item.stock,
         status: "published",
         kind:

@@ -7,6 +7,8 @@ export interface CartItem {
     name: string;
     imageUrl: string;
     price: number | null;
+    originalPrice?: number | null;
+    promotionCode?: string | null;
     quantity: number;
     stock: number;
     status: "available" | "hidden" | "out-of-stock" | "insufficient-stock";

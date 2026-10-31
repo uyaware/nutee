@@ -254,6 +254,9 @@ export default function ProductDetailPage() {
     const product = {
         ...detail,
         price: variant?.price ?? detail.price,
+        originalPrice:
+            variant?.originalPrice ?? variant?.price ?? detail.originalPrice,
+        promotionCode: variant?.promotionCode ?? null,
         stock: variant?.quantity ?? detail.stock,
         sku: variant?.sku ?? detail.sku,
         specifications: variant?.specifications ?? detail.specifications,
@@ -434,6 +437,29 @@ export default function ProductDetailPage() {
                             >
                                 {money(product.price)}
                             </Typography>
+                            {product.originalPrice !== undefined &&
+                                product.originalPrice > product.price && (
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        alignItems="center"
+                                    >
+                                        <Typography
+                                            sx={{
+                                                textDecoration: "line-through",
+                                            }}
+                                            color="text.secondary"
+                                        >
+                                            {money(product.originalPrice)}
+                                        </Typography>
+                                        <Chip
+                                            size="small"
+                                            label={`Promotion ${product.promotionCode}`}
+                                            color="success"
+                                            variant="outlined"
+                                        />
+                                    </Stack>
+                                )}
                             <Stack
                                 direction="row"
                                 gap={0.75}

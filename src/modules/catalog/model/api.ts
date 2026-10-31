@@ -21,6 +21,8 @@ export interface ApiVariant {
     quantity: number;
     imageId: number | null;
     specifications: ApiSpecification[];
+    originalPrice?: number;
+    promotionCode?: string | null;
 }
 
 export interface ApiProduct {

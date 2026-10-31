@@ -3,6 +3,8 @@ export interface ProductVariant {
     id: number;
     sku: string;
     price: number;
+    originalPrice?: number;
+    promotionCode?: string | null;
     quantity: number;
     imageId: number | null;
     specifications: ProductSummary["specifications"];

@@ -1,25 +1,13 @@
 import type { ApiClient } from "@/shared/api/apiClient";
 import { ServiceError } from "@/shared/lib/errors";
-import type { ApiCart } from "@/modules/cart/model/api";
+import { mapApiCartItem, type ApiCart } from "@/modules/cart/model/api";
 import type { CartService } from "@/modules/cart/model/contracts";
 import { MAX_CART_QUANTITY, type Cart } from "@/modules/cart/model/types";
 
 function cartResponse(data: ApiCart): Cart {
     return {
         ...data,
-        items: data.items.map(({ specifications, ...item }) => ({
-            ...item,
-            variantId: String(item.variantId),
-            productId: String(item.productId),
-            imageUrl: item.imageUrl ?? "",
-            configuration:
-                specifications.find((spec) => spec.name === "configuration")
-                    ?.value ??
-                specifications
-                    .filter((spec) => spec.name !== "kind")
-                    .map((spec) => spec.value)
-                    .join(" / "),
-        })),
+        items: data.items.map(mapApiCartItem),
     };
 }
 
