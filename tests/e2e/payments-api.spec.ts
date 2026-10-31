@@ -17,6 +17,7 @@ async function setup(page: Page) {
         created: false,
         rejectOrder: true,
         rejectRefresh: true,
+        refreshRequests: 0,
         requests: [] as Record<string, unknown>[],
     };
     const item = {
@@ -176,6 +177,7 @@ async function setup(page: Page) {
             return route.fulfill({ json: payment() });
         }
         if (path === "/orders/42/payment/refresh") {
+            state.refreshRequests++;
             if (state.rejectRefresh) {
                 state.rejectRefresh = false;
                 return route.fulfill({
@@ -318,4 +320,26 @@ test("COD places an order with the configured fee while payOS is disabled", asyn
         paymentMethod: "cod",
     });
     expect(state.created).toBe(false);
+});
+
+test("returning from payOS verifies once with the server and never trusts a forged paid status", async ({
+    page,
+}) => {
+    const state = await setup(page);
+    state.created = true;
+    await page.goto(
+        "/orders/42/payment?code=00&id=test-link&orderCode=123&status=PAID",
+    );
+    await expect(
+        page.getByRole("alert").filter({ hasText: "Chưa thể kiểm tra thanh toán" }),
+    ).toBeVisible();
+    expect(state.refreshRequests).toBe(1);
+    await expect(
+        page.getByRole("heading", { name: "Thanh toán thành công", exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Kiểm tra thanh toán với payOS" }).click();
+    await expect(
+        page.getByRole("heading", { name: "Thanh toán thành công", exact: true }),
+    ).toBeVisible();
+    expect(state.refreshRequests).toBe(2);
 });

@@ -1,4 +1,4 @@
-﻿import {
+import {
     Alert,
     Box,
     Button,
@@ -10,8 +10,8 @@
 } from "@mui/material";
 import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
 import TimerOutlined from "@mui/icons-material/TimerOutlined";
-import { Link, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { services } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
@@ -33,6 +33,9 @@ export default function PaymentPage() {
         return () => window.clearInterval(timer);
     }, []);
     const id = Number(useParams().id);
+    const [params] = useSearchParams();
+    const returnedFromPayOS = params.has("orderCode") && params.has("id");
+    const checkedReturn = useRef<number | null>(null);
     const session = useSession("customer");
     const orderQuery = useOrder(id);
     const cache = useQueryClient();
@@ -66,6 +69,21 @@ export default function PaymentPage() {
             });
         },
     });
+    const refreshPayment = action.mutate;
+    useEffect(() => {
+        if (
+            returnedFromPayOS &&
+            orderQuery.data?.paymentMethod === "qr" &&
+            orderQuery.data.paymentStatus !== "paid" &&
+            paymentQuery.data &&
+            checkedReturn.current !== id
+        ) {
+            // Redirect parameters only trigger verification; the server determines payment status.
+            checkedReturn.current = id;
+            refreshPayment("refresh");
+        }
+    }, [returnedFromPayOS, id, orderQuery.data, paymentQuery.data, refreshPayment]);
+
     if (!Number.isSafeInteger(id) || id < 1)
         return (
             <EmptyState
