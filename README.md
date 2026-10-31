@@ -41,7 +41,8 @@ Restart backend và Vite sau khi đổi cấu hình. Xem [hướng dẫn Google 
 
 Đăng ký chỉ cần email và mật khẩu; backend tạo CUSTOMER và cấp cookie đăng nhập.
 Mật khẩu từ 12 ký tự, tối đa 72 byte UTF-8. Sau đăng ký, chuyển tới hồ sơ hoặc
-trang đích hợp lệ đã chọn. Hồ sơ chỉ hiển thị dữ liệu `/auth/me`; chưa có API cập nhật hồ sơ.
+trang đích hợp lệ đã chọn. Hồ sơ đọc `/account/profile` và cập nhật tên, số điện thoại qua
+PUT cùng đường dẫn; email dùng đăng nhập được giữ chỉ đọc.
 
 Trang chủ, danh sách và chi tiết sản phẩm đã nối API catalog thật, giữ giao diện hiện có.
 Trang chi tiết chọn `defaultVariantId` từ backend; đổi variant sẽ đổi giá, tồn kho,
@@ -67,14 +68,29 @@ Giá, ảnh, SKU và tồn kho lấy từ backend. Các dòng hết hàng/ngừn
 để kiểm tra và xóa. Khách chưa đăng nhập được chuyển tới login với variant đã chọn
 trong URL quay lại; không có guest cart trong browser storage.
 Tài liệu: [Cart API](https://github.com/uyaware/nutee_be/blob/main/docs/cart-api.md).
-Checkout chỉ hiển thị các variant đã chọn; chức năng đặt hàng đang chờ API,
-không tạo đơn hoặc báo thành công giả.
+Checkout chỉ dùng các variant đã chọn, tạo đơn qua API với khóa idempotency và
+chuyển tới xác nhận COD hoặc trang thanh toán payOS.
 
-Các màn hình đơn hàng, địa chỉ, thanh toán và nghiệp vụ quản trị
+Sổ địa chỉ đã nối API thật: thêm/sửa tỉnh/thành, phường/xã,
+số nhà/tên đường; chọn mặc định và xóa sau xác nhận. Địa chỉ đầu tiên tự làm mặc định;
+xóa mặc định chọn địa chỉ còn lại. Checkout đọc sổ địa chỉ, ưu tiên mặc định và gửi `addressId`;
+tên/số điện thoại lấy từ hồ sơ user. Lỗi lưu giữ lại nội dung form, không báo thành công giả.
+Trang `/account/setup` có thể lưu hồ sơ và địa chỉ tùy chọn trong cùng request nguyên tử.
+Chi tiết: [Account API](https://github.com/uyaware/nutee_be/blob/main/docs/account-api.md)
+(workspace: `backend/docs/account-api.md`).
+
+Promotion đã áp dụng tự động trên catalog, biến thể, giỏ hàng và bộ lọc giá. Giá gốc được
+hiển thị khi có giảm. Voucher nhập/chọn tại checkout; backend tính promotion trước rồi
+voucher trên tiền hàng còn lại, kiểm tra điều kiện và hạn mức. Xem trước không trừ lượt.
+Checkout báo giá qua `/checkout/quote`, giữ form và ẩn tổng cũ khi lỗi; phí giao đọc từ `/checkout/config`.
+Quản trị tại `/management/promotions` và `/management/vouchers`: CRUD, bật/tắt, thời hạn,
+chọn sản phẩm hoặc cấp voucher cho khách. Các phần này dùng API thật và chỉ cho ADMIN.
+Seed: `backend/scripts/seed-discounts.ps1`; [tài liệu ưu đãi](https://github.com/uyaware/nutee_be/blob/main/docs/discounts-api.md).
+
+Các màn hình quản trị đơn hàng, giao hàng, hoàn tiền và các nghiệp vụ quản trị còn lại
 giữ nguyên giao diện với dữ liệu rỗng vì backend chưa có API nghiệp vụ tương ứng. Các model rỗng
 chỉ phục vụ hiển thị, không phải API giả hay fallback khi API lỗi. Thao tác lưu chưa hỗ trợ
-phải báo lỗi, không ghi vào trình duyệt hoặc giả lập thành công. Hồ sơ đọc từ `/auth/me`;
-form cập nhật vẫn được giữ nhưng chờ API cập nhật tương ứng. Luồng khôi phục mật khẩu gọi API thật.
+phải báo lỗi, không ghi vào trình duyệt hoặc giả lập thành công. Luồng khôi phục mật khẩu gọi API thật.
 Để thử gửi email, cấu hình SMTP rồi bật `PASSWORD_RESET_ENABLED=true` ở backend.
 
 ## Xác thực và HTTP client
@@ -93,21 +109,23 @@ await api.request("/auth/logout", { method: "POST", authenticated: false });
 
 API lỗi hiển thị trên giao diện, không chuyển sang local. Google credential chỉ dùng
 để đổi lấy phiên NUTEE. Email đã đăng ký cần đăng nhập bằng mật khẩu trước khi liên kết
-qua `/api/v1/auth/social/google/link`; hiện chưa có UI liên kết.
+qua `/api/v1/auth/social/google/link`. UI tại **Tài khoản → Bảo mật** hiển thị email cần
+khớp, trạng thái liên kết và nút Google. Mỗi lần thử dùng nonce mới; lỗi liên kết không
+tạo phiên đăng nhập khác hoặc tự gộp tài khoản.
 
 ## Cấu trúc
 
 ```text
 src/
   app/                  # Router, layout và khởi tạo API client
-    services.ts         # Client, auth/profile/catalog API và model rỗng cho UI chưa có API
+    services.ts         # Khởi tạo client và auth/profile/catalog/cart API
   modules/
     auth/               # API, form, Google SDK, route guard, session hook
-    account/            # Giữ giao diện tài khoản, hồ sơ đọc từ /auth/me
+    account/            # Hồ sơ, sổ địa chỉ qua API và liên kết Google
     catalog/            # API cho trang chủ, tìm kiếm, bộ lọc, chi tiết và variants
     cart/               # API giỏ theo variant, số lượng, chọn dòng, xóa và trạng thái tồn kho
-    checkout/           # Giữ giao diện checkout/thanh toán
-    orders/             # Giữ giao diện đơn hàng, dữ liệu rỗng
+    checkout/           # Báo giá, đặt hàng thật, phí giao và thanh toán payOS
+    orders/             # Lịch sử/chi tiết đơn chính chủ và API thanh toán
     after-sales/        # Giữ giao diện bảo hành/đổi trả, dữ liệu rỗng
     management/         # Giữ giao diện quản trị, dữ liệu rỗng
   shared/
@@ -134,3 +152,10 @@ Test dùng HTTP/Google SDK giả lập. Test Google cũng chạy khi truy cập
 localStorage/sessionStorage bị chặn. Google thật cần tài khoản và cấu hình Console.
 Production cần HTTPS, `AUTH_SECURE_COOKIE=true`, SPA fallback và reverse proxy
 `/api/v1` tới backend; origin API riêng cần cấu hình CORS chính xác.
+
+Thanh toán dùng `PaymentGateway`/`PayOSAdapter` ở backend; frontend chỉ nhận hosted link và
+trạng thái do backend xác nhận. Phí giao mặc định 25.000đ, cấu hình backend bằng
+`CHECKOUT_SHIPPING_FEE` hoặc `app.payment.shipping-fee`. Không đưa API/checksum key vào Vite.
+Hướng dẫn kênh merchant và webhook: `backend/docs/payments-api.md` trong workspace.
+QR chỉ khả dụng khi backend bật và cấu hình payOS; COD vẫn hoạt động. Query `payment=paid`
+hay `status=paid` không đánh dấu thanh toán. Retry sau lỗi mạng giữ nguyên khóa/nội dung đơn.

@@ -1,4 +1,13 @@
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    createOrderSchema,
+    type CreateOrder,
+} from "@/modules/orders/model/api";
+import { errorMessage, ServiceError } from "@/shared/lib/errors";
+import { money } from "@/shared/lib/format";
+import { services } from "@/app/services";
+import { VoucherPicker } from "@/modules/checkout/components/VoucherPicker";
 import {
     Alert,
     Box,
@@ -22,46 +31,126 @@ import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import LocalShippingOutlined from "@mui/icons-material/LocalShippingOutlined";
 import PaymentsOutlined from "@mui/icons-material/PaymentsOutlined";
 import QrCodeRounded from "@mui/icons-material/QrCodeRounded";
-import { Link, useSearchParams } from "react-router-dom";
-import {
-    checkoutAddresses,
-    checkoutItems,
-    checkoutQuote,
-} from "@/modules/checkout/fixtures/checkout";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { checkoutItems } from "@/modules/checkout/fixtures/checkout";
 import {
     CheckoutSummary,
     type CheckoutProduct,
 } from "@/modules/checkout/components/CheckoutSummary";
 import { useCart } from "@/modules/cart/hooks/useCart";
+import { useProfile } from "@/modules/account/hooks/useProfile";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
 import { tokens } from "@/shared/theme/tokens";
 
 export default function CheckoutPage() {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [submitted, setSubmitted] = useState<CreateOrder | null>(null);
+    const [validation, setValidation] = useState("");
+    const config = useQuery({
+        queryKey: ["checkout-config"],
+        queryFn: services.orders.config,
+        retry: false,
+    });
+    const placeOrder = useMutation({
+        mutationFn: services.orders.create,
+        onError: (error) => {
+            if (
+                error instanceof ServiceError &&
+                ["VALIDATION", "CONFLICT", "NOT_FOUND"].includes(error.code)
+            ) {
+                setSubmitted(null);
+                setStep(0);
+                void queryClient.invalidateQueries({ queryKey: ["customer"] });
+                void config.refetch();
+            }
+        },
+        onSuccess: (order) => {
+            navigate(
+                `/orders/${order.id}/${order.paymentMethod === "qr" && order.paymentStatus !== "paid" ? "payment" : "success"}`,
+                { replace: true },
+            );
+            void queryClient.invalidateQueries({ queryKey: ["customer"] });
+        },
+    });
     const [params] = useSearchParams();
     const cart = useCart();
+    const profile = useProfile();
     const [step, setStep] = useState(0);
-    const [addressId, setAddressId] = useState("home");
-    const [address, setAddress] = useState(
-        checkoutAddresses[0] ?? {
-            id: "draft",
-            label: "",
-            recipient: "",
-            phone: "",
-            line: "",
-        },
-    );
+    const [selection, setSelection] = useState<{
+        ownerId: string;
+        id: string;
+    } | null>(null);
+    const savedAddresses = profile.data?.addresses ?? [];
+    const selectedAddress =
+        savedAddresses.find(
+            (item) =>
+                selection?.ownerId === profile.data?.user.id &&
+                item.id === selection?.id,
+        ) ??
+        savedAddresses.find((item) => item.isDefault) ??
+        savedAddresses[0];
+    const addressId = selectedAddress?.id ?? "";
+    const address = {
+        recipient: profile.data?.user.name ?? "",
+        phone: profile.data?.user.phone ?? "",
+        line: selectedAddress?.line ?? "",
+    };
     const [method, setMethod] = useState("cod");
     const [note, setNote] = useState("");
-    const [promotionOpen, setPromotionOpen] = useState(false);
+    const [voucherCode, setVoucherCode] = useState("");
     const fromCart = params.has("items");
-    if (fromCart && cart.isPending) return <LoadingState />;
-    if (fromCart && cart.isError)
+    const variantIds = (params.get("items") ?? "")
+        .split(",")
+        .filter(Boolean)
+        .map(Number);
+    const quoteQuery = useQuery({
+        queryKey: [
+            "customer",
+            profile.data?.user.id,
+            "checkout-quote",
+            variantIds,
+            voucherCode,
+            cart.dataUpdatedAt,
+        ],
+        queryFn: () => services.checkout.quote(variantIds, voucherCode),
+        enabled:
+            fromCart &&
+            !submitted &&
+            !!profile.data &&
+            !!variantIds.length &&
+            !cart.isPending &&
+            !cart.isError,
+        retry: false,
+        refetchInterval: 30000,
+    });
+    const orderRequest = () =>
+        createOrderSchema.safeParse({
+            idempotencyKey: submitted?.idempotencyKey ?? crypto.randomUUID(),
+            variantIds,
+            voucherCode,
+            expectedTotal:
+                (quoteQuery.data?.total ?? 0) + (config.data?.shippingFee ?? 0),
+            addressId: Number(addressId),
+            note,
+            paymentMethod: method,
+        });
+    if (profile.isPending) return <LoadingState />;
+    if (profile.isError)
+        return (
+            <ErrorState
+                error={profile.error}
+                retry={() => void profile.refetch()}
+            />
+        );
+    if (fromCart && cart.isPending && !submitted) return <LoadingState />;
+    if (fromCart && cart.isError && !submitted)
         return (
             <ErrorState error={cart.error} retry={() => void cart.refetch()} />
         );
     const selectedIds = new Set((params.get("items") ?? "").split(","));
     const items: CheckoutProduct[] = fromCart
-        ? (cart.data?.items ?? []).flatMap((item) =>
+        ? (quoteQuery.data?.items ?? cart.data?.items ?? []).flatMap((item) =>
               selectedIds.has(item.variantId) &&
               item.status === "available" &&
               item.price !== null
@@ -69,23 +158,7 @@ export default function CheckoutPage() {
                   : [],
           )
         : checkoutItems;
-    const subtotal = items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
-    );
-    const discount = fromCart
-        ? subtotal >= 1000000
-            ? checkoutQuote.discount
-            : 0
-        : checkoutQuote.discount;
-    const shipping = items.length ? checkoutQuote.shipping : 0;
-    const quote = {
-        subtotal,
-        discount,
-        shipping,
-        total: subtotal - discount + shipping,
-    };
-    if (!items.length)
+    if (!items.length && !submitted)
         return (
             <Stack spacing={2}>
                 <Alert severity="info">
@@ -118,10 +191,20 @@ export default function CheckoutPage() {
                     Chỉ vài bước nữa, công nghệ mới sẽ đến với bạn.
                 </Typography>
             </Box>
-            {fromCart && (
-                <Alert severity="info">
-                    Đặt hàng trực tuyến hiện chưa khả dụng. Giỏ hàng của bạn vẫn
-                    được giữ nguyên.
+            {config.isError && (
+                <ErrorState
+                    error={config.error}
+                    retry={() => void config.refetch()}
+                />
+            )}
+            {validation && <Alert severity="warning">{validation}</Alert>}
+            {placeOrder.isError && (
+                <Alert severity="error">
+                    {errorMessage(placeOrder.error)}{" "}
+                    {submitted
+                        ? "Nội dung yêu cầu được giữ để bạn có thể thử lại an toàn."
+                        : "Kiểm tra thông tin và xác nhận lại đơn hàng."}{" "}
+                    <Link to="/account/orders">Xem lịch sử đơn hàng</Link>
                 </Alert>
             )}
             <Stepper activeStep={step} alternativeLabel sx={{ py: 1 }}>
@@ -151,7 +234,24 @@ export default function CheckoutPage() {
                             spacing={3}
                             onSubmit={(event) => {
                                 event.preventDefault();
+                                if (submitted) {
+                                    placeOrder.mutate(submitted);
+                                    return;
+                                }
+                                const parsed = orderRequest();
+                                if (!parsed.success) {
+                                    setValidation(
+                                        parsed.error.issues[0]?.message ??
+                                            "Kiểm tra thông tin giao hàng.",
+                                    );
+                                    return;
+                                }
+                                setValidation("");
                                 if (step === 0) setStep(1);
+                                else {
+                                    setSubmitted(parsed.data);
+                                    placeOrder.mutate(parsed.data);
+                                }
                             }}
                         >
                             {step === 0 && (
@@ -174,20 +274,14 @@ export default function CheckoutPage() {
                                             aria-labelledby="delivery-address-label"
                                             value={addressId}
                                             onChange={(event) => {
-                                                const selected =
-                                                    checkoutAddresses.find(
-                                                        (item) =>
-                                                            item.id ===
-                                                            event.target.value,
-                                                    );
-                                                setAddressId(
-                                                    event.target.value,
-                                                );
-                                                if (selected)
-                                                    setAddress(selected);
+                                                setSelection({
+                                                    ownerId:
+                                                        profile.data.user.id,
+                                                    id: event.target.value,
+                                                });
                                             }}
                                         >
-                                            {checkoutAddresses.map((item) => (
+                                            {savedAddresses.map((item) => (
                                                 <Paper
                                                     key={item.id}
                                                     variant="outlined"
@@ -223,11 +317,10 @@ export default function CheckoutPage() {
                                                                         }
                                                                     >
                                                                         {
-                                                                            item.label
+                                                                            item.recipient
                                                                         }
                                                                     </Typography>
-                                                                    {item.id ===
-                                                                        "home" && (
+                                                                    {item.isDefault && (
                                                                         <Chip
                                                                             size="small"
                                                                             label="Mặc định"
@@ -256,59 +349,32 @@ export default function CheckoutPage() {
                                             ))}
                                         </RadioGroup>
                                     </FormControl>
-                                    <Divider />
-                                    <Box
-                                        sx={{
-                                            display: "grid",
-                                            gridTemplateColumns: {
-                                                xs: "1fr",
-                                                sm: "1fr 1fr",
-                                            },
-                                            gap: 2,
-                                        }}
+                                    <Button
+                                        component={Link}
+                                        to="/account/addresses"
+                                        sx={{ alignSelf: "flex-start" }}
                                     >
-                                        <TextField
-                                            label="Họ tên người nhận"
-                                            value={address.recipient}
-                                            onChange={(event) =>
-                                                setAddress({
-                                                    ...address,
-                                                    recipient:
-                                                        event.target.value,
-                                                })
-                                            }
-                                            autoComplete="shipping name"
-                                        />
-                                        <TextField
-                                            label="Số điện thoại"
-                                            value={address.phone}
-                                            onChange={(event) =>
-                                                setAddress({
-                                                    ...address,
-                                                    phone: event.target.value,
-                                                })
-                                            }
-                                            autoComplete="shipping tel"
-                                            type="tel"
-                                        />
-                                    </Box>
-                                    <TextField
-                                        label="Địa chỉ giao hàng"
-                                        value={address.line}
-                                        onChange={(event) =>
-                                            setAddress({
-                                                ...address,
-                                                line: event.target.value,
-                                            })
-                                        }
-                                        autoComplete="shipping street-address"
-                                        multiline
-                                        minRows={3}
-                                        maxRows={6}
-                                        slotProps={{
-                                            inputLabel: { shrink: true },
-                                        }}
-                                    />
+                                        {savedAddresses.length
+                                            ? "Quản lý sổ địa chỉ"
+                                            : "Thêm địa chỉ vào sổ địa chỉ"}
+                                    </Button>
+                                    <Divider />
+                                    <Typography>
+                                        {address.recipient} · {address.phone}
+                                    </Typography>
+                                    <Typography color="text.secondary">
+                                        {address.line}
+                                    </Typography>
+                                    {!profile.data.user.profileCompleted && (
+                                        <Alert severity="warning">
+                                            Cập nhật họ tên và số điện thoại
+                                            trong{" "}
+                                            <Link to="/account/profile">
+                                                hồ sơ
+                                            </Link>{" "}
+                                            trước khi đặt hàng.
+                                        </Alert>
+                                    )}
                                     <TextField
                                         label="Ghi chú giao hàng (không bắt buộc)"
                                         value={note}
@@ -326,8 +392,12 @@ export default function CheckoutPage() {
                                         severity="info"
                                         icon={<LocalShippingOutlined />}
                                     >
-                                        Phí và thời gian giao hàng chưa được xác
-                                        nhận.
+                                        Phí giao hàng:{" "}
+                                        {config.data
+                                            ? money(config.data.shippingFee)
+                                            : "Đang tải…"}
+                                        . Thời gian giao sẽ được xác nhận khi xử
+                                        lý đơn.
                                     </Alert>
                                 </>
                             )}
@@ -384,6 +454,12 @@ export default function CheckoutPage() {
                                                     >
                                                         <FormControlLabel
                                                             value={value}
+                                                            disabled={
+                                                                value ===
+                                                                    "qr" &&
+                                                                !config.data
+                                                                    ?.payosEnabled
+                                                            }
                                                             control={<Radio />}
                                                             sx={{
                                                                 m: 0,
@@ -432,6 +508,12 @@ export default function CheckoutPage() {
                                             )}
                                         </RadioGroup>
                                     </FormControl>
+                                    {!config.data?.payosEnabled && (
+                                        <Alert severity="info">
+                                            Thanh toán payOS hiện chưa khả dụng.
+                                            Bạn có thể chọn COD.
+                                        </Alert>
+                                    )}
                                     <Paper
                                         variant="outlined"
                                         sx={{
@@ -439,48 +521,19 @@ export default function CheckoutPage() {
                                             bgcolor: "background.default",
                                         }}
                                     >
-                                        <Stack spacing={1.5}>
-                                            <Typography fontWeight={600}>
-                                                Ưu đãi dành cho đơn hàng
-                                            </Typography>
-                                            <Stack
-                                                direction="row"
-                                                spacing={1}
-                                                alignItems="center"
-                                            >
-                                                <Chip
-                                                    label="NUTEE100"
-                                                    color="primary"
-                                                    variant="outlined"
-                                                />
-                                                <Typography variant="body2">
-                                                    {discount
-                                                        ? "Đã áp dụng · Giảm 100.000 ₫"
-                                                        : "Áp dụng cho đơn từ 1.000.000 ₫"}
-                                                </Typography>
-                                            </Stack>
-                                            <Button
-                                                onClick={() =>
-                                                    setPromotionOpen(
-                                                        !promotionOpen,
-                                                    )
+                                        <VoucherPicker
+                                            ownerId={profile.data.user.id}
+                                            selected={voucherCode}
+                                            pending={quoteQuery.isFetching}
+                                            onApply={(code) => {
+                                                if (code === voucherCode)
+                                                    void quoteQuery.refetch();
+                                                else {
+                                                    setStep(0);
+                                                    setVoucherCode(code);
                                                 }
-                                                aria-expanded={promotionOpen}
-                                                sx={{ alignSelf: "flex-start" }}
-                                            >
-                                                Xem điều kiện ưu đãi
-                                            </Button>
-                                            {promotionOpen && (
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                >
-                                                    Giảm 100.000 ₫ cho đơn từ
-                                                    1.000.000 ₫. Tổng tiền bên
-                                                    cạnh đã bao gồm ưu đãi.
-                                                </Typography>
-                                            )}
-                                        </Stack>
+                                            }}
+                                        />
                                     </Paper>
                                 </>
                             )}
@@ -507,6 +560,7 @@ export default function CheckoutPage() {
                                         )}
                                         <Button
                                             onClick={() => setStep(0)}
+                                            disabled={!!submitted}
                                             sx={{ alignSelf: "flex-start" }}
                                         >
                                             Sửa thông tin giao hàng
@@ -524,6 +578,7 @@ export default function CheckoutPage() {
                                         </Typography>
                                         <Button
                                             onClick={() => setStep(0)}
+                                            disabled={!!submitted}
                                             sx={{ alignSelf: "flex-start" }}
                                         >
                                             Đổi phương thức thanh toán
@@ -540,20 +595,34 @@ export default function CheckoutPage() {
                                     <Button
                                         variant="outlined"
                                         onClick={() => setStep(step - 1)}
+                                        disabled={!!submitted}
                                     >
                                         Quay lại
                                     </Button>
                                 )}
                                 <Button
                                     type="submit"
-                                    disabled={step > 0}
+                                    disabled={
+                                        placeOrder.isPending ||
+                                        (!submitted &&
+                                            (!config.isSuccess ||
+                                                !selectedAddress ||
+                                                !profile.data.user
+                                                    .profileCompleted ||
+                                                !quoteQuery.isSuccess ||
+                                                quoteQuery.isFetching))
+                                    }
                                     variant="contained"
                                     size="large"
                                     sx={{ ml: { sm: "auto" } }}
                                 >
                                     {step === 0
                                         ? "Kiểm tra đơn hàng"
-                                        : "Đặt hàng"}
+                                        : placeOrder.isPending
+                                          ? "Đang đặt hàng…"
+                                          : submitted
+                                            ? "Thử lại đặt hàng"
+                                            : "Đặt hàng"}
                                 </Button>
                             </Stack>
                         </Stack>
@@ -565,7 +634,26 @@ export default function CheckoutPage() {
                         top: tokens.layout.storefrontHeaderHeight + 16,
                     }}
                 >
-                    <CheckoutSummary items={items} quote={quote} />
+                    {quoteQuery.isPending || quoteQuery.isFetching ? (
+                        <LoadingState />
+                    ) : quoteQuery.isError ? (
+                        <ErrorState
+                            error={quoteQuery.error}
+                            retry={() => void quoteQuery.refetch()}
+                        />
+                    ) : (
+                        <CheckoutSummary
+                            items={items}
+                            quote={{
+                                ...quoteQuery.data,
+                                shipping: config.data?.shippingFee ?? 0,
+                                shippingConfirmed: !!config.data,
+                                total:
+                                    quoteQuery.data.total +
+                                    (config.data?.shippingFee ?? 0),
+                            }}
+                        />
+                    )}
                 </Box>
             </Box>
         </Stack>

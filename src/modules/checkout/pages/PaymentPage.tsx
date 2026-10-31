@@ -1,226 +1,294 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Divider,
-  Paper,
-  Stack,
-  Typography,
+﻿import {
+    Alert,
+    Box,
+    Button,
+    Chip,
+    Divider,
+    Paper,
+    Stack,
+    Typography,
 } from "@mui/material";
-import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
 import TimerOutlined from "@mui/icons-material/TimerOutlined";
-import {
-  Link,
-  useLocation,
-  useParams,
-  useSearchParams,
-} from "react-router-dom";
-import {
-  paymentLabels,
-  findPrototypeOrder,
-} from "@/modules/orders/fixtures/orders";
+import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { services } from "@/app/services";
+import { useSession } from "@/modules/auth/hooks/useSession";
+import { useOrder } from "@/modules/orders/hooks/useOrder";
+import { paymentLabels } from "@/modules/orders/model/api";
 import { money } from "@/shared/lib/format";
-import { EmptyState } from "@/shared/components/Feedback";
+import { errorMessage } from "@/shared/lib/errors";
+import {
+    EmptyState,
+    ErrorState,
+    LoadingState,
+} from "@/shared/components/Feedback";
 import { OrderTotals } from "@/modules/checkout/components/CheckoutSummary";
 
 export default function PaymentPage() {
-  const { id } = useParams();
-  const location = useLocation();
-  const [params, setParams] = useSearchParams();
-  const order = findPrototypeOrder(id, location.state);
-  if (!order || order.userId !== "customer-1")
-    return (
-      <EmptyState
-        title="Không tìm thấy đơn hàng"
-        description="Chọn một đơn trong lịch sử để tiếp tục."
-      />
-    );
-  if (order.paymentMethod !== "qr")
-    return (
-      <Stack spacing={2}>
-        <Alert severity="info">
-          Đơn này thanh toán khi nhận hàng, không cần quét mã QR.
-        </Alert>
-        <Button
-          component={Link}
-          to={`/account/orders/${order.id}`}
-          state={location.state}
-        >
-          Xem đơn hàng
-        </Button>
-      </Stack>
-    );
-  const requestedStatus = params.get("status");
-  const status =
-    requestedStatus && Object.hasOwn(paymentLabels, requestedStatus)
-      ? (requestedStatus as keyof typeof paymentLabels)
-      : order.paymentStatus;
-  const pending = status === "pending";
-  return (
-    <Stack spacing={3} sx={{ maxWidth: 1000, mx: "auto" }}>
-      <Box>
-        <Typography variant="h1">Thanh toán đơn hàng</Typography>
-        <Typography color="text.secondary" sx={{ mt: 1 }}>
-          Mã đơn {order.id.toUpperCase()} · Chuyển khoản bằng mã QR
-        </Typography>
-      </Box>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "minmax(0, 1fr)",
-            md: "minmax(0, 1fr) 340px",
-          },
-          gap: 3,
-          alignItems: "start",
-        }}
-      >
-        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 4 } }}>
-          <Stack spacing={3} alignItems="center" textAlign="center">
-            <Chip
-              label={paymentLabels[status]}
-              color={
-                status === "paid" ? "success" : pending ? "warning" : "error"
-              }
-              variant="outlined"
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        const timer = window.setInterval(() => setNow(Date.now()), 1000);
+        return () => window.clearInterval(timer);
+    }, []);
+    const id = Number(useParams().id);
+    const session = useSession("customer");
+    const orderQuery = useOrder(id);
+    const cache = useQueryClient();
+    const key = ["customer", session.data?.id, "payments", id];
+    const paymentQuery = useQuery({
+        queryKey: key,
+        queryFn: () => services.orders.payment(id),
+        enabled: orderQuery.data?.paymentMethod === "qr",
+        retry: false,
+        refetchInterval: (query) =>
+            ["paid", "cancelled", "expired"].includes(
+                query.state.data?.status ?? "",
+            )
+                ? false
+                : 5000,
+    });
+    const action = useMutation({
+        mutationFn: async (kind: "create" | "refresh" | "cancel") => {
+            if (kind === "cancel") {
+                await services.orders.cancel(id);
+                return services.orders.payment(id);
+            }
+            return kind === "create"
+                ? services.orders.pay(id)
+                : services.orders.refresh(id);
+        },
+        onSuccess: (payment) => {
+            cache.setQueryData(key, payment);
+            void cache.invalidateQueries({
+                queryKey: ["customer", session.data?.id, "orders"],
+            });
+        },
+    });
+    if (!Number.isSafeInteger(id) || id < 1)
+        return (
+            <EmptyState
+                title="Không tìm thấy đơn hàng"
+                description="Kiểm tra mã đơn trong lịch sử mua hàng."
             />
-            {pending ? (
-              <>
-                <Typography variant="h2">Quét mã để thanh toán</Typography>
-                <Box
-                  sx={{
-                    p: 2,
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 2,
-                    bgcolor: "background.paper",
-                  }}
-                >
-                  <QrCode2Rounded
-                    role="img"
-                    aria-label="Mã QR thanh toán"
-                    sx={{
-                      fontSize: { xs: 180, sm: 224 },
-                      display: "block",
-                      color: "text.primary",
-                    }}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    NUTEE
-                  </Typography>
-                </Box>
-                <Typography variant="h2" component="p" color="primary.main">
-                  {money(order.total)}
+        );
+    if (orderQuery.isPending) return <LoadingState />;
+    if (orderQuery.isError)
+        return (
+            <ErrorState
+                error={orderQuery.error}
+                retry={() => void orderQuery.refetch()}
+            />
+        );
+    const order = orderQuery.data;
+    const payment = paymentQuery.data;
+    const observed = [order.paymentStatus, payment?.status];
+    const status = observed.includes("paid")
+        ? "paid"
+        : observed.includes("review")
+          ? "review"
+          : order.status === "cancelled"
+            ? payment?.status === "expired"
+                ? "expired"
+                : "cancelled"
+            : (payment?.status ?? order.paymentStatus);
+    const terminal =
+        ["paid", "cancelled", "expired", "review"].includes(status) ||
+        order.status === "cancelled";
+    const expired =
+        !!order.paymentExpiresAt && Date.parse(order.paymentExpiresAt) <= now;
+    return (
+        <Stack spacing={3} sx={{ maxWidth: 1000, mx: "auto" }}>
+            <Box>
+                <Typography variant="h1">Thanh toán đơn hàng</Typography>
+                <Typography color="text.secondary" sx={{ mt: 1 }}>
+                    Mã đơn {order.code} ·{" "}
+                    {order.paymentMethod === "qr"
+                        ? "Chuyển khoản qua payOS"
+                        : "Thanh toán khi nhận hàng"}
                 </Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <TimerOutlined color="warning" />
-                  <Typography>Thời hạn: 15 phút</Typography>
-                </Stack>
-                <Typography variant="body2" color="text.secondary">
-                  Nội dung chuyển khoản: NUTEE {order.id.toUpperCase()}
-                </Typography>
-              </>
-            ) : (
-              <>
-                {status === "paid" && (
-                  <CheckCircleOutlineRounded
-                    color="success"
-                    sx={{ fontSize: 80 }}
-                  />
-                )}
-                <Typography variant="h2">
-                  {status === "paid"
-                    ? "Thanh toán thành công"
-                    : status === "expired"
-                      ? "Mã thanh toán đã hết hạn"
-                      : "Thanh toán chưa thành công"}
-                </Typography>
-                <Typography color="text.secondary">
-                  {status === "paid"
-                    ? "Bạn có thể xem xác nhận và chi tiết đơn hàng."
-                    : "Vui lòng thử lại để tiếp tục thanh toán."}
-                </Typography>
-                <Button
-                  variant="contained"
-                  {...(status === "paid"
-                    ? {
-                        component: Link,
-                        to: `/orders/${order.id}/success?payment=paid`,
-                        state: location.state,
-                      }
-                    : {
-                        onClick: () =>
-                          setParams(
-                            { status: "pending" },
-                            { state: location.state },
-                          ),
-                      })}
-                >
-                  {status === "paid"
-                    ? "Xem xác nhận đơn hàng"
-                    : "Thử lại thanh toán"}
-                </Button>
-              </>
-            )}
-            <Divider flexItem />
-            <Typography variant="body2" color="text.secondary">
-              Trạng thái thanh toán
-            </Typography>
-            <Stack
-              direction="row"
-              gap={1}
-              useFlexGap
-              flexWrap="wrap"
-              justifyContent="center"
+            </Box>
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: {
+                        xs: "minmax(0, 1fr)",
+                        md: "minmax(0, 1fr) 340px",
+                    },
+                    gap: 3,
+                    alignItems: "start",
+                }}
             >
-              {(["pending", "paid", "failed", "expired"] as const).map(
-                (value) => (
-                  <Button
-                    key={value}
-                    variant={status === value ? "contained" : "outlined"}
-                    onClick={() =>
-                      setParams({ status: value }, { state: location.state })
-                    }
-                    aria-pressed={status === value}
-                  >
-                    {value === "pending"
-                      ? "Chờ thanh toán"
-                      : value === "paid"
-                        ? "Thành công"
-                        : value === "failed"
-                          ? "Thất bại"
-                          : "Hết hạn"}
-                  </Button>
-                ),
-              )}
-            </Stack>
-          </Stack>
-        </Paper>
-        <Paper variant="outlined" sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            <Typography variant="h3" component="h2">
-              Thông tin thanh toán
-            </Typography>
-            <Typography>
-              {order.items.length} sản phẩm · {order.address.recipient}
-            </Typography>
-            <OrderTotals quote={order} />
-            <Button
-              component={Link}
-              to={`/account/orders/${order.id}${status === "paid" ? "?payment=paid" : ""}`}
-              state={location.state}
-              variant="outlined"
-            >
-              Xem chi tiết đơn hàng
-            </Button>
-            <Button component={Link} to="/account/orders">
-              Về lịch sử đơn hàng
-            </Button>
-          </Stack>
-        </Paper>
-      </Box>
-    </Stack>
-  );
+                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 4 } }}>
+                    <Stack spacing={3} alignItems="center" textAlign="center">
+                        <Chip
+                            label={paymentLabels[status] ?? status}
+                            color={status === "paid" ? "success" : "warning"}
+                            variant="outlined"
+                        />
+                        {status === "paid" && (
+                            <CheckCircleOutlineRounded
+                                color="success"
+                                sx={{ fontSize: 80 }}
+                            />
+                        )}
+                        <Typography variant="h2">
+                            {status === "paid"
+                                ? "Thanh toán thành công"
+                                : order.paymentMethod === "cod"
+                                  ? "Thanh toán khi nhận hàng"
+                                  : status === "review"
+                                    ? "Thanh toán cần được kiểm tra"
+                                    : terminal
+                                      ? "Phiên thanh toán đã kết thúc"
+                                      : "Thanh toán an toàn qua payOS"}
+                        </Typography>
+                        <Typography
+                            variant="h2"
+                            component="p"
+                            color="primary.main"
+                        >
+                            {money(order.total)}
+                        </Typography>
+                        {order.paymentExpiresAt && (
+                            <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                            >
+                                <TimerOutlined color="warning" />
+                                <Typography>
+                                    Hạn thanh toán:{" "}
+                                    {new Date(
+                                        order.paymentExpiresAt,
+                                    ).toLocaleString("vi-VN")}
+                                </Typography>
+                            </Stack>
+                        )}
+                        {order.paymentMethod === "qr" && !terminal && (
+                            <>
+                                <Typography color="text.secondary">
+                                    Mở trang payOS để quét mã QR bằng ứng dụng
+                                    ngân hàng. Trạng thái sẽ tự cập nhật sau khi
+                                    hệ thống xác nhận giao dịch.
+                                </Typography>
+                                {payment?.checkoutUrl && !expired ? (
+                                    <Button
+                                        component="a"
+                                        href={payment.checkoutUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        variant="contained"
+                                    >
+                                        Mở trang thanh toán payOS
+                                    </Button>
+                                ) : (
+                                    !expired && (
+                                        <Button
+                                            variant="contained"
+                                            disabled={action.isPending}
+                                            onClick={() =>
+                                                action.mutate("create")
+                                            }
+                                        >
+                                            {status === "creating"
+                                                ? "Kiểm tra link đang tạo"
+                                                : "Tạo link thanh toán payOS"}
+                                        </Button>
+                                    )
+                                )}
+                                {expired && (
+                                    <Alert severity="warning">
+                                        Đã hết thời gian thanh toán. Kiểm tra
+                                        trạng thái hoặc hủy đơn để hệ thống xác
+                                        nhận kết quả và giải phóng sản phẩm chưa
+                                        thanh toán.
+                                    </Alert>
+                                )}
+                            </>
+                        )}
+                        {status === "review" && (
+                            <Alert severity="warning">
+                                Giao dịch cần đối soát. Vui lòng liên hệ cửa
+                                hàng và cung cấp mã đơn; không chuyển khoản
+                                thêm.
+                            </Alert>
+                        )}
+                        {paymentQuery.isError && (
+                            <ErrorState
+                                error={paymentQuery.error}
+                                retry={() => void paymentQuery.refetch()}
+                            />
+                        )}
+                        {action.isError && (
+                            <Alert severity="error">
+                                {errorMessage(action.error)}
+                            </Alert>
+                        )}
+                        {order.paymentMethod === "qr" &&
+                            status !== "paid" &&
+                            (payment?.checkoutUrl ||
+                                [
+                                    "creating",
+                                    "error",
+                                    "review",
+                                    "expired",
+                                ].includes(payment?.status ?? "")) && (
+                                <Button
+                                    disabled={action.isPending}
+                                    variant="outlined"
+                                    onClick={() => action.mutate("refresh")}
+                                >
+                                    Kiểm tra thanh toán với payOS
+                                </Button>
+                            )}
+                        {!terminal && order.paymentMethod === "qr" && (
+                            <Button
+                                color="error"
+                                disabled={action.isPending}
+                                onClick={() => action.mutate("cancel")}
+                            >
+                                Hủy đơn hàng
+                            </Button>
+                        )}
+                        {status === "paid" && (
+                            <Button
+                                component={Link}
+                                to={`/orders/${id}/success`}
+                                variant="contained"
+                            >
+                                Xem xác nhận đơn hàng
+                            </Button>
+                        )}
+                        <Divider flexItem />
+                        <Typography variant="body2" color="text.secondary">
+                            Trạng thái được xác nhận bởi hệ thống thanh toán.
+                        </Typography>
+                    </Stack>
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 3 }}>
+                    <Stack spacing={3}>
+                        <Typography variant="h3" component="h2">
+                            Thông tin thanh toán
+                        </Typography>
+                        <Typography>
+                            {order.items.length} sản phẩm · {order.recipient}
+                        </Typography>
+                        <OrderTotals quote={order} />
+                        <Button
+                            component={Link}
+                            to={`/account/orders/${id}`}
+                            variant="outlined"
+                        >
+                            Xem chi tiết đơn hàng
+                        </Button>
+                        <Button component={Link} to="/account/orders">
+                            Về lịch sử đơn hàng
+                        </Button>
+                    </Stack>
+                </Paper>
+            </Box>
+        </Stack>
+    );
 }

@@ -73,8 +73,57 @@ async function setup(
             return route.fulfill(
                 options.guest ? { status: 401, json: {} } : { json: user },
             );
+        if (path === "/account/profile")
+            return route.fulfill({
+                json: {
+                    user,
+                    phone: "0912345678",
+                    googleLinked: false,
+                    addresses: [
+                        {
+                            id: 101,
+                            provinceCity: "TP Hồ Chí Minh",
+                            wardCommune: "Phường 1",
+                            street: "12 Đường A",
+                            isDefault: true,
+                        },
+                    ],
+                },
+            });
         if (path.startsWith("/auth/"))
             return route.fulfill({ status: 401, json: {} });
+        if (path === "/vouchers")
+            return route.fulfill({
+                json: { content: [], page: 0, size: 20, totalElements: 0 },
+            });
+        if (path === "/checkout/config")
+            return route.fulfill({
+                json: { shippingFee: 25000, payosEnabled: false },
+            });
+        if (path === "/checkout/quote") {
+            const selected = new Set(
+                request.postDataJSON().variantIds as number[],
+            );
+            const items = state.items.filter((row) =>
+                selected.has(row.variantId),
+            );
+            const subtotal = items.reduce(
+                (sum, row) => sum + (row.lineTotal ?? 0),
+                0,
+            );
+            return route.fulfill({
+                json: {
+                    items,
+                    subtotal,
+                    promotionDiscount: 0,
+                    voucherDiscount: 0,
+                    discount: 0,
+                    total: subtotal,
+                    voucherCode: null,
+                    shippingConfirmed: false,
+                },
+            });
+        }
         if (path === "/cart" || path.startsWith("/cart/")) {
             if (options.guest) return route.fulfill({ status: 401, json: {} });
             if (method === "GET") {
@@ -184,20 +233,28 @@ test("adds the selected variants, updates the badge and quantities, selects chec
         .click();
     await expect(page).toHaveURL(/\/checkout\?items=12$/);
     await expect(
+        page.getByText("Cart user · 0912345678", { exact: true }).last(),
+    ).toBeVisible();
+    await expect(
+        page
+            .getByText("12 Đường A, Phường 1, TP Hồ Chí Minh", { exact: true })
+            .first(),
+    ).toBeVisible();
+    await expect(
         page.getByText("16 GB / 512 GB", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("8 GB / 256 GB", { exact: true })).toHaveCount(
         0,
     );
     await expect(
-        page.getByText(/Đặt hàng trực tuyến hiện chưa khả dụng/),
+        page.getByText(/Thanh toán payOS hiện chưa khả dụng/),
     ).toBeVisible();
     await page
         .getByRole("button", { name: "Kiểm tra đơn hàng", exact: true })
         .click();
     await expect(
         page.getByRole("button", { name: "Đặt hàng", exact: true }),
-    ).toBeDisabled();
+    ).toBeEnabled();
     await page
         .getByRole("link", { name: "Quay lại giỏ hàng", exact: true })
         .click();
