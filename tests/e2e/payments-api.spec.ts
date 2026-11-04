@@ -224,7 +224,7 @@ async function setup(page: Page) {
 
 test("checkout retries the identical order and displays the server-provided QR immediately", async ({
     page,
-}) => {
+}, testInfo) => {
     const state = await setup(page);
     await page.goto("/checkout?items=11");
     await expect(page.getByText("125.000 ₫", { exact: true })).toBeVisible();
@@ -257,26 +257,76 @@ test("checkout retries the identical order and displays the server-provided QR i
     expect(state.requests[0]).not.toHaveProperty("phone");
     expect(state.requests[0]).not.toHaveProperty("addressLine");
     await expect(
-        page.getByRole("img", { name: "Mã QR thanh toán payOS" }),
+        page.getByRole("img", { name: "Mã QR thanh toán VietQR" }),
     ).toBeVisible();
     expect(state.paymentCreates).toBe(0);
+    await expect(page.getByText("125.000 ₫", { exact: true })).toHaveCount(1);
+    await expect(page.getByText("Số tiền", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(1);
+    await expect(
+        page.getByRole("button", { name: "Kiểm tra thanh toán với payOS" }),
+    ).toHaveCount(0);
+    const title = page.getByRole("heading", {
+        name: "Thanh toán qua VietQR",
+        exact: true,
+    });
+    const status = page.getByText("Chờ thanh toán", { exact: true });
+    const titleBounds = await title.boundingBox();
+    const statusBounds = await status.boundingBox();
+    expect(statusBounds!.x).toBeGreaterThan(
+        titleBounds!.x + titleBounds!.width,
+    );
+    expect(
+        Math.abs(
+            statusBounds!.y +
+                statusBounds!.height / 2 -
+                titleBounds!.y -
+                titleBounds!.height / 2,
+        ),
+    ).toBeLessThan(5);
+    const qr = page.getByRole("img", { name: "Mã QR thanh toán VietQR" });
+    const details = page.getByRole("heading", {
+        name: "Thông tin thanh toán",
+        exact: true,
+    });
+    const qrBounds = await qr.boundingBox();
+    const detailsBounds = await details.boundingBox();
+    expect(detailsBounds!.x).toBeGreaterThan(qrBounds!.x + qrBounds!.width);
+    await page.screenshot({
+        path: testInfo.outputPath("payment-desktop.png"),
+        fullPage: true,
+    });
     await expect(page.getByText("113366668888", { exact: true })).toBeVisible();
     await expect(page.getByText("NUTEE TEST", { exact: true })).toBeVisible();
     await expect(page.getByText("NUTEE00042", { exact: true })).toBeVisible();
     await page.reload();
     await expect(
-        page.getByRole("img", { name: "Mã QR thanh toán payOS" }),
+        page.getByRole("img", { name: "Mã QR thanh toán VietQR" }),
     ).toBeVisible();
     await expect(
-        page.getByRole("link", { name: "Mở trang thanh toán payOS" }),
-    ).toHaveCount(0);
+        page.getByRole("link", { name: "Mở trang thanh toán", exact: true }),
+    ).toHaveAttribute("href", "https://pay.payos.vn/web/test-link");
     await expect(page.getByText("113366668888", { exact: true })).toBeVisible();
     await expect(
         page.getByText("Thanh toán thành công", { exact: true }),
     ).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(details).toBeVisible();
+    const mobileQr = await qr.boundingBox();
+    const mobileDetails = await details.boundingBox();
+    expect(mobileDetails!.y).toBeGreaterThan(mobileQr!.y + mobileQr!.height);
+    expect(
+        await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+    ).toBe(true);
+    await page.screenshot({
+        path: testInfo.outputPath("payment-mobile.png"),
+        fullPage: true,
+    });
 });
 
-test("browser query parameters cannot mark an order paid and provider errors remain visible until the server confirms", async ({
+test("browser refresh reads backend payment status without trusting query parameters", async ({
     page,
 }) => {
     const state = await setup(page);
@@ -292,28 +342,36 @@ test("browser query parameters cannot mark an order paid and provider errors rem
         .getByRole("link", { name: "Kiểm tra thanh toán", exact: true })
         .click();
     await expect(
-        page.getByRole("heading", { name: "Thanh toán an toàn qua payOS" }),
+        page.getByRole("heading", {
+            name: "Thanh toán qua VietQR",
+            exact: true,
+        }),
     ).toBeVisible();
-    await page
-        .getByRole("button", { name: "Kiểm tra thanh toán với payOS" })
-        .click();
+    await page.reload();
     await expect(
-        page
-            .getByRole("alert")
-            .filter({ hasText: "Chưa thể kiểm tra thanh toán" }),
+        page.getByRole("heading", {
+            name: "Thanh toán qua VietQR",
+            exact: true,
+        }),
     ).toBeVisible();
+    expect(state.refreshRequests).toBe(0);
     await expect(
-        page.getByText("Thanh toán thành công", { exact: true }),
+        page.getByRole("heading", {
+            name: "Thanh toán thành công",
+            exact: true,
+        }),
     ).toHaveCount(0);
-    await page
-        .getByRole("button", { name: "Kiểm tra thanh toán với payOS" })
-        .click();
+    state.paid = true;
+    await page.reload();
     await expect(
         page.getByRole("heading", {
             name: "Thanh toán thành công",
             exact: true,
         }),
     ).toBeVisible();
+    await expect(
+        page.getByRole("link", { name: "Mở trang thanh toán", exact: true }),
+    ).toHaveCount(0);
     await page
         .getByRole("link", { name: "Xem xác nhận đơn hàng", exact: true })
         .click();
@@ -376,9 +434,7 @@ test("returning from payOS verifies once with the server and never trusts a forg
             exact: true,
         }),
     ).toHaveCount(0);
-    await page
-        .getByRole("button", { name: "Kiểm tra thanh toán với payOS" })
-        .click();
+    await page.reload();
     await expect(
         page.getByRole("heading", {
             name: "Thanh toán thành công",
@@ -406,26 +462,48 @@ test("payment provider error keeps the created order and retries only the QR", a
     expect(state.requests).toHaveLength(1);
     await page.getByRole("button", { name: "Thử lại tạo mã QR" }).click();
     await expect(
-        page.getByRole("img", { name: "Mã QR thanh toán payOS" }),
+        page.getByRole("img", { name: "Mã QR thanh toán VietQR" }),
     ).toBeVisible();
     expect(state.requests).toHaveLength(1);
     expect(state.paymentCreates).toBe(1);
 });
 
-test("an older payment without a saved QR never redirects to the hosted page", async ({
+test("a payment without a saved QR opens the payment link only when requested", async ({
     page,
 }) => {
     const state = await setup(page);
     state.created = true;
     state.omitQr = true;
+    await page
+        .context()
+        .route("https://pay.payos.vn/**", (route) =>
+            route.fulfill({
+                contentType: "text/html",
+                body: "<h1>Trang thanh toán payOS</h1>",
+            }),
+        );
     await page.goto("/orders/42/payment");
     await expect(
-        page.getByRole("alert").filter({ hasText: "Chưa thể lấy lại mã QR" }),
+        page.getByRole("alert").filter({ hasText: "Chưa thể hiển thị mã QR" }),
     ).toBeVisible();
     await expect(
-        page.getByRole("img", { name: "Mã QR thanh toán payOS" }),
+        page.getByRole("img", { name: "Mã QR thanh toán VietQR" }),
     ).toHaveCount(0);
-    await expect(
-        page.getByRole("link", { name: "Mở trang thanh toán payOS" }),
-    ).toHaveCount(0);
+    await expect(page).toHaveURL(/\/orders\/42\/payment$/);
+    const paymentLink = page.getByRole("link", {
+        name: "Mở trang thanh toán",
+        exact: true,
+    });
+    await expect(paymentLink).toHaveAttribute(
+        "href",
+        "https://pay.payos.vn/web/test-link",
+    );
+    await expect(paymentLink).toHaveAttribute("rel", "noopener noreferrer");
+    const popupReady = page.waitForEvent("popup");
+    await paymentLink.click();
+    const popup = await popupReady;
+    await expect(popup).toHaveURL("https://pay.payos.vn/web/test-link");
+    await expect(page).toHaveURL(/\/orders\/42\/payment$/);
+    expect(state.paid).toBe(false);
+    await popup.close();
 });

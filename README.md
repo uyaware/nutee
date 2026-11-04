@@ -156,7 +156,10 @@ Production cần HTTPS, `AUTH_SECURE_COOKIE=true`, SPA fallback và reverse prox
 Thanh toán dùng `PaymentGateway`/`PayOSAdapter` ở backend; frontend hiển thị mã
 VietQR tại checkout cùng số tài khoản, chủ tài khoản, BIN ngân hàng, số tiền và nội dung
 chuyển khoản từ API. Nội dung cho QR mới là mã đơn; tải lại trang vẫn lấy dữ liệu
-đã lưu trên `orders`. Thông tin chuyển khoản ẩn khi đơn hết hạn hoặc đã kết thúc.
+đã lưu trên `orders`. QR nằm bên trái và thông tin chuyển khoản bên phải trên desktop,
+xếp dọc trên điện thoại; số tiền chỉ hiển thị một lần ở đầu khu thanh toán.
+Liên kết mở trang thanh toán dùng khi không quét được QR. Trạng thái tự cập nhật và
+được đọc lại khi tải lại trang. Thông tin chuyển khoản ẩn khi đơn hết hạn hoặc đã kết thúc.
 Phí giao mặc định 25.000đ, cấu hình backend bằng
 `CHECKOUT_SHIPPING_FEE` hoặc `app.payment.shipping-fee`. Không đưa API/checksum key vào Vite.
 Hướng dẫn kênh merchant và webhook: `backend/docs/payments-api.md` trong workspace.
