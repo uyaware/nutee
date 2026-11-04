@@ -9,3 +9,12 @@ test-results/
 .agents
 docs
 design-system
+
+# Local AI instructions and tools
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.agents/
+.codex/
+.claude/
+.cursor/
