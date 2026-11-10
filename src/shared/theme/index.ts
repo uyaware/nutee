@@ -199,6 +199,30 @@ const base: ThemeOptions = {
   },
 };
 export const storefrontTheme = createTheme(base);
+export const customerLightTheme = createTheme({ ...base, cssVariables: false });
+export const customerDarkTheme = createTheme(
+  { ...base, cssVariables: false },
+  {
+    palette: {
+      mode: "dark",
+      primary: { main: "#a8c3ff", light: "#c5d7ff", dark: "#719af0", contrastText: "#101b30" },
+      secondary: { main: "#c1cde0", contrastText: "#101b30" },
+      background: { default: "#0b0d12", paper: "#171d28" },
+      text: { primary: "#f2f4f8", secondary: "#c1cad9" },
+      divider: "#46556c",
+      success: { main: "#65dba8" },
+      warning: { main: "#ffd08a" },
+      error: { main: "#ff9a9a" },
+      action: { hover: "rgba(255,255,255,0.08)", selected: "rgba(168,195,255,0.16)" },
+    },
+    components: {
+      MuiPaper: { styleOverrides: { outlined: { borderColor: "#46556c" } } },
+      MuiCard: { styleOverrides: { root: { borderColor: "#46556c" } } },
+      MuiOutlinedInput: { styleOverrides: { root: { backgroundColor: "#1b2230" } } },
+      MuiTableCell: { styleOverrides: { head: { background: "#202a39" }, root: { borderColor: "#46556c" } } },
+    },
+  },
+);
 export const backofficeTheme = createTheme(base, {
   components: {
     MuiTableCell: { styleOverrides: { root: { padding: "14px 16px" } } },

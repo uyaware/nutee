@@ -19,9 +19,13 @@ import { useSession } from "@/modules/auth/hooks/useSession";
 import { tokens } from "@/shared/theme/tokens";
 import { useCart } from "@/modules/cart/hooks/useCart";
 import { CategoryNavigation } from "@/modules/catalog/components/CategoryNavigation";
+import { ThemeToggle } from "@/shared/components/ThemeToggle";
+import { useCustomerMode } from "@/shared/theme/customerMode";
 
 export function StorefrontHeader() {
   const location = useLocation();
+  const { mode } = useCustomerMode();
+  const dark = mode === "dark";
   const navigate = useNavigate();
   const session = useSession("customer");
   const cart = useCart();
@@ -37,6 +41,18 @@ export function StorefrontHeader() {
       sx={{
         borderBottom: "1px solid",
         borderColor: "divider",
+        ...(dark && {
+          backgroundColor: "#090c13",
+          color: "#f2f4f8",
+          borderColor: "#293244",
+          "& .MuiIconButton-root": { color: "#dce5f5" },
+          "& .MuiButton-outlined": { color: "#dce5f5", borderColor: "#687a94" },
+          "& .MuiOutlinedInput-root": { backgroundColor: "#141a25", color: "#f2f4f8" },
+          "& .MuiOutlinedInput-notchedOutline": { borderColor: "#687a94" },
+          "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#b9ccff" },
+          "& .MuiInputLabel-root": { color: "#c0cadb" },
+          "& .MuiInputLabel-root.Mui-focused": { color: "#b9ccff" },
+        }),
         height: {
           xs: tokens.layout.storefrontMobileHeaderHeight,
           md: tokens.layout.storefrontHeaderHeight,
@@ -73,7 +89,7 @@ export function StorefrontHeader() {
             sx={{ gridArea: "left" }}
           >
             <Brand compact />
-            <CategoryNavigation />
+            <CategoryNavigation dark={dark} />
           </Stack>
           <Box
             component="form"
@@ -127,6 +143,7 @@ export function StorefrontHeader() {
             spacing={{ xs: 0.5, sm: 1 }}
             sx={{ gridArea: "right", justifySelf: "end" }}
           >
+            <ThemeToggle />
             <IconButton
               component={Link}
               to="/cart"
@@ -140,16 +157,18 @@ export function StorefrontHeader() {
               component={Link}
               to={session.data ? "/account/profile" : "/login"}
               variant="outlined"
+              aria-label={session.data ? "Tài khoản" : "Đăng nhập"}
               startIcon={<PersonOutlineRounded />}
               sx={{
-                px: { xs: 1.25, sm: 2 },
+                px: { xs: 1, sm: 2 },
+                minWidth: { xs: 44, sm: 0 },
                 whiteSpace: "nowrap",
                 "& .MuiButton-startIcon": {
-                  display: { xs: "none", sm: "inline-flex" },
+                  margin: { xs: 0, sm: undefined },
                 },
               }}
             >
-              {session.data ? "Tài khoản" : "Đăng nhập"}
+              <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>{session.data ? "Tài khoản" : "Đăng nhập"}</Box>
             </Button>
           </Stack>
         </Toolbar>

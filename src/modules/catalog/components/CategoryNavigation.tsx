@@ -28,7 +28,7 @@ const categoryIcons: Record<string, typeof CategoryOutlined> = {
   keyboard: KeyboardRounded,
 };
 
-export function CategoryNavigation() {
+export function CategoryNavigation({ dark = false }: { dark?: boolean }) {
   const id = useId();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const location = useLocation();
@@ -70,7 +70,20 @@ export function CategoryNavigation() {
         slotProps={{
           list: { "aria-labelledby": `${id}-trigger` },
           paper: {
-            sx: { mt: 1, minWidth: 260, maxWidth: "calc(100vw - 32px)" },
+            sx: {
+              mt: 1,
+              minWidth: 260,
+              maxWidth: "calc(100vw - 32px)",
+              ...(dark && {
+                bgcolor: "#141a25",
+                color: "#f2f4f8",
+                border: "1px solid #38465c",
+                "& .MuiListSubheader-root": { bgcolor: "#141a25", color: "#b8c5d8" },
+                "& .MuiListItemIcon-root": { color: "#a8c3ff" },
+                "& .MuiDivider-root": { borderColor: "#38465c" },
+                "& .MuiMenuItem-root.Mui-disabled": { color: "#b8c5d8", opacity: 1 },
+              }),
+            },
           },
         }}
       >

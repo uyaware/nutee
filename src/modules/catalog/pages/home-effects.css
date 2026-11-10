@@ -1,0 +1,34 @@
+@property --home-border-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@keyframes home-border-rotate {
+    to { --home-border-angle: 360deg; }
+}
+
+.home-hover-border {
+    transition: border-color 180ms ease;
+}
+
+.home-hover-border:hover,
+.home-hover-border:focus-within {
+    border-color: transparent;
+    background-image: linear-gradient(#141a25, #141a25), conic-gradient(from var(--home-border-angle), #38465c, #719eff, #a991ff, #38465c 55%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    animation: home-border-rotate 3s linear infinite;
+}
+
+.home-hover-border-light:hover,
+.home-hover-border-light:focus-within {
+    background-image: linear-gradient(#fff, #fff), conic-gradient(from var(--home-border-angle), #d8e1f0, #719eff, #a991ff, #d8e1f0 55%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-hover-border:hover,
+    .home-hover-border:focus-within {
+        animation: none;
+    }
+}

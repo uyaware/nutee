@@ -2,7 +2,7 @@ import {
   Box,
   Button,
   CardActionArea,
-  Chip,
+  Container,
   Paper,
   Stack,
   Typography,
@@ -11,18 +11,29 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import LaptopMacRounded from "@mui/icons-material/LaptopMacRounded";
 import SmartphoneRounded from "@mui/icons-material/SmartphoneRounded";
 import KeyboardRounded from "@mui/icons-material/KeyboardRounded";
+import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
+import MouseOutlined from "@mui/icons-material/MouseOutlined";
+import HeadphonesOutlined from "@mui/icons-material/HeadphonesOutlined";
+import MonitorOutlined from "@mui/icons-material/MonitorOutlined";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { services } from "@/app/services";
 import { ProductCard } from "@/modules/catalog/components/ProductCard";
+import "@/modules/catalog/pages/home-effects.css";
+import { tokens } from "@/shared/theme/tokens";
+import { useCustomerMode } from "@/shared/theme/customerMode";
+import { parseCatalogFilters } from "@/modules/catalog/model/filters";
 import {
   EmptyState,
   ErrorState,
   LoadingState,
 } from "@/shared/components/Feedback";
-import { tokens } from "@/shared/theme/tokens";
+
+const allProductsFilters = parseCatalogFilters(new URLSearchParams());
 
 export default function HomePage() {
+  const { mode } = useCustomerMode();
+  const dark = mode === "dark";
   const categories = useQuery({
     queryKey: ["catalog", "categories"],
     queryFn: services.catalog.categories,
@@ -31,162 +42,154 @@ export default function HomePage() {
     queryKey: ["catalog", "featured"],
     queryFn: services.catalog.featured,
   });
+  const productCount = useQuery({
+    queryKey: ["catalog", "list", allProductsFilters],
+    queryFn: () => services.catalog.list(allProductsFilters),
+  });
+  const brands = useQuery({
+    queryKey: ["catalog", "brands"],
+    queryFn: services.catalog.brands,
+  });
+  const statistics = [
+    { label: "Sản phẩm", value: productCount.data?.total, failed: productCount.isError },
+    { label: "Thương hiệu", value: brands.data?.length, failed: brands.isError },
+    { label: "Danh mục", value: categories.data?.length, failed: categories.isError },
+  ].filter((item) => !item.failed);
   return (
     <Stack spacing={4}>
-      <Paper
+      <Box
+        component="section"
         sx={{
-          bgcolor: tokens.color.blueTint,
-          borderRadius: 2,
+          position: "relative",
+          width: "100vw",
+          left: "50%",
+          transform: "translateX(-50%)",
+          minHeight: { xs: `calc(100svh - ${tokens.layout.storefrontMobileHeaderHeight}px)`, md: `calc(100svh - ${tokens.layout.storefrontHeaderHeight}px)` },
           overflow: "hidden",
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "1.15fr 1fr" },
+          color: dark ? "#fff" : "#172033",
+          "@keyframes heroFloat": { "0%, 100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-14px)" } },
+          "@media (prefers-reduced-motion: reduce)": { "& .hero-product": { animation: "none" } },
         }}
       >
-        <Box sx={{ p: { xs: 3, sm: 4, lg: 5 } }}>
-          <Chip
-            label="CHÀO MỪNG ĐẾN NUTEE"
-            variant="outlined"
-            color="primary"
-            size="small"
-            sx={{ fontWeight: 600, mb: 3 }}
-          />
-          <Typography variant="h1">
-            Công nghệ cho
-            <br />
-            <Box component="span" sx={{ color: "primary.main" }}>
-              nhịp sống của bạn.
+        <Container maxWidth="lg" sx={{ minHeight: { xs: `calc(100svh - ${tokens.layout.storefrontMobileHeaderHeight}px)`, md: `calc(100svh - ${tokens.layout.storefrontHeaderHeight}px)` }, position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "1fr 1.1fr" }, alignItems: "center", gap: 3, py: { xs: 4, md: 5 } }}>
+        <Box>
+          <Typography sx={{ color: dark ? "#afc6ff" : "#315cae", fontWeight: 700, letterSpacing: ".16em", fontSize: ".75rem", mb: 3 }}>
+            CHÀO MỪNG ĐẾN NUTEE
+          </Typography>
+          <Typography variant="h1" sx={{ fontSize: { xs: "clamp(1.4rem, 5.8vw, 2.75rem)", md: "clamp(2rem, 3.2vw, 3rem)" }, lineHeight: 1.2 }}>
+            <Box component="span" sx={{ display: "block", whiteSpace: "nowrap" }}>
+              Đồ án chuyên ngành
+            </Box>
+            <Box component="span" sx={{ display: "block", whiteSpace: "nowrap", color: dark ? "#a9bfff" : "#2956ae" }}>
+              Thương mại điện tử
             </Box>
           </Typography>
           <Typography
-            color="text.secondary"
-            sx={{ mt: 3, mb: 4, maxWidth: 440 }}
+            sx={{ color: dark ? "#d4dbe9" : "#526176", mt: 3, mb: 4, maxWidth: 440, fontSize: "1rem" }}
           >
-            Từ góc làm việc đến những kết nối mỗi ngày. Khám phá không gian điện
-            tử được xây dựng cho bạn.
+            Khám phá những thiết bị đồng hành cùng bạn trong công việc, giải trí
+            và mọi ý tưởng mới.
           </Typography>
           <Button
             variant="contained"
             component={Link}
             to="/products"
             endIcon={<ArrowForwardRounded />}
+            sx={{ color: "#fff", px: 3, py: 1, borderRadius: 2, background: "linear-gradient(180deg, #3978ed, #1f55c7)", border: "1px solid #6197ff", borderBottom: "4px solid #173d94", boxShadow: "none", transition: "background 200ms, transform 150ms, border-width 150ms", "&:hover": { background: "linear-gradient(180deg, #3270df, #1d4daf)", boxShadow: "none" }, "&:active": { transform: "translateY(2px)", borderBottomWidth: "2px" }, "@media (prefers-reduced-motion: reduce)": { transition: "none" } }}
           >
             Khám phá sản phẩm
           </Button>
+          {statistics.length > 0 && (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: { xs: 2, sm: 3 }, mt: 4, pt: 2.5, borderTop: "1px solid", borderColor: dark ? "#46556c" : "#c9d4e4" }}>
+              {statistics.map(({ label, value }) => (
+                <Box key={label} sx={{ minWidth: 78 }}>
+                  <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "text.primary" }}>
+                    {value === undefined ? "—" : value.toLocaleString("vi-VN")}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">{label}</Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
         </Box>
-        <Box
-          sx={{
-            minHeight: { xs: 220, md: 340 },
-            position: "relative",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            bgcolor: "primary.main",
-            overflow: "hidden",
-          }}
-        >
+        <Box className="hero-product" sx={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 0, animation: "heroFloat 7s ease-in-out infinite", filter: "drop-shadow(0 25px 45px rgba(31, 64, 160, .4))" }}>
           <Box
-            aria-hidden
+            component="img"
+            src="/images/hero-medion.png"
+            alt="Ảnh minh họa laptop Medion Akoya"
+            aria-describedby="hero-image-credit"
+            fetchPriority="high"
             sx={{
-              position: "absolute",
-              width: 370,
-              height: 370,
-              border: "1px solid",
-              borderColor: "primary.contrastText",
-              borderRadius: "50%",
-              opacity: 0.18,
+              width: "100%",
+              maxWidth: 620,
+              height: { xs: 260, sm: 380, md: 500 },
+              objectFit: "contain",
+              borderRadius: 4,
             }}
           />
           <Box
             component="img"
-            src="/images/laptop.svg"
-            alt="Minh họa laptop NUTEE"
-            sx={{
-              width: "90%",
-              maxWidth: 430,
-              height: 290,
-              zIndex: 1,
-              objectFit: "contain",
-            }}
+            src="/images/hero-keyboard.png"
+            alt="Ảnh minh họa bàn phím Apple Magic Keyboard"
+            aria-describedby="hero-image-credit"
+            sx={{ position: "absolute", right: { xs: "0%", md: "-2%" }, bottom: { xs: "7%", md: "10%" }, width: { xs: "58%", md: "60%" }, objectFit: "contain", transform: "rotate(-8deg)", filter: "drop-shadow(0 12px 18px rgba(0, 0, 0, .6))" }}
           />
-          <Chip
-            label="WORK. CREATE. CONNECT."
-            sx={{
-              position: "absolute",
-              bottom: 24,
-              bgcolor: "secondary.main",
-              color: "secondary.contrastText",
-              fontSize: 11,
-              letterSpacing: ".12em",
-            }}
-          />
+          <Box component="span" id="hero-image-credit" sx={{ position: "absolute", width: "1px", height: "1px", p: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
+            Ảnh laptop của PantheraLeo1359531 và ảnh bàn phím của Fletcher, chỉnh sửa bởi AGreuet, từ Wikimedia Commons. Thông tin giấy phép tại /image-credits.txt.
+          </Box>
         </Box>
-      </Paper>
-      <Box
+        </Container>
+      </Box>
+      {categories.isPending ? (
+        <LoadingState />
+      ) : categories.isError ? (
+        <ErrorState error={categories.error} retry={() => void categories.refetch()} />
+      ) : categories.data.length === 0 ? (
+        <Box>
+          <EmptyState title="Chưa có danh mục" description="Danh mục sản phẩm sẽ xuất hiện tại đây." />
+        </Box>
+      ) : <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+          gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(3, minmax(0, 1fr))", md: "repeat(6, minmax(0, 1fr))" },
           gap: 2,
         }}
       >
-        {[
-          {
-            icon: LaptopMacRounded,
-            title: "Laptop",
-            category: categories.data?.find(
-              (category) => category.name === "Laptop",
-            )?.id,
-            desc: "Làm việc & sáng tạo",
-          },
-          {
-            icon: SmartphoneRounded,
-            title: "Điện thoại",
-            category: categories.data?.find(
-              (category) => category.name === "Điện thoại",
-            )?.id,
-            desc: "Kết nối mỗi ngày",
-          },
-          {
-            icon: KeyboardRounded,
-            title: "Bàn phím",
-            category: categories.data?.find(
-              (category) => category.name === "Bàn phím",
-            )?.id,
-            desc: "Hoàn thiện góc làm việc",
-          },
-        ].map(({ icon: Icon, title, desc, category }) => (
-          <Paper key={title} variant="outlined" sx={{ overflow: "hidden" }}>
+        {categories.data.map((category) => {
+          const name = category.name.toLocaleLowerCase("vi");
+          const Icon = name.includes("laptop") ? LaptopMacRounded : name.includes("điện thoại") ? SmartphoneRounded : name.includes("bàn phím") ? KeyboardRounded : name.includes("chuột") ? MouseOutlined : name.includes("tai nghe") ? HeadphonesOutlined : name.includes("màn hình") ? MonitorOutlined : CategoryOutlined;
+          return (
+          <Paper key={category.id} className={`home-hover-border${dark ? "" : " home-hover-border-light"}`} variant="outlined" sx={{ overflow: "hidden", bgcolor: dark ? "#141a25" : "#fff", color: "text.primary", borderColor: "divider" }}>
             <CardActionArea
               component={Link}
-              to={category ? `/products?category=${category}` : "/products"}
+              to={`/products?${new URLSearchParams({ category: category.id })}`}
               sx={{
                 p: 2,
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "flex-start",
-                gap: 2,
+                justifyContent: "center",
+                textAlign: "center",
+                height: "100%",
+                gap: 1,
               }}
             >
               <Box
                 sx={{
                   p: 1.5,
-                  bgcolor: tokens.color.blueTint,
+                  bgcolor: dark ? "#253653" : "#eaf1ff",
                   borderRadius: 2,
-                  color: "primary.main",
+                  color: dark ? "#b9ccff" : "#174aa8",
                   display: "flex",
                 }}
               >
                 <Icon />
               </Box>
-              <Box>
-                <Typography fontWeight={600}>{title}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {desc}
-                </Typography>
-              </Box>
+              <Typography fontWeight={600} sx={{ overflowWrap: "anywhere" }}>{category.name}</Typography>
             </CardActionArea>
           </Paper>
-        ))}
-      </Box>
+        ); })}
+      </Box>}
       <Box>
         <Stack
           direction={{ xs: "column", sm: "row" }}
@@ -202,6 +205,7 @@ export default function HomePage() {
             component={Link}
             to="/products"
             endIcon={<ArrowForwardRounded />}
+            sx={{ color: dark ? "#b9ccff" : "#174aa8" }}
           >
             Xem tất cả sản phẩm
           </Button>
@@ -214,10 +218,12 @@ export default function HomePage() {
             retry={() => void products.refetch()}
           />
         ) : !products.data.length ? (
-          <EmptyState
-            title="Chưa có sản phẩm"
-            description="Sản phẩm công khai sẽ xuất hiện tại đây."
-          />
+          <Box>
+            <EmptyState
+              title="Chưa có sản phẩm"
+              description="Sản phẩm công khai sẽ xuất hiện tại đây."
+            />
+          </Box>
         ) : (
           <Box
             sx={{
@@ -232,7 +238,7 @@ export default function HomePage() {
             }}
           >
             {products.data.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} dark={dark} home />
             ))}
           </Box>
         )}
@@ -244,6 +250,9 @@ export default function HomePage() {
           display: "flex",
           gap: 2,
           alignItems: "flex-start",
+          bgcolor: dark ? "#141a25" : "#fff",
+          color: "text.primary",
+          borderColor: "divider",
         }}
       >
         <LaptopMacRounded color="primary" />

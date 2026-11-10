@@ -6,6 +6,7 @@ import { LoginPage } from "@/modules/auth/pages/LoginPage";
 import { AccountLayout } from "@/modules/account/layouts/AccountLayout";
 import { OrderDetailPage, OrdersPage } from "@/modules/orders/pages/OrdersPage";
 import { SystemPage } from "@/shared/components/SystemPage";
+import { CustomerThemeProvider } from "@/shared/theme/CustomerThemeProvider";
 const HomePage = lazy(() => import("@/modules/catalog/pages/HomePage"));
 const CatalogPage = lazy(() => import("@/modules/catalog/pages/CatalogPage"));
 const ProductDetailPage = lazy(
@@ -44,7 +45,7 @@ const AfterSaleCreatePage = lazy(
 );
 export default function CustomerRoutes() {
   return (
-    <Routes>
+    <CustomerThemeProvider><Routes>
       <Route path="login" element={<LoginPage portal="customer" />} />
       <Route path="register" element={<RegisterPage />} />
       <Route element={<StorefrontLayout />}>
@@ -106,6 +107,6 @@ export default function CustomerRoutes() {
         <Route path="403" element={<SystemPage forbidden />} />
         <Route path="*" element={<SystemPage />} />
       </Route>
-    </Routes>
+    </Routes></CustomerThemeProvider>
   );
 }

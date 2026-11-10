@@ -13,12 +13,16 @@ import { ProductImage } from "@/modules/catalog/components/ProductImage";
 export function ProductCard({
     product,
     returnTo,
+    dark = false,
+    home = false,
 }: {
     product: ProductSummary;
     returnTo?: string;
+    dark?: boolean;
+    home?: boolean;
 }) {
     return (
-        <Card sx={{ height: "100%", minWidth: 0 }}>
+        <Card className={home ? `home-hover-border${dark ? "" : " home-hover-border-light"}` : undefined} sx={{ height: "100%", minWidth: 0, ...(dark && { bgcolor: "#141a25", color: "#f2f4f8", borderColor: "#38465c", "& .MuiTypography-colorTextSecondary": { color: "#b8c5d8" }, "& .MuiTypography-colorWarningMain": { color: "#ffca80" } }) }}>
             <CardActionArea
                 component={Link}
                 to={`/products/${product.id}`}
@@ -32,7 +36,7 @@ export function ProductCard({
             >
                 <Box
                     sx={{
-                        bgcolor: "background.default",
+                        bgcolor: dark ? "#1b2230" : "background.default",
                         p: 2,
                         height: { xs: 160, lg: 140 },
                         display: "flex",
@@ -67,7 +71,7 @@ export function ProductCard({
                         sx={{
                             mt: 1.25,
                             fontWeight: 700,
-                            color: "primary.main",
+                            color: dark ? "#a8c3ff" : "primary.main",
                             fontVariantNumeric: "tabular-nums",
                         }}
                     >

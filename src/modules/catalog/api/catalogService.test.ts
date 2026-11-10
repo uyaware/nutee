@@ -79,6 +79,14 @@ function setup() {
 }
 
 describe("catalog API contract", () => {
+    it("requests up to 15 featured products without duplicating the response", async () => {
+        const { fetch, catalog } = setup();
+        const featured = await catalog.featured();
+        const request = new URL(String(fetch.mock.calls[0][0]), "http://localhost");
+        expect(request.searchParams.get("size")).toBe("15");
+        expect(request.searchParams.get("sort")).toBe("featured");
+        expect(featured.map((item) => item.id)).toEqual(["7"]);
+    });
     it("sends filters to the backend and translates zero-based pages and numeric IDs for the existing UI", async () => {
         const { fetch, catalog } = setup();
         const page = await catalog.list(

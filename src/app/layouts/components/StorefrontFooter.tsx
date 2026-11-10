@@ -14,12 +14,15 @@ import { Brand } from "@/shared/components/Brand";
 // Sample contact details for the storefront prototype.
 const contact = { email: "hotro@nutee.vn", phone: "0900 123 456" };
 
-export function StorefrontFooter() {
+export function StorefrontFooter({ dark = false }: { dark?: boolean }) {
   return (
     <Box
       component="footer"
       sx={{
-        bgcolor: "background.paper",
+        position: "relative",
+        bgcolor: dark ? "#0c101b" : "background.paper",
+        color: dark ? "#f2f4f8" : "text.primary",
+        ...(dark && { "& .MuiTypography-colorTextSecondary, & .MuiLink-root.MuiLink-underlineHover": { color: "#bdc7d8" } }),
         borderTop: "1px solid",
         borderColor: "divider",
         py: { xs: 4, md: 5 },

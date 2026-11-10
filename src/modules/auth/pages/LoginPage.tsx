@@ -22,6 +22,9 @@ import { services } from "@/app/services";
 import { errorMessage } from "@/shared/lib/errors";
 import { safeReturnTo } from "@/modules/auth/model/redirect";
 import { Brand } from "@/shared/components/Brand";
+import { CharacterBackground } from "@/shared/components/CharacterBackground";
+import { ThemeToggle } from "@/shared/components/ThemeToggle";
+import { useCustomerMode } from "@/shared/theme/customerMode";
 import { PasswordField } from "@/shared/components/PasswordField";
 import { GoogleSignIn } from "@/modules/auth/components/GoogleSignIn";
 import type { User } from "@/modules/auth/model/types";
@@ -33,6 +36,7 @@ const schema = z.object({
 type Fields = z.infer<typeof schema>;
 export function LoginPage({ portal }: { portal: Portal }) {
   const management = portal === "backoffice";
+  const { mode } = useCustomerMode();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const client = useQueryClient();
@@ -62,8 +66,10 @@ export function LoginPage({ portal }: { portal: Portal }) {
         minHeight: "100dvh",
         display: "grid",
         gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+        ...(!management && { position: "relative", backgroundColor: mode === "dark" ? "#0b0d12" : "#fafafa", color: "text.primary" }),
       }}
     >
+      {!management && <CharacterBackground />}
       <Box
         sx={{
           display: { xs: "none", md: "flex" },
@@ -128,6 +134,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
           width: "100%",
           mx: "auto",
           justifyContent: "center",
+          position: "relative",
         }}
         spacing={3}
       >
@@ -140,9 +147,12 @@ export function LoginPage({ portal }: { portal: Portal }) {
           flexWrap="wrap"
         >
           <Brand management={management} />
-          <Button component={Link} to="/" startIcon={<ArrowBackRounded />}>
-            Về trang chủ
-          </Button>
+          <Stack direction="row" alignItems="center">
+            {!management && <ThemeToggle />}
+            <Button component={Link} to="/" startIcon={<ArrowBackRounded />}>
+              Về trang chủ
+            </Button>
+          </Stack>
         </Stack>
         <Box>
           <Typography variant="h2" component="h1">

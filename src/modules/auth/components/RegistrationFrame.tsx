@@ -3,6 +3,9 @@ import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import { Link } from "react-router-dom";
 import { Brand } from "@/shared/components/Brand";
+import { CharacterBackground } from "@/shared/components/CharacterBackground";
+import { ThemeToggle } from "@/shared/components/ThemeToggle";
+import { useCustomerMode } from "@/shared/theme/customerMode";
 
 /** Bố cục đăng ký customer, dùng cùng nhận diện với trang đăng nhập. */
 export function RegistrationFrame({
@@ -12,6 +15,7 @@ export function RegistrationFrame({
   children: ReactNode;
   step?: number;
 }) {
+  const { mode } = useCustomerMode();
   return (
     <Box
       component="main"
@@ -21,8 +25,12 @@ export function RegistrationFrame({
         minHeight: "100dvh",
         display: "grid",
         gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+        position: "relative",
+        backgroundColor: mode === "dark" ? "#0b0d12" : "#fafafa",
+        color: "text.primary",
       }}
     >
+      <CharacterBackground />
       <Stack
         component="aside"
         justifyContent="space-between"
@@ -31,6 +39,7 @@ export function RegistrationFrame({
           bgcolor: "primary.main",
           color: "primary.contrastText",
           p: { md: 6, lg: 9 },
+          position: "relative",
         }}
       >
         <Typography
@@ -65,6 +74,7 @@ export function RegistrationFrame({
           mx: "auto",
           p: { xs: 3, sm: 5, lg: 7 },
           boxSizing: "border-box",
+          position: "relative",
         }}
       >
         <Stack
@@ -74,6 +84,8 @@ export function RegistrationFrame({
           gap={2}
         >
           <Brand />
+          <Stack direction="row" alignItems="center">
+          <ThemeToggle />
           <Button
             component={Link}
             to="/"
@@ -82,6 +94,7 @@ export function RegistrationFrame({
           >
             Trang chủ
           </Button>
+          </Stack>
         </Stack>
         <Stack spacing={1}>
           <Typography variant="h1">
