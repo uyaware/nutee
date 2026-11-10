@@ -118,7 +118,8 @@ const base: ThemeOptions = {
     },
     MuiOutlinedInput: {
       styleOverrides: {
-        root: ({ ownerState }) => ({
+        root: ({ ownerState, theme }) => ({
+          ...(theme.palette.mode === "dark" ? { backgroundColor: theme.palette.background.paper } : {}),
           ...(ownerState.type === "search" ? { borderRadius: "999px" } : {}),
           ...(ownerState.multiline
             ? { height: "auto", alignItems: "flex-start", padding: "12px 14px" }
@@ -218,7 +219,6 @@ export const customerDarkTheme = createTheme(
     components: {
       MuiPaper: { styleOverrides: { outlined: { borderColor: "#46556c" } } },
       MuiCard: { styleOverrides: { root: { borderColor: "#46556c" } } },
-      MuiOutlinedInput: { styleOverrides: { root: { backgroundColor: "#1b2230" } } },
       MuiTableCell: { styleOverrides: { head: { background: "#202a39" }, root: { borderColor: "#46556c" } } },
     },
   },
