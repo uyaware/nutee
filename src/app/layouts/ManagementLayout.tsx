@@ -73,6 +73,10 @@ export function ManagementLayout() {
                       label: "Sản phẩm",
                       icon: Inventory2Outlined,
                   },
+              ]
+            : []),
+        ...(hasPermission(user.role, "taxonomy:write")
+            ? [
                   {
                       to: "/management/brands",
                       label: "Thương hiệu",
@@ -83,6 +87,10 @@ export function ManagementLayout() {
                       label: "Danh mục",
                       icon: CategoryOutlined,
                   },
+              ]
+            : []),
+        ...(hasPermission(user.role, "promotions:write")
+            ? [
                   {
                       to: "/management/promotions",
                       label: "Khuyến mãi",
@@ -93,6 +101,10 @@ export function ManagementLayout() {
                       label: "Voucher",
                       icon: LocalOfferOutlined,
                   },
+              ]
+            : []),
+        ...(hasPermission(user.role, "users:read")
+            ? [
                   {
                       to: "/management/users",
                       label: "Tài khoản",

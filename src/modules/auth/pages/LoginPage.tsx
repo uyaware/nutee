@@ -22,7 +22,7 @@ import { services } from "@/app/services";
 import { errorMessage } from "@/shared/lib/errors";
 import { safeReturnTo } from "@/modules/auth/model/redirect";
 import { Brand } from "@/shared/components/Brand";
-import { CharacterBackground } from "@/shared/components/CharacterBackground";
+import { LandingBackground } from "@/shared/components/LandingBackground";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
 import { useCustomerMode } from "@/shared/theme/customerMode";
 import { PasswordField } from "@/shared/components/PasswordField";
@@ -65,12 +65,12 @@ export function LoginPage({ portal }: { portal: Portal }) {
       sx={{
         minHeight: "100dvh",
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+        gridTemplateColumns: management ? { xs: "1fr", md: "1fr 1fr" } : "1fr",
         ...(!management && { position: "relative", backgroundColor: mode === "dark" ? "#0b0d12" : "#fafafa", color: "text.primary" }),
       }}
     >
-      {!management && <CharacterBackground />}
-      <Box
+      {!management && <LandingBackground />}
+      {management && <Box
         sx={{
           display: { xs: "none", md: "flex" },
           flexDirection: "column",
@@ -122,7 +122,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
             opacity: 0.6,
           }}
         />
-      </Box>
+      </Box>}
       <Stack
         component="main"
         id="main-content"

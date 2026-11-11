@@ -135,7 +135,7 @@ function UserEditor({ user }: { user: User }) {
             {role === "admin"
               ? "Quản lý dữ liệu bán hàng, tài khoản và xem báo cáo kinh doanh."
               : role === "staff"
-                ? "Xử lý đơn hàng và yêu cầu của khách hàng trong cổng vận hành."
+                ? "Quản lý sản phẩm, thương hiệu, danh mục và xử lý yêu cầu của khách hàng."
                 : "Mua hàng và quản lý thông tin cá nhân trong cửa hàng."}
           </Typography>
           {lastAdmin && !self && blocked && (

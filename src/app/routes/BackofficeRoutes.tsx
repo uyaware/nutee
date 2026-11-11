@@ -11,16 +11,16 @@ const DashboardPage = lazy(
     () => import("@/modules/management/dashboard/pages/DashboardPage"),
 );
 const ProductsPage = lazy(
-    () => import("@/modules/management/products/pages/ProductsPage"),
+    () => import("@/modules/management/products/pages/ConnectedProductsPage"),
 );
 const UsersPage = lazy(
-    () => import("@/modules/management/users/pages/UsersPage"),
+    () => import("@/modules/management/users/pages/ConnectedUsersPage"),
 );
 const ProductEditorPage = lazy(
-    () => import("@/modules/management/products/pages/ProductEditorPage"),
+    () => import("@/modules/management/products/pages/ConnectedProductEditorPage"),
 );
 const TaxonomyPage = lazy(
-    () => import("@/modules/management/taxonomy/pages/TaxonomyPage"),
+    () => import("@/modules/management/taxonomy/pages/ConnectedTaxonomyPage"),
 );
 const PromotionsPage = lazy(
     () => import("@/modules/management/promotions/pages/PromotionsPage"),
@@ -35,7 +35,7 @@ const VoucherEditorPage = lazy(
     () => import("@/modules/management/vouchers/pages/VoucherEditorPage"),
 );
 const UserDetailPage = lazy(
-    () => import("@/modules/management/users/pages/UserDetailPage"),
+    () => import("@/modules/management/users/pages/ConnectedUserDetailPage"),
 );
 const OperationsOrdersPage = lazy(
     () => import("@/modules/orders/pages/OperationsOrdersPage"),
@@ -92,6 +92,15 @@ export default function BackofficeRoutes() {
                                 path="products/:id/edit"
                                 element={<ProductEditorPage />}
                             />
+                        </Route>
+                        <Route
+                            element={
+                                <RequireAuth
+                                    portal="backoffice"
+                                    permission="taxonomy:write"
+                                />
+                            }
+                        >
                             <Route
                                 path="brands"
                                 element={<TaxonomyPage kind="brands" />}

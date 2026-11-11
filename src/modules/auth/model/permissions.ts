@@ -5,15 +5,17 @@ export type Permission =
   | "orders:own"
   | "operations:read"
   | "products:write"
+  | "taxonomy:write"
   | "promotions:write"
   | "users:read";
 export const permissions: Record<Role, readonly Permission[]> = {
   customer: ["catalog:read", "profile:own", "orders:own"],
-  staff: ["catalog:read", "operations:read"],
+  staff: ["catalog:read", "operations:read", "products:write", "taxonomy:write"],
   admin: [
     "catalog:read",
     "operations:read",
     "products:write",
+    "taxonomy:write",
     "promotions:write",
     "users:read",
   ],
