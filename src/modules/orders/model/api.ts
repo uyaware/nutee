@@ -10,6 +10,11 @@ export const createOrderSchema = z.object({
     paymentMethod: z.enum(["cod", "qr"]),
 });
 export type CreateOrder = z.infer<typeof createOrderSchema>;
+export interface OrderHistoryEntry {
+    status: string | null;
+    occurredAt: string | null;
+    actorName?: string | null;
+}
 export interface CustomerOrder {
     id: number;
     code: string;

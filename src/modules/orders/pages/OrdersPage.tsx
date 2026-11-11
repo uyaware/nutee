@@ -1,6 +1,6 @@
 import type { Portal } from "@/shared/types/database";
-import { PrototypeOrderHistory } from "@/modules/orders/components/PrototypeOrderHistory";
-import { PrototypeOrderDetail } from "@/modules/orders/components/PrototypeOrderDetail";
+import ConnectedOperationsOrdersPage from "@/modules/orders/pages/ConnectedOperationsOrdersPage";
+import { ManagementOrderDetail } from "@/modules/orders/components/ManagementOrderDetail";
 import {
     CustomerOrderHistory,
     CustomerOrderDetail,
@@ -16,7 +16,7 @@ export function OrdersPage({
     return portal === "customer" ? (
         <CustomerOrderHistory compact={compact} />
     ) : (
-        <PrototypeOrderHistory portal={portal} compact={compact} />
+        <ConnectedOperationsOrdersPage compact={compact} />
     );
 }
 
@@ -24,6 +24,6 @@ export function OrderDetailPage({ portal }: { portal: Portal }) {
     return portal === "customer" ? (
         <CustomerOrderDetail />
     ) : (
-        <PrototypeOrderDetail portal={portal} />
+        <ManagementOrderDetail />
     );
 }

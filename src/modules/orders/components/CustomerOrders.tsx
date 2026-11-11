@@ -39,6 +39,7 @@ import {
 } from "@/shared/components/Feedback";
 import { dateTime, money } from "@/shared/lib/format";
 import { errorMessage } from "@/shared/lib/errors";
+import { OrderHistoryPanel } from "@/modules/orders/components/OrderHistoryPanel";
 
 const statuses = [
     ["all", "Tất cả"],
@@ -391,6 +392,7 @@ export function CustomerOrderDetail() {
                     </Stack>
                 </Stack>
             </Paper>
+            <OrderHistoryPanel id={id} currentStatus={order.status} />
             <Dialog
                 open={cancelOpen}
                 onClose={() => {

@@ -38,7 +38,7 @@ const UserDetailPage = lazy(
     () => import("@/modules/management/users/pages/ConnectedUserDetailPage"),
 );
 const OperationsOrdersPage = lazy(
-    () => import("@/modules/orders/pages/OperationsOrdersPage"),
+    () => import("@/modules/orders/pages/ConnectedOperationsOrdersPage"),
 );
 const AfterSalesPage = lazy(
     () => import("@/modules/after-sales/pages/PrototypeAfterSales"),
