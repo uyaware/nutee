@@ -14,6 +14,7 @@ import { StorefrontFooter } from "@/app/layouts/components/StorefrontFooter";
 import { CharacterBackground } from "@/shared/components/CharacterBackground";
 import { LandingBackground } from "@/shared/components/LandingBackground";
 import { useCustomerMode } from "@/shared/theme/customerMode";
+import { ServiceError } from "@/shared/lib/errors";
 
 export function StorefrontLayout() {
   const location = useLocation();
@@ -48,7 +49,7 @@ export function StorefrontLayout() {
         maxWidth="lg"
         sx={{ pt: home ? 0 : { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 }, flex: 1, position: "relative", color: "text.primary", "& .MuiOutlinedInput-root": { backgroundColor: "background.paper" } }}
       >
-        {session.isError && (
+        {session.isError && !(session.error instanceof ServiceError && session.error.code === "NETWORK") && (
           <Alert severity="warning" sx={{ mb: 2 }}>
             Không đọc được phiên khách hàng.{" "}
             <Button onClick={() => logout.mutate()}>Xóa phiên này</Button>

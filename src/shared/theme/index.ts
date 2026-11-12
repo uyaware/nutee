@@ -206,10 +206,10 @@ export const customerDarkTheme = createTheme(
   {
     palette: {
       mode: "dark",
-      primary: { main: "#a8c3ff", light: "#c5d7ff", dark: "#719af0", contrastText: "#101b30" },
-      secondary: { main: "#c1cde0", contrastText: "#101b30" },
+      primary: { main: "#a9b9d3", light: "#c0cbdd", dark: "#8097ba", contrastText: "#101b30" },
+      secondary: { main: "#b3bece", contrastText: "#101b30" },
       background: { default: "#0b0d12", paper: "#171d28" },
-      text: { primary: "#f2f4f8", secondary: "#c1cad9" },
+      text: { primary: "#d8dee8", secondary: "#adb8c8" },
       divider: "#46556c",
       success: { main: "#65dba8" },
       warning: { main: "#ffd08a" },

@@ -1,11 +1,8 @@
-import { useState } from "react";
 import {
   Alert,
   Box,
   Button,
-  Checkbox,
-  Chip,
-  FormControlLabel,
+  Paper,
   Stack,
   TextField,
   Typography,
@@ -19,9 +16,8 @@ import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Portal } from "@/modules/auth/model/types";
 import { services } from "@/app/services";
-import { errorMessage } from "@/shared/lib/errors";
+import { errorMessage, ServiceError } from "@/shared/lib/errors";
 import { safeReturnTo } from "@/modules/auth/model/redirect";
-import { Brand } from "@/shared/components/Brand";
 import { LandingBackground } from "@/shared/components/LandingBackground";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
 import { useCustomerMode } from "@/shared/theme/customerMode";
@@ -40,7 +36,6 @@ export function LoginPage({ portal }: { portal: Portal }) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const client = useQueryClient();
-  const [rememberLogin, setRememberLogin] = useState(false);
   const {
     register,
     handleSubmit,
@@ -57,7 +52,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
   };
   const login = useMutation({
     mutationFn: (fields: Fields) =>
-      services.auth.login(portal, fields.email, fields.password, rememberLogin),
+      services.auth.login(portal, fields.email, fields.password),
     onSuccess: onSignedIn,
   });
   return (
@@ -65,64 +60,24 @@ export function LoginPage({ portal }: { portal: Portal }) {
       sx={{
         minHeight: "100dvh",
         display: "grid",
-        gridTemplateColumns: management ? { xs: "1fr", md: "1fr 1fr" } : "1fr",
-        ...(!management && { position: "relative", backgroundColor: mode === "dark" ? "#0b0d12" : "#fafafa", color: "text.primary" }),
+        gridTemplateColumns: "1fr",
+        position: "relative", backgroundColor: mode === "dark" ? "#0b0d12" : "#fafafa", color: "text.primary",
       }}
     >
-      {!management && <LandingBackground />}
-      {management && <Box
-        sx={{
-          display: { xs: "none", md: "flex" },
-          flexDirection: "column",
-          justifyContent: "space-between",
-          p: { md: 6, lg: 9 },
-          bgcolor: "secondary.main",
-          color: "primary.contrastText",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <Chip
-          label={management ? "NUTEE / WORKSPACE" : "NUTEE / STORE"}
-          sx={{
-            color: "inherit",
-            border: "1px solid",
-            borderColor: "primary.light",
-            alignSelf: "flex-start",
-          }}
-        />
-        <Box sx={{ py: 8, position: "relative", zIndex: 1 }}>
-          <Typography variant="h1" component="h2">
-            {management
-              ? "Một không gian.\nVận hành kết nối."
-              : "Công nghệ tốt.\nTrải nghiệm tốt hơn."}
-          </Typography>
-          <Typography sx={{ mt: 3, maxWidth: 430, opacity: 0.85 }}>
-            {management
-              ? "Theo dõi dữ liệu bán hàng và cộng tác trong một workspace dành riêng cho đội ngũ NUTEE."
-              : "Chào mừng bạn đến với không gian công nghệ NUTEE. Những thiết bị cho công việc và cuộc sống mỗi ngày."}
-          </Typography>
+      <LandingBackground />
+      <Box sx={{
+          position: "fixed", right: { xs: 16, sm: 24 }, bottom: { xs: 16, sm: 24 }, zIndex: 10,
+          "& .MuiIconButton-root": {
+            width: 48, height: 48,
+            color: mode === "dark" ? "#fff4c2" : "#17336a",
+            bgcolor: mode === "dark" ? "#273655" : "#fff",
+            border: "1px solid", borderColor: mode === "dark" ? "#829bc5" : "#aabbd8",
+            boxShadow: 3,
+            "&:hover": { bgcolor: mode === "dark" ? "#394f78" : "#e8efff" },
+          },
+        }}>
+          <ThemeToggle />
         </Box>
-        <Typography variant="body2">
-          {management
-            ? "Dành cho nhân viên & quản trị viên"
-            : "Dành cho khách hàng"}
-        </Typography>
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            width: 420,
-            height: 420,
-            border: "70px solid",
-            borderColor: "primary.main",
-            borderRadius: "50%",
-            right: -230,
-            bottom: 90,
-            opacity: 0.6,
-          }}
-        />
-      </Box>}
       <Stack
         component="main"
         id="main-content"
@@ -146,22 +101,25 @@ export function LoginPage({ portal }: { portal: Portal }) {
           useFlexGap
           flexWrap="wrap"
         >
-          <Brand management={management} />
-          <Stack direction="row" alignItems="center">
-            {!management && <ThemeToggle />}
-            <Button component={Link} to="/" startIcon={<ArrowBackRounded />}>
-              Về trang chủ
+          <Button component={Link} to="/" startIcon={<ArrowBackRounded />}>
+            Về trang chủ
+          </Button>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Button component={Link} to={management ? "/login" : "/management/login"} endIcon={<ArrowForwardRounded />}>
+              {management ? "Store" : "Backoffice"}
             </Button>
           </Stack>
         </Stack>
+        <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 }, borderRadius: 2 }}>
+        <Stack spacing={3}>
         <Box>
           <Typography variant="h2" component="h1">
-            {management ? "Đăng nhập vận hành" : "Đăng nhập cửa hàng"}
+            Đăng nhập
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
             {management
-              ? "Đăng nhập để quản lý cửa hàng NUTEE."
-              : "Đăng nhập để quản lý tài khoản và giỏ hàng của bạn."}
+              ? "Dành cho nhân viên và quản lý cửa hàng"
+              : "Dành cho khách hàng"}
           </Typography>
         </Box>
         <Stack
@@ -170,11 +128,24 @@ export function LoginPage({ portal }: { portal: Portal }) {
           noValidate
           spacing={2}
           sx={(theme) => ({
-            "& .MuiOutlinedInput-root": { bgcolor: "background.paper" },
+            "& .MuiOutlinedInput-root": {
+              bgcolor: mode === "dark" ? "#171e2b" : "background.paper",
+              ...(mode === "dark" && {
+                color: "#e1e7f0",
+                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#576780" },
+                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#aebbd0" },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#829bc5" },
+                "&.Mui-error .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.error.main },
+                "& .MuiIconButton-root": { color: "#aebbd0" },
+              }),
+            },
+            ...(mode === "dark" && {
+              "& .MuiInputLabel-root:not(.Mui-error)": { color: "#aebbd0" },
+            }),
             // Paint over the browser autofill background without disabling autofill.
             "& input:is(:-webkit-autofill, :autofill)": {
-              WebkitBoxShadow: `0 0 0 1000px ${theme.palette.background.paper} inset`,
-              boxShadow: `0 0 0 1000px ${theme.palette.background.paper} inset`,
+              WebkitBoxShadow: `0 0 0 1000px ${mode === "dark" ? "#171e2b" : theme.palette.background.paper} inset`,
+              boxShadow: `0 0 0 1000px ${mode === "dark" ? "#171e2b" : theme.palette.background.paper} inset`,
               WebkitTextFillColor: theme.palette.text.primary,
               caretColor: theme.palette.text.primary,
             },
@@ -195,24 +166,26 @@ export function LoginPage({ portal }: { portal: Portal }) {
             error={!!errors.password}
             helperText={errors.password?.message}
           />
-          <FormControlLabel
-            sx={{ m: 0, alignSelf: "flex-start" }}
-            control={
-              <Checkbox
-                checked={rememberLogin}
-                onChange={(_, checked) => setRememberLogin(checked)}
-                disabled={login.isPending}
-                sx={{ width: 44, height: 44 }}
-              />
-            }
-            label="Ghi nhớ đăng nhập"
-          />
-          {login.isError && (
+          {!management && (
+            <Button component={Link} to="/forgot-password" sx={{ px: 1, alignSelf: "flex-start" }}>
+              Quên mật khẩu?
+            </Button>
+          )}
+          {login.isError && !(login.error instanceof ServiceError && login.error.code === "NETWORK") && (
             <Alert severity="error">{errorMessage(login.error)}</Alert>
           )}
           <Button
             type="submit"
-            variant="outlined"
+            variant="contained"
+            sx={{
+              color: mode === "dark" ? "#e0e6ef" : "#fff", borderRadius: 2,
+              background: "linear-gradient(180deg, #3978ed, #1f55c7)",
+              border: "1px solid #6197ff", borderBottom: "4px solid #173d94", boxShadow: "none",
+              transition: "background 200ms, transform 150ms, border-width 150ms",
+              "&:hover": { background: "linear-gradient(180deg, #3270df, #1d4daf)", boxShadow: "none" },
+              "&:active": { transform: "translateY(2px)", borderBottomWidth: "2px" },
+              "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+            }}
             disabled={login.isPending}
             endIcon={<ArrowForwardRounded />}
           >
@@ -220,12 +193,14 @@ export function LoginPage({ portal }: { portal: Portal }) {
           </Button>
         </Stack>
         {!management && (
-          <GoogleSignIn remember={rememberLogin} onSuccess={onSignedIn} />
+          <GoogleSignIn onSuccess={onSignedIn} />
         )}
         {!management && (
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          <Stack direction="row" alignItems="center" justifyContent="center" useFlexGap flexWrap="wrap" columnGap={0.5}>
+            <Typography variant="body2" color="text.secondary">Chưa có tài khoản?</Typography>
             <Button
               component={Link}
+              sx={{ px: 1 }}
               to={
                 params.has("returnTo")
                   ? `/register?${new URLSearchParams({ returnTo: safeReturnTo(params.get("returnTo"), portal) })}`
@@ -234,20 +209,10 @@ export function LoginPage({ portal }: { portal: Portal }) {
             >
               Tạo tài khoản
             </Button>
-            <Button component={Link} to="/forgot-password">
-              Quên mật khẩu
-            </Button>
           </Stack>
         )}
-        <Button
-          component={Link}
-          to={management ? "/login" : "/management/login"}
-          color="secondary"
-        >
-          {management
-            ? "Đến đăng nhập khách hàng"
-            : "Đến đăng nhập nhân viên / admin"}
-        </Button>
+        </Stack>
+        </Paper>
       </Stack>
     </Box>
   );

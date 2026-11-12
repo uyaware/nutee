@@ -2,11 +2,11 @@ import { z } from "zod";
 
 export const authPasswordSchema = z
   .string()
-  .min(12, "Mật khẩu cần ít nhất 12 ký tự.")
-  .max(72, "Mật khẩu tối đa 72 byte UTF-8.")
+  .min(8, "Mật khẩu cần ít nhất 8 ký tự")
+  .max(72, "Mật khẩu tối đa 72 ký tự")
   .refine(
     (value) => new TextEncoder().encode(value).length <= 72,
-    "Mật khẩu tối đa 72 byte UTF-8.",
+    "Mật khẩu tối đa 72 ký tự",
   );
 export const registrationSchema = z
   .object({
@@ -14,12 +14,12 @@ export const registrationSchema = z
       .string()
       .trim()
       .toLowerCase()
-      .pipe(z.email("Nhập địa chỉ email hợp lệ.")),
+      .pipe(z.email("Nhập địa chỉ email hợp lệ")),
     password: authPasswordSchema,
     confirmPassword: z.string().min(1, "Nhập lại mật khẩu."),
   })
   .refine((fields) => fields.password === fields.confirmPassword, {
     path: ["confirmPassword"],
-    message: "Mật khẩu xác nhận không khớp.",
+    message: "Mật khẩu xác nhận không khớp",
   });
 export type RegistrationInput = z.infer<typeof registrationSchema>;

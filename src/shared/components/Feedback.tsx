@@ -6,7 +6,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { errorMessage } from "@/shared/lib/errors";
+import { errorMessage, ServiceError } from "@/shared/lib/errors";
 
 export function LoadingState() {
   return (
@@ -23,6 +23,8 @@ export function ErrorState({
   error: unknown;
   retry?: () => void;
 }) {
+  if (error instanceof ServiceError && error.code === "NETWORK") return null;
+
   return (
     <Alert
       severity="error"

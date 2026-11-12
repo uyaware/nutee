@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Box, Button, CircularProgress, Stack } from "@mui/material";
 import { services } from "@/app/services";
 import type { User } from "@/modules/auth/model/types";
-import { errorMessage } from "@/shared/lib/errors";
+import { errorMessage, ServiceError } from "@/shared/lib/errors";
+import { useReportSystemError } from "@/shared/lib/systemError";
 
 type GoogleId = {
     initialize(options: {
@@ -31,10 +32,10 @@ function loadGoogle(): Promise<GoogleId> {
             script.onload = () =>
                 window.google
                     ? resolve(window.google.accounts.id)
-                    : reject(new Error("Không thể tải Google."));
+                    : reject(new ServiceError("NETWORK", "Không thể tải Google."));
             script.onerror = () => {
                 script.remove();
-                reject(new Error("Không thể tải Google. Vui lòng thử lại."));
+                reject(new ServiceError("NETWORK", "Không thể tải Google. Vui lòng thử lại."));
             };
             document.head.appendChild(script);
         }).catch((error) => {
@@ -47,21 +48,25 @@ function loadGoogle(): Promise<GoogleId> {
 
 export function GoogleSignIn({
     onSuccess,
-    remember = false,
     mode = "login",
 }: {
     onSuccess: (user: User) => Promise<void>;
-    remember?: boolean;
     mode?: "login" | "link";
 }) {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     const container = useRef<HTMLDivElement>(null);
-    const latest = useRef({ onSuccess, remember });
+    const latest = useRef({ onSuccess });
     useEffect(() => {
-        latest.current = { onSuccess, remember };
-    }, [onSuccess, remember]);
+        latest.current = { onSuccess };
+    }, [onSuccess]);
     const [attempt, setAttempt] = useState(0);
-    const [error, setError] = useState("");
+    const [error, setError] = useState<unknown>(null);
+    useReportSystemError(error);
+    useEffect(() => {
+        if (!(error instanceof ServiceError) || error.code !== "NETWORK") return;
+        const timer = setTimeout(() => setAttempt((value) => value + 1), 10000);
+        return () => clearTimeout(timer);
+    }, [error]);
     const [busy, setBusy] = useState(false);
     useEffect(() => {
         if (!clientId) return;
@@ -82,14 +87,11 @@ export function GoogleSignIn({
                         submitting = true;
                         clearTimeout(renewal);
                         setBusy(true);
-                        setError("");
+                        setError(null);
                         void (
                             mode === "link"
                                 ? services.auth.linkGoogle(credential)
-                                : services.auth.google(
-                                      credential,
-                                      latest.current.remember,
-                                  )
+                                : services.auth.google(credential)
                         )
                             .then((user) => {
                                 if (active)
@@ -97,7 +99,7 @@ export function GoogleSignIn({
                             })
                             .catch((reason) => {
                                 if (active) {
-                                    setError(errorMessage(reason));
+                                    setError(reason);
                                     setAttempt((value) => value + 1);
                                 }
                             })
@@ -107,6 +109,7 @@ export function GoogleSignIn({
                             });
                     },
                 });
+                setError(null);
                 container.current.replaceChildren();
                 google.renderButton(container.current, {
                     theme: "outline",
@@ -120,7 +123,7 @@ export function GoogleSignIn({
                     4 * 60 * 1000,
                 );
             } catch (reason) {
-                if (active) setError(errorMessage(reason));
+                if (active) setError(reason);
             }
         }
         void prepare();
@@ -155,13 +158,13 @@ export function GoogleSignIn({
                     }
                 />
             )}
-            {error && (
+            {!!error && !(error instanceof ServiceError && error.code === "NETWORK") && (
                 <Alert
                     severity="error"
                     action={
                         <Button
                             onClick={() => {
-                                setError("");
+                                setError(null);
                                 setAttempt((value) => value + 1);
                             }}
                         >
@@ -169,7 +172,7 @@ export function GoogleSignIn({
                         </Button>
                     }
                 >
-                    {error}
+                    {errorMessage(error)}
                 </Alert>
             )}
         </Stack>

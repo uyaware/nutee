@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { backofficeTheme } from "@/shared/theme";
 import { RequireAuth } from "@/modules/auth/guards/RequireAuth";
 import { LoginPage } from "@/modules/auth/pages/LoginPage";
+import { CustomerThemeProvider } from "@/shared/theme/CustomerThemeProvider";
 import { OrderDetailPage } from "@/modules/orders/pages/OrdersPage";
 import { SystemPage } from "@/shared/components/SystemPage";
 import { ManagementLayout } from "@/app/layouts/ManagementLayout";
@@ -52,7 +53,7 @@ export default function BackofficeRoutes() {
             <Routes>
                 <Route
                     path="login"
-                    element={<LoginPage portal="backoffice" />}
+                    element={<CustomerThemeProvider><LoginPage portal="backoffice" /></CustomerThemeProvider>}
                 />
                 <Route element={<RequireAuth portal="backoffice" />}>
                     <Route element={<ManagementLayout />}>

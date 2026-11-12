@@ -6,12 +6,11 @@ export interface AuthService {
         portal: Portal,
         email: string,
         password: string,
-        remember?: boolean,
     ): Promise<User>;
     currentUser(portal: Portal): Promise<User | null>;
     logout(portal: Portal): Promise<void>;
     googleNonce(): Promise<{ nonce: string }>;
-    google(credential: string, remember?: boolean): Promise<User>;
+    google(credential: string): Promise<User>;
     linkGoogle(credential: string): Promise<User>;
     forgotPassword(email: string): Promise<{ message: string }>;
     resetPassword(token: string, password: string): Promise<void>;

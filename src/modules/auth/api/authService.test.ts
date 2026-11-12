@@ -52,16 +52,15 @@ describe("JWT authentication via HttpOnly cookies", () => {
         for (const [, init] of fetch.mock.calls)
             expect(init?.headers ?? {}).not.toHaveProperty("Authorization");
     });
-    it("sends the remember preference to the server and /me does not need token headers", async () => {
+    it("logs in and reads /me without token headers", async () => {
         const { auth, fetch } = setup();
-        await auth.login("customer", user.email, "Password12345!", true);
+        await auth.login("customer", user.email, "Password12345!");
         expect(fetch).toHaveBeenCalledWith(
             "/api/v1/auth/login",
             expect.objectContaining({
                 body: JSON.stringify({
                     identifier: user.email,
                     password: "Password12345!",
-                    remember: true,
                 }),
             }),
         );
@@ -126,13 +125,13 @@ describe("JWT authentication via HttpOnly cookies", () => {
         expect(fetch.mock.calls.map(([url]) => url)).toEqual(
             expect.arrayContaining([
                 "/api/v1/auth/social/google/nonce",
-                "/api/v1/auth/social/google?remember=false",
+                "/api/v1/auth/social/google",
                 "/api/v1/auth/forgot-password",
                 "/api/v1/auth/reset-password",
             ]),
         );
         expect(fetch).toHaveBeenCalledWith(
-            "/api/v1/auth/social/google?remember=false",
+            "/api/v1/auth/social/google",
             expect.objectContaining({
                 body: JSON.stringify({ credential: "google-id-token" }),
             }),

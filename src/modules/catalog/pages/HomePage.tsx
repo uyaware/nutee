@@ -80,7 +80,7 @@ export default function HomePage() {
             <Box component="span" sx={{ display: "block", whiteSpace: "nowrap" }}>
               Đồ án chuyên ngành
             </Box>
-            <Box component="span" sx={{ display: "block", whiteSpace: "nowrap", color: dark ? "#a9bfff" : "#2956ae" }}>
+            <Box component="span" sx={{ display: "block", whiteSpace: "nowrap", color: tokens.color.blue }}>
               Thương mại điện tử
             </Box>
           </Typography>

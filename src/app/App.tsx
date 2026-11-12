@@ -1,5 +1,10 @@
-import { lazy, Suspense, useEffect } from "react";
-import { Box } from "@mui/material";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Alert, Box } from "@mui/material";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/app/services";
+import type { Mutation } from "@tanstack/react-query";
+import { ServiceError } from "@/shared/lib/errors";
+import { hasReportedSystemError, subscribeSystemErrors } from "@/shared/lib/systemError";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { LoadingState } from "@/shared/components/Feedback";
 const CustomerRoutes = lazy(() => import("@/app/routes/CustomerRoutes"));
@@ -30,8 +35,73 @@ const managementTitles: Record<string, string> = {
   "/management/users": "Tài khoản",
 };
 
+async function checkBackendConnection() {
+  try {
+    await api.request("/auth/me", { authenticated: false });
+  } catch (error) {
+    if (error instanceof ServiceError && (error.code === "UNAUTHORIZED" || error.code === "FORBIDDEN")) return true;
+    throw error;
+  }
+  return true;
+}
+
 export default function App() {
   const location = useLocation();
+  useQuery({
+    queryKey: ["system", "backend-connection"],
+    queryFn: checkBackendConnection,
+    retry: false,
+    refetchInterval: 15000,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
+  });
+  const client = useQueryClient();
+  const queryCache = client.getQueryCache();
+  const mutationCache = client.getMutationCache();
+  const observedMutations = useRef(new Map<Mutation, number>());
+  const alertRef = useRef<HTMLDivElement>(null);
+  const [alertHeight, setAlertHeight] = useState(0);
+  const hasSystemLoadError = useSyncExternalStore(
+    (notify) => queryCache.subscribe(notify),
+    () => queryCache.getAll().some((query) =>
+      query.isActive() && query.state.status === "error" &&
+      query.state.error instanceof ServiceError && query.state.error.code === "NETWORK"
+    ),
+    () => false,
+  );
+  const hasSystemMutationError = useSyncExternalStore(
+    (notify) => mutationCache.subscribe((event) => {
+      const mutation = event.mutation;
+      if (mutation && event.type === "observerAdded") {
+        observedMutations.current.set(mutation, (observedMutations.current.get(mutation) ?? 0) + 1);
+      } else if (mutation && event.type === "observerRemoved") {
+        const count = observedMutations.current.get(mutation) ?? 0;
+        if (count <= 1) observedMutations.current.delete(mutation);
+        else observedMutations.current.set(mutation, count - 1);
+      }
+      notify();
+    }),
+    () => Array.from(observedMutations.current.keys()).some((mutation) =>
+      mutation.state.status === "error" && mutation.state.error instanceof ServiceError &&
+      mutation.state.error.code === "NETWORK"
+    ),
+    () => false,
+  );
+  const hasReportedError = useSyncExternalStore(subscribeSystemErrors, hasReportedSystemError, () => false);
+  const hasSystemError = hasSystemLoadError || hasSystemMutationError || hasReportedError;
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty("--system-alert-height", `${hasSystemError ? alertHeight : 0}px`);
+    return () => { document.documentElement.style.removeProperty("--system-alert-height"); };
+  }, [alertHeight, hasSystemError]);
+  useLayoutEffect(() => {
+    const alert = alertRef.current;
+    if (!hasSystemError || !alert) return;
+    const updateHeight = () => setAlertHeight(alert.getBoundingClientRect().height);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(alert);
+    return () => observer.disconnect();
+  }, [hasSystemError]);
   useEffect(() => {
     const name =
       location.pathname === "/"
@@ -88,12 +158,19 @@ export default function App() {
       >
         Đi đến nội dung chính
       </Box>
+      {hasSystemError && (
+        <Alert ref={alertRef} severity="warning" sx={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 1400, borderRadius: 0, justifyContent: "center" }}>
+          Hệ thống đang gặp sự cố, xin hãy thử lại sau.
+        </Alert>
+      )}
+      <Box sx={{ "--system-alert-height": `${hasSystemError ? alertHeight : 0}px`, pt: `${hasSystemError ? alertHeight : 0}px` }}>
       <Suspense fallback={<LoadingState />}>
         <Routes>
           <Route path="/management/*" element={<BackofficeRoutes />} />
           <Route path="/*" element={<CustomerRoutes />} />
         </Routes>
       </Suspense>
+      </Box>
     </>
   );
 }

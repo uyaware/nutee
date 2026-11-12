@@ -12,7 +12,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { Brand } from "@/shared/components/Brand";
 
 // Sample contact details for the storefront prototype.
-const contact = { email: "hotro@nutee.vn", phone: "0900 123 456" };
+const contact = { email: "not_an_email@nutee.vn", phone: "0900 xxx xxx" };
 
 export function StorefrontFooter({ dark = false }: { dark?: boolean }) {
   return (

@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
+import { tokens } from "@/shared/theme/tokens";
 export function Brand({
   management = false,
   compact = false,
@@ -37,7 +38,7 @@ export function Brand({
             lineHeight: 1.1,
           }}
         >
-          <Box component="span" sx={{ color: "primary.main" }}>
+          <Box component="span" sx={{ color: tokens.color.blue }}>
             NUT
           </Box>
           EE

@@ -66,92 +66,94 @@ export default function PasswordRecoveryPage({
   const isReset = mode === "reset-password";
   return (
     <Stack spacing={3} sx={{ maxWidth: 540, mx: "auto" }}>
-      <Typography variant="h1">
-        {isReset ? "Đặt lại mật khẩu" : "Quên mật khẩu"}
-      </Typography>
-      <Typography color="text.secondary">
-        {isReset
-          ? "Nhập mật khẩu mới cho tài khoản của bạn."
-          : "Nhập email để nhận liên kết đặt lại mật khẩu."}
-      </Typography>
       <Paper variant="outlined" sx={{ p: 3 }}>
-        {!isReset ? (
-          <Stack
-            component="form"
-            spacing={2}
-            noValidate
-            onSubmit={emailForm.handleSubmit((fields) =>
-              forgot.mutate(fields.email),
-            )}
-          >
-            <TextField
-              label="Email"
-              type="email"
-              autoComplete="email"
-              {...emailForm.register("email")}
-              error={!!emailForm.formState.errors.email}
-              helperText={emailForm.formState.errors.email?.message}
-            />
-            {forgot.isSuccess && (
-              <Alert severity="success">{forgot.data.message}</Alert>
-            )}
-            {forgot.isError && (
-              <Alert severity="error">{errorMessage(forgot.error)}</Alert>
-            )}
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={forgot.isPending}
+        <Stack spacing={2}>
+          <Typography variant="h2" component="h1" sx={{ fontSize: { xs: "1.4rem", sm: "1.6rem" } }}>
+            {isReset ? "Đặt lại mật khẩu" : "Quên mật khẩu"}
+          </Typography>
+          <Typography color="text.secondary" sx={{ fontSize: "1rem", lineHeight: 1.65 }}>
+            {isReset
+              ? "Nhập mật khẩu mới cho tài khoản của bạn."
+              : "Nhập email để nhận liên kết đặt lại mật khẩu."}
+          </Typography>
+          {!isReset ? (
+            <Stack
+              component="form"
+              spacing={2}
+              noValidate
+              onSubmit={emailForm.handleSubmit((fields) =>
+                forgot.mutate(fields.email),
+              )}
             >
-              {forgot.isPending ? "Đang gửi…" : "Gửi liên kết đặt lại mật khẩu"}
-            </Button>
-          </Stack>
-        ) : reset.isSuccess ? (
-          <Alert severity="success">
-            Đã đổi mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.
-          </Alert>
-        ) : !/^[A-Za-z0-9_-]{43}$/.test(token) ? (
-          <Alert severity="warning">
-            Liên kết không hợp lệ. Hãy yêu cầu liên kết đặt lại mật khẩu mới.
-          </Alert>
-        ) : (
-          <Stack
-            component="form"
-            spacing={2}
-            noValidate
-            onSubmit={resetForm.handleSubmit((fields) =>
-              reset.mutate(fields.password),
-            )}
-          >
-            <PasswordField
-              label="Mật khẩu mới"
-              autoComplete="new-password"
-              {...resetForm.register("password")}
-              error={!!resetForm.formState.errors.password}
-              helperText={
-                resetForm.formState.errors.password?.message ??
-                "Ít nhất 12 ký tự, tối đa 72 byte UTF-8."
-              }
-            />
-            <PasswordField
-              label="Xác nhận mật khẩu"
-              autoComplete="new-password"
-              {...resetForm.register("confirmPassword")}
-              error={!!resetForm.formState.errors.confirmPassword}
-              helperText={resetForm.formState.errors.confirmPassword?.message}
-            />
-            {reset.isError && (
-              <Alert severity="error">{errorMessage(reset.error)}</Alert>
-            )}
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={reset.isPending}
+              <TextField
+                label="Email"
+                type="email"
+                autoComplete="email"
+                {...emailForm.register("email")}
+                error={!!emailForm.formState.errors.email}
+                helperText={emailForm.formState.errors.email?.message}
+              />
+              {forgot.isSuccess && (
+                <Alert severity="success">{forgot.data.message}</Alert>
+              )}
+              {forgot.isError && (
+                <Alert severity="error">{errorMessage(forgot.error)}</Alert>
+              )}
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={forgot.isPending}
+              >
+                {forgot.isPending ? "Đang gửi…" : "Gửi liên kết đặt lại mật khẩu"}
+              </Button>
+            </Stack>
+          ) : reset.isSuccess ? (
+            <Alert severity="success">
+              Đã đổi mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.
+            </Alert>
+          ) : !/^[A-Za-z0-9_-]{43}$/.test(token) ? (
+            <Alert severity="warning">
+              Liên kết không hợp lệ. Hãy yêu cầu liên kết đặt lại mật khẩu mới.
+            </Alert>
+          ) : (
+            <Stack
+              component="form"
+              spacing={2}
+              noValidate
+              onSubmit={resetForm.handleSubmit((fields) =>
+                reset.mutate(fields.password),
+              )}
             >
-              {reset.isPending ? "Đang lưu…" : "Lưu mật khẩu mới"}
-            </Button>
-          </Stack>
-        )}
+              <PasswordField
+                label="Mật khẩu mới"
+                autoComplete="new-password"
+                {...resetForm.register("password")}
+                error={!!resetForm.formState.errors.password}
+                helperText={
+                  resetForm.formState.errors.password?.message ??
+                  "Ít nhất 12 ký tự, tối đa 72 byte UTF-8."
+                }
+              />
+              <PasswordField
+                label="Xác nhận mật khẩu"
+                autoComplete="new-password"
+                {...resetForm.register("confirmPassword")}
+                error={!!resetForm.formState.errors.confirmPassword}
+                helperText={resetForm.formState.errors.confirmPassword?.message}
+              />
+              {reset.isError && (
+                <Alert severity="error">{errorMessage(reset.error)}</Alert>
+              )}
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={reset.isPending}
+              >
+                {reset.isPending ? "Đang lưu…" : "Lưu mật khẩu mới"}
+              </Button>
+            </Stack>
+          )}
+        </Stack>
       </Paper>
       {isReset && (
         <Button component={Link} to="/forgot-password">
