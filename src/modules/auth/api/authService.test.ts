@@ -121,7 +121,7 @@ describe("JWT authentication via HttpOnly cookies", () => {
         await auth.googleNonce();
         await auth.google("google-id-token");
         await auth.forgotPassword(user.email);
-        await auth.resetPassword("reset-token", "Password12345!");
+        await auth.resetPassword(user.email, "012345", "Password12345!");
         expect(fetch.mock.calls.map(([url]) => url)).toEqual(
             expect.arrayContaining([
                 "/api/v1/auth/social/google/nonce",

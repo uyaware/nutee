@@ -2,7 +2,8 @@ import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import { Link } from "react-router-dom";
 import { prototypeOrders } from "@/modules/orders/fixtures/orders";
-import { prototypeAfterSales } from "@/modules/after-sales/fixtures/afterSales";
+import { useAfterSaleCount } from "@/modules/management/hooks/useAfterSaleCount";
+import { ErrorState } from "@/shared/components/Feedback";
 import { useSession } from "@/modules/auth/hooks/useSession";
 import { roleLabels } from "@/modules/auth/model/permissions";
 import { OrdersPage } from "@/modules/orders/pages/OrdersPage";
@@ -11,15 +12,13 @@ import AdminDashboardPage from "@/modules/management/dashboard/pages/AdminDashbo
 
 export default function DashboardPage() {
   const session = useSession("backoffice");
+  const afterSales = useAfterSaleCount();
   if (session.data?.role === "admin") return <AdminDashboardPage />;
   const data = {
     orders: prototypeOrders.length,
     pending: prototypeOrders.filter((order) => order.status === "pending")
       .length,
-    afterSales: prototypeAfterSales.filter(
-      (request) =>
-        request.status === "pending" || request.status === "reviewing",
-    ).length,
+    afterSales: afterSales.data ?? (afterSales.isError ? "—" : "…"),
     paidRevenue: prototypeOrders
       .filter(
         (order) =>
@@ -46,6 +45,7 @@ export default function DashboardPage() {
   ];
   return (
     <Stack spacing={4}>
+      {afterSales.isError && <ErrorState error={afterSales.error} retry={() => void afterSales.refetch()} />}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"

@@ -262,14 +262,16 @@ test("forgot and reset password submit API shapes with CSRF and reject mismatche
     await page.getByLabel("Email", { exact: true }).fill(user.email);
     const forgot = page.waitForRequest("**/api/v1/auth/forgot-password");
     await page
-        .getByRole("button", { name: "Gửi liên kết đặt lại mật khẩu" })
+        .getByRole("button", { name: "Gửi mã OTP" })
         .click();
     expect((await forgot).postDataJSON()).toEqual({ email: user.email });
     await expect(page.getByRole("alert")).toContainText(
         "Nếu email có tài khoản phù hợp",
     );
-    const token = "a".repeat(43);
-    await page.goto(`/reset-password#token=${token}`);
+    const otp = "012345";
+    await page.getByRole("button", { name: "Gửi lại mã OTP" }).click();
+    await expect(page.getByText("Vui lòng đợi đủ 60 giây trước khi gửi lại mã.")).toBeVisible();
+    await page.getByLabel("Mã OTP", { exact: true }).fill(otp);
     await page
         .getByLabel("Mật khẩu mới", { exact: true })
         .fill("ReplacementPassword123!");
@@ -284,7 +286,8 @@ test("forgot and reset password submit API shapes with CSRF and reject mismatche
     const reset = page.waitForRequest("**/api/v1/auth/reset-password");
     await page.getByRole("button", { name: "Lưu mật khẩu mới" }).click();
     expect((await reset).postDataJSON()).toEqual({
-        token,
+        email: user.email,
+        otp,
         password: "ReplacementPassword123!",
     });
     await expect(page.getByRole("alert")).toContainText("Đã đổi mật khẩu");

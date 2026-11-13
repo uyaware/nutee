@@ -130,10 +130,10 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
                 body: { email },
                 authenticated: false,
             }),
-        resetPassword: async (token, password) => {
+        resetPassword: async (email, otp, password) => {
             await api.request<void>("/auth/reset-password", {
                 method: "POST",
-                body: { token, password },
+                body: { email, otp, password },
                 authenticated: false,
             });
         },

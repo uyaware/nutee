@@ -13,5 +13,5 @@ export interface AuthService {
     google(credential: string): Promise<User>;
     linkGoogle(credential: string): Promise<User>;
     forgotPassword(email: string): Promise<{ message: string }>;
-    resetPassword(token: string, password: string): Promise<void>;
+    resetPassword(email: string, otp: string, password: string): Promise<void>;
 }

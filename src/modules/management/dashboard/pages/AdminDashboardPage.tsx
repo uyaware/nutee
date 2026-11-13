@@ -15,7 +15,8 @@ import {
   promotionStatus,
 } from "@/modules/management/fixtures/admin";
 import { prototypeOrders } from "@/modules/orders/fixtures/orders";
-import { prototypeAfterSales } from "@/modules/after-sales/fixtures/afterSales";
+import { useAfterSaleCount } from "@/modules/management/hooks/useAfterSaleCount";
+import { ErrorState } from "@/shared/components/Feedback";
 import { money } from "@/shared/lib/format";
 import { useSession } from "@/modules/auth/hooks/useSession";
 import { StatusBadge } from "@/shared/components/StatusBadge";
@@ -30,6 +31,7 @@ import { alpha } from "@mui/material/styles";
 export default function AdminDashboardPage() {
   const { data } = useAdminPrototype();
   const session = useSession("backoffice");
+  const afterSales = useAfterSaleCount();
   const { params, update } = useAdminFilters();
   const days = params.get("period") === "7" ? 7 : 30;
   const day = 86400000;
@@ -44,9 +46,6 @@ export default function AdminDashboardPage() {
     (o) => o.paymentStatus === "paid" && o.status !== "cancelled",
   );
   const paidRevenue = paid.reduce((sum, o) => sum + o.total, 0);
-  const requests = prototypeAfterSales.filter(
-    (r) => r.status === "pending" || r.status === "reviewing",
-  );
   const metrics = [
     {
       label: "Giá trị đơn đã thanh toán",
@@ -65,7 +64,7 @@ export default function AdminDashboardPage() {
     },
     {
       label: "Yêu cầu cần xử lý",
-      value: requests.length,
+      value: afterSales.data ?? (afterSales.isError ? "—" : "…"),
       note: "Tất cả yêu cầu chờ / đang kiểm tra",
     },
   ];
@@ -111,6 +110,7 @@ export default function AdminDashboardPage() {
     .slice(0, 5);
   return (
     <Stack spacing={3}>
+      {afterSales.isError && <ErrorState error={afterSales.error} retry={() => void afterSales.refetch()} />}
       <AdminPageHeader
         title={`Chào ${session.data?.name}.`}
         description="Tổng quan kinh doanh và các công việc cần chú ý."

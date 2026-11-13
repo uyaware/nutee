@@ -6,6 +6,7 @@ import { createProfileService } from "@/modules/account/api/profileService";
 import { createDiscountService } from "@/modules/management/api/discountService";
 import { createCheckoutService } from "@/modules/checkout/api/checkoutService";
 import { createOrderService } from "@/modules/orders/api/orderService";
+import { createAfterSaleService } from "@/modules/after-sales/api/afterSaleService";
 
 export const api = createApiClient({
     baseUrl: import.meta.env.VITE_API_BASE_URL ?? "/api/v1",
@@ -20,4 +21,5 @@ export const services = {
     discounts: createDiscountService(api),
     checkout: createCheckoutService(api),
     orders: createOrderService(api),
+    afterSales: createAfterSaleService(api),
 };

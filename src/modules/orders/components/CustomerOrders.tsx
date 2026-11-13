@@ -350,6 +350,21 @@ export function CustomerOrderDetail() {
                     )}
                     <Divider />
                     <OrderProducts items={orderProducts(order)} />
+                    {order.status === "delivered" && (
+                        <Stack spacing={1}>
+                            {order.items.map((item) => (
+                                <Button
+                                    key={item.id}
+                                    component={Link}
+                                    to={`/account/after-sales/new?orderId=${order.id}&itemId=${item.id}`}
+                                    variant="outlined"
+                                    sx={{ alignSelf: "flex-start" }}
+                                >
+                                    Bảo hành / đổi trả: {item.name}
+                                </Button>
+                            ))}
+                        </Stack>
+                    )}
                     <Divider />
                     <OrderTotals quote={order} />
                     <Typography>

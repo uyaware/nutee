@@ -42,10 +42,10 @@ const OperationsOrdersPage = lazy(
     () => import("@/modules/orders/pages/ConnectedOperationsOrdersPage"),
 );
 const AfterSalesPage = lazy(
-    () => import("@/modules/after-sales/pages/PrototypeAfterSales"),
+    () => import("@/modules/after-sales/pages/AfterSalesPage"),
 );
 const AfterSaleDetailPage = lazy(
-    () => import("@/modules/after-sales/pages/PrototypeAfterSaleDetail"),
+    () => import("@/modules/after-sales/pages/AfterSaleDetailPage"),
 );
 export default function BackofficeRoutes() {
     return (
