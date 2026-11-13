@@ -25,18 +25,16 @@ describe("shared error toast reporting", () => {
             "Có lỗi xảy ra. Vui lòng thử lại.",
         );
     });
-    it("does not duplicate the same cache/component error and retains its retry action", async () => {
+    it("does not duplicate the same cache/component error", async () => {
         const { reportErrorToast, currentErrorToast, dismissErrorToast } =
             await import("@/shared/lib/errorToast");
         const { ServiceError } = await import("@/shared/lib/errors");
         const error = new ServiceError("CONFLICT", "Không lưu được thay đổi.");
-        const retry = vi.fn();
         reportErrorToast(error);
         const id = currentErrorToast()!.id;
-        reportErrorToast(error, retry);
+        reportErrorToast(error);
         expect(currentErrorToast()).toMatchObject({
             id,
-            retry,
             message: error.message,
         });
         dismissErrorToast(id);
@@ -61,14 +59,12 @@ describe("shared error toast reporting", () => {
         );
         expect(currentErrorToast()?.message).toBe("Không lưu được thay đổi.");
     });
-    it("does not spam system toasts from polling and does not expose technical details", async () => {
+    it("preserves server messages without spamming system toasts from polling", async () => {
         const { reportErrorToast, currentErrorToast, dismissErrorToast } =
             await import("@/shared/lib/errorToast");
         const { ServiceError } = await import("@/shared/lib/errors");
-        reportErrorToast(new ServiceError("SERVER", "Internal details"));
-        expect(currentErrorToast()?.message).toBe(
-            "Hệ thống đang gặp sự cố, xin hãy thử lại sau.",
-        );
+        reportErrorToast(new ServiceError("SERVER", "Dịch vụ đang bảo trì."));
+        expect(currentErrorToast()?.message).toBe("Dịch vụ đang bảo trì.");
         dismissErrorToast(currentErrorToast()!.id);
         reportErrorToast(new ServiceError("NETWORK", "Network details"));
         expect(currentErrorToast()).toBeUndefined();

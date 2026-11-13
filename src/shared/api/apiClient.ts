@@ -32,11 +32,10 @@ class ApiError extends ServiceError {
                       : status >= 500
                         ? "SERVER"
                         : "VALIDATION",
-            status === 401
-                ? "Thông tin đăng nhập không hợp lệ."
-                : status >= 500
-                  ? "Hệ thống đang gặp sự cố, xin hãy thử lại sau."
-                  : (detail ?? "Yêu cầu không thành công. Vui lòng thử lại."),
+            detail ??
+                (status >= 500
+                    ? "Hệ thống đang gặp sự cố, xin hãy thử lại sau."
+                    : "Có lỗi xảy ra."),
             fieldErrors,
         );
     }
@@ -89,12 +88,17 @@ export function createApiClient(
             const problem = (body && typeof body === "object" ? body : {}) as {
                 code?: string;
                 detail?: string;
+                message?: string;
                 errors?: { field: string; message: string }[];
             };
             throw new ApiError(
                 response.status,
                 problem.code,
-                typeof problem.detail === "string" ? problem.detail : undefined,
+                [problem.message, problem.detail].find(
+                    (message): message is string =>
+                        typeof message === "string" &&
+                        message.trim().length > 0,
+                ),
                 Array.isArray(problem.errors)
                     ? Object.fromEntries(
                           problem.errors

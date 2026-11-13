@@ -13,8 +13,6 @@ export function LoadingState() {
 }
 export function ErrorState({
     error,
-    retry,
-    retryLabel,
 }: {
     error: unknown;
     retry?: () => void;
@@ -22,8 +20,8 @@ export function ErrorState({
 }) {
     useReportSystemError(error);
     useEffect(() => {
-        reportErrorToast(error, retry, retryLabel);
-    }, [error, retry, retryLabel]);
+        reportErrorToast(error);
+    }, [error]);
     return null;
 }
 export function EmptyState({

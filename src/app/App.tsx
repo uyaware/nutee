@@ -7,7 +7,7 @@ import {
     useState,
     useSyncExternalStore,
 } from "react";
-import { Alert, Box, Button } from "@mui/material";
+import { Alert, Box } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/app/services";
 import type { Mutation } from "@tanstack/react-query";
@@ -208,20 +208,6 @@ export default function App() {
                     ref={alertRef}
                     severity="warning"
                     data-testid="system-error-banner"
-                    action={
-                        <Button
-                            color="inherit"
-                            onClick={() => {
-                                void client.refetchQueries({
-                                    type: "active",
-                                    predicate: (query) =>
-                                        query.state.status === "error",
-                                });
-                            }}
-                        >
-                            Thử lại
-                        </Button>
-                    }
                     sx={{
                         position: "fixed",
                         top: 0,

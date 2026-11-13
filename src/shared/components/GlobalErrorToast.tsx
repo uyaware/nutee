@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { Alert, Button, Portal, Snackbar } from "@mui/material";
+import { Alert, Portal, Snackbar } from "@mui/material";
 import {
     currentErrorToast,
     dismissErrorToast,
@@ -40,20 +40,6 @@ export function GlobalErrorToast() {
                     onClose={() => {
                         if (notice) dismissErrorToast(notice.id);
                     }}
-                    action={
-                        notice?.retry ? (
-                            <Button
-                                color="inherit"
-                                size="small"
-                                onClick={() => {
-                                    dismissErrorToast(notice.id);
-                                    notice.retry?.();
-                                }}
-                            >
-                                {notice.retryLabel}
-                            </Button>
-                        ) : undefined
-                    }
                 >
                     {notice?.message}
                 </Alert>

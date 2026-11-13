@@ -33,7 +33,7 @@ describe("shared API client", () => {
             createApiClient({ fetch }).request("/products"),
         ).rejects.toMatchObject({ code: "SERVER" });
     });
-    it("keeps ordinary API errors separate from server outages and hides internal 500 details", async () => {
+    it("preserves backend details for ordinary and server errors", async () => {
         const fetch = vi
             .fn<typeof globalThis.fetch>()
             .mockResolvedValueOnce(
@@ -43,7 +43,7 @@ describe("shared API client", () => {
                 ),
             )
             .mockResolvedValueOnce(
-                response({ detail: "Internal SQL details" }, 500),
+                response({ detail: "Dịch vụ đang bảo trì." }, 500),
             );
         const api = createApiClient({ fetch });
         await expect(api.request("/products/999")).rejects.toMatchObject({
@@ -52,9 +52,24 @@ describe("shared API client", () => {
         });
         await expect(api.request("/products/1")).rejects.toMatchObject({
             code: "SERVER",
-            message: "Hệ thống đang gặp sự cố, xin hãy thử lại sau.",
+            message: "Dịch vụ đang bảo trì.",
         });
     });
+    it.each([401, 409, 500])(
+        "preserves backend message for HTTP %s",
+        async (status) => {
+            const fetch = vi
+                .fn<typeof globalThis.fetch>()
+                .mockResolvedValue(
+                    response({ message: "Thông báo từ backend." }, status),
+                );
+            await expect(
+                createApiClient({ fetch }).request("/auth/login", {
+                    authenticated: false,
+                }),
+            ).rejects.toMatchObject({ message: "Thông báo từ backend." });
+        },
+    );
     it("includes cookies on every request and adds CSRF to future domain mutations", async () => {
         const fetch = vi
             .fn<typeof globalThis.fetch>()

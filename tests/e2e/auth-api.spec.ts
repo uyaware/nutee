@@ -341,7 +341,7 @@ test("invalid credentials stay on login and show the API error", async ({
     await page.getByLabel("Mật khẩu", { exact: true }).fill("wrong");
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
     await expect(page.getByRole("alert")).toContainText(
-        "Thông tin đăng nhập không hợp lệ",
+        "Invalid credentials",
     );
     await expect(page).toHaveURL(/\/login$/);
 });

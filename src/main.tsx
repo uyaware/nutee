@@ -18,14 +18,7 @@ import App from "@/app/App";
 const client: QueryClient = new QueryClient({
     queryCache: new QueryCache({
         onError: (error, query) => {
-            if (!query.meta?.silentErrorToast)
-                reportErrorToast(error, () => {
-                    void client.refetchQueries({
-                        queryKey: query.queryKey,
-                        exact: true,
-                        type: "active",
-                    });
-                });
+            if (!query.meta?.silentErrorToast) reportErrorToast(error);
         },
     }),
     mutationCache: new MutationCache({

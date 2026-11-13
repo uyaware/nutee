@@ -88,7 +88,7 @@ async function mockBackend(page: Page) {
 }
 
 for (const width of [1280, 375]) {
-    test(`500 shows a persistent banner above the navbar with no inline error at ${width}px and recovers on retry`, async ({
+    test(`500 shows a persistent banner above the navbar with no inline error at ${width}px and recovers after reload`, async ({
         page,
     }) => {
         const state = await mockBackend(page);
@@ -98,6 +98,12 @@ for (const width of [1280, 375]) {
         const banner = page.getByTestId("system-error-banner");
         await expect(banner).toContainText("Hệ thống đang gặp sự cố");
         await expect(page.getByTestId("error-toast")).toBeVisible();
+        await expect(banner.getByRole("button")).toHaveCount(0);
+        await expect(
+            page
+                .getByTestId("error-toast")
+                .getByRole("button", { name: "Thử lại" }),
+        ).toHaveCount(0);
         await expect(page.locator("main").getByRole("alert")).toHaveCount(0);
         const bar = await banner.boundingBox();
         const navbar = await page.locator("header").boundingBox();
@@ -107,10 +113,12 @@ for (const width of [1280, 375]) {
         await expect(page.getByTestId("error-toast")).toHaveCount(0);
         await expect(banner).toBeVisible();
         state.status = 200;
-        await banner.getByRole("button", { name: "Thử lại" }).click();
+        await page.reload();
+        await expect(page.locator("header")).toBeVisible();
         await expect(banner).toHaveCount(0);
-        const recovered = await page.locator("header").boundingBox();
-        expect(recovered!.y).toBe(0);
+        await expect
+            .poll(async () => (await page.locator("header").boundingBox())?.y)
+            .toBe(0);
         expect(
             await page.evaluate(
                 () => document.documentElement.scrollWidth <= innerWidth,
@@ -132,6 +140,7 @@ test("ordinary API failures use one toast, preserve drafts and never show an inl
     const toast = page.getByTestId("error-toast");
     await expect(toast).toContainText("Không lưu được hồ sơ.");
     await expect(toast.getByRole("alert")).toHaveCount(1);
+    await expect(toast.getByRole("button", { name: "Thử lại" })).toHaveCount(0);
     await expect(page.getByTestId("system-error-banner")).toHaveCount(0);
     await expect(page.locator("main").getByRole("alert")).toHaveCount(0);
     await expect(page.getByLabel("Tên hiển thị", { exact: true })).toHaveValue(
@@ -150,9 +159,9 @@ test("mutation 503 also shows the top banner without exposing backend details in
     await page.getByRole("button", { name: "Lưu hồ sơ", exact: true }).click();
     await expect(page.getByTestId("system-error-banner")).toBeVisible();
     await expect(page.locator("main").getByRole("alert")).toHaveCount(0);
-    await expect(
-        page.getByText("Không lưu được hồ sơ.", { exact: true }),
-    ).toHaveCount(0);
+    await expect(page.getByTestId("error-toast")).toContainText(
+        "Không lưu được hồ sơ.",
+    );
     state.rejectSave = 0;
     await page.getByRole("button", { name: "Lưu hồ sơ", exact: true }).click();
     await expect(page.getByTestId("system-error-banner")).toHaveCount(0);
