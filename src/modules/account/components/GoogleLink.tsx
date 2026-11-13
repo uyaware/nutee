@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { Alert, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { GoogleSignIn } from "@/modules/auth/components/GoogleSignIn";
 import { useProfile } from "@/modules/account/hooks/useProfile";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
+import {
+    AccountSection,
+    AccountSectionBody,
+} from "@/modules/account/components/AccountSection";
 
 export function GoogleLink() {
     const profile = useProfile();
     const client = useQueryClient();
     const [linkedOwner, setLinkedOwner] = useState<string | null>(null);
     return (
-        <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 3 } }}>
-            <Stack spacing={2}>
+        <AccountSection>
+            <AccountSectionBody spacing={2}>
                 <Typography variant="h3" component="h2">
                     Liên kết Google
                 </Typography>
@@ -59,7 +63,7 @@ export function GoogleLink() {
                         )}
                     </>
                 )}
-            </Stack>
-        </Paper>
+            </AccountSectionBody>
+        </AccountSection>
     );
 }

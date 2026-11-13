@@ -238,7 +238,7 @@ export default function HomePage() {
             }}
           >
             {products.data.map((p) => (
-              <ProductCard key={p.id} product={p} dark={dark} home />
+              <ProductCard key={p.id} product={p} home />
             ))}
           </Box>
         )}

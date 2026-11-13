@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-    Alert,
-    Box,
-    Button,
-    Divider,
-    Paper,
-    Stack,
-    Typography,
-} from "@mui/material";
+import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import LockOutlined from "@mui/icons-material/LockOutlined";
 import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
 import { Link } from "react-router-dom";
@@ -17,6 +9,12 @@ import { z } from "zod";
 import { PasswordField } from "@/shared/components/PasswordField";
 import { FormErrorSummary } from "@/shared/components/FormErrorSummary";
 import { GoogleLink } from "@/modules/account/components/GoogleLink";
+import {
+    AccountSection,
+    AccountSectionActions,
+    AccountSectionBody,
+} from "@/modules/account/components/AccountSection";
+import { PageHeading } from "@/shared/components/PageHeading";
 
 const passwordChangeSchema = z
     .object({
@@ -66,20 +64,18 @@ export default function SecurityPage() {
 
     return (
         <Stack spacing={2.5} sx={{ width: "100%", maxWidth: 680 }}>
-            <Stack spacing={0.75}>
-                <Typography variant="h2" component="h1">
-                    Bảo mật tài khoản
-                </Typography>
-                <Typography color="text.secondary">
-                    Quản lý mật khẩu đăng nhập của bạn.
-                </Typography>
-            </Stack>
+            <PageHeading
+                title="Bảo mật tài khoản"
+                description="Quản lý mật khẩu đăng nhập của bạn."
+                spacing={0.75}
+            />
             <GoogleLink />
             {errors.root?.message && (
                 <Alert severity="warning">{errors.root.message}</Alert>
             )}
-            <Paper
-                variant="outlined"
+            <AccountSection
+                title={complete ? undefined : "Đổi mật khẩu"}
+                icon={<LockOutlined aria-hidden="true" />}
                 sx={{ borderRadius: 2, overflow: "hidden" }}
             >
                 {complete ? (
@@ -128,133 +124,93 @@ export default function SecurityPage() {
                         </Stack>
                     </Stack>
                 ) : (
-                    <>
-                        <Stack
-                            direction="row"
-                            spacing={1.5}
-                            alignItems="center"
-                            sx={{ p: { xs: 2.5, sm: 3 } }}
-                        >
-                            <Box
-                                sx={{
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: 1,
-                                    bgcolor: "action.selected",
-                                    color: "primary.main",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    flexShrink: 0,
+                    <Stack
+                        component="form"
+                        noValidate
+                        onSubmit={handleSubmit(() => {
+                            // Prototype confirmation only: credentials never enter storage or the URL.
+                            reset();
+                            setError("root", {
+                                message:
+                                    "Chức năng đổi mật khẩu hiện chưa được hỗ trợ. Bạn có thể dùng liên kết quên mật khẩu.",
+                            });
+                        })}
+                        spacing={0}
+                    >
+                        <AccountSectionBody>
+                            <FormErrorSummary
+                                submitCount={submitCount}
+                                errors={[
+                                    {
+                                        fieldId: "security-current-password",
+                                        message:
+                                            errors.currentPassword?.message ??
+                                            "",
+                                    },
+                                    {
+                                        fieldId: "security-new-password",
+                                        message:
+                                            errors.newPassword?.message ?? "",
+                                    },
+                                    {
+                                        fieldId: "security-confirm-password",
+                                        message:
+                                            errors.confirmPassword?.message ??
+                                            "",
+                                    },
+                                ].filter((error) => !!error.message)}
+                            />
+                            <PasswordField
+                                id="security-current-password"
+                                label="Mật khẩu hiện tại"
+                                autoComplete="current-password"
+                                {...currentField}
+                                inputRef={currentRef}
+                                error={!!errors.currentPassword}
+                                helperText={errors.currentPassword?.message}
+                                slotProps={{
+                                    htmlInput: { maxLength: 128 },
                                 }}
-                            >
-                                <LockOutlined aria-hidden="true" />
-                            </Box>
-                            <Typography variant="h3" component="h2">
+                            />
+                            <PasswordField
+                                id="security-new-password"
+                                label="Mật khẩu mới"
+                                autoComplete="new-password"
+                                {...newField}
+                                inputRef={newRef}
+                                error={!!errors.newPassword}
+                                helperText={
+                                    errors.newPassword?.message ??
+                                    "Sử dụng từ 8 đến 128 ký tự."
+                                }
+                                slotProps={{
+                                    htmlInput: { maxLength: 128 },
+                                }}
+                            />
+                            <PasswordField
+                                id="security-confirm-password"
+                                label="Xác nhận mật khẩu mới"
+                                autoComplete="new-password"
+                                {...confirmField}
+                                inputRef={confirmRef}
+                                error={!!errors.confirmPassword}
+                                helperText={errors.confirmPassword?.message}
+                                slotProps={{
+                                    htmlInput: { maxLength: 128 },
+                                }}
+                            />
+                        </AccountSectionBody>
+                        <AccountSectionActions>
+                            <Button color="secondary" onClick={() => reset()}>
+                                Hủy
+                            </Button>
+                            <Button type="submit" variant="contained">
                                 Đổi mật khẩu
-                            </Typography>
-                        </Stack>
-                        <Divider />
-                        <Stack
-                            component="form"
-                            noValidate
-                            onSubmit={handleSubmit(() => {
-                                // Prototype confirmation only: credentials never enter storage or the URL.
-                                reset();
-                                setError("root", {
-                                    message:
-                                        "Chức năng đổi mật khẩu hiện chưa được hỗ trợ. Bạn có thể dùng liên kết quên mật khẩu.",
-                                });
-                            })}
-                            spacing={0}
-                        >
-                            <Stack spacing={2.5} sx={{ p: { xs: 2.5, sm: 3 } }}>
-                                <FormErrorSummary
-                                    submitCount={submitCount}
-                                    errors={[
-                                        {
-                                            fieldId:
-                                                "security-current-password",
-                                            message:
-                                                errors.currentPassword
-                                                    ?.message ?? "",
-                                        },
-                                        {
-                                            fieldId: "security-new-password",
-                                            message:
-                                                errors.newPassword?.message ??
-                                                "",
-                                        },
-                                        {
-                                            fieldId:
-                                                "security-confirm-password",
-                                            message:
-                                                errors.confirmPassword
-                                                    ?.message ?? "",
-                                        },
-                                    ].filter((error) => !!error.message)}
-                                />
-                                <PasswordField
-                                    id="security-current-password"
-                                    label="Mật khẩu hiện tại"
-                                    autoComplete="current-password"
-                                    {...currentField}
-                                    inputRef={currentRef}
-                                    error={!!errors.currentPassword}
-                                    helperText={errors.currentPassword?.message}
-                                    slotProps={{
-                                        htmlInput: { maxLength: 128 },
-                                    }}
-                                />
-                                <PasswordField
-                                    id="security-new-password"
-                                    label="Mật khẩu mới"
-                                    autoComplete="new-password"
-                                    {...newField}
-                                    inputRef={newRef}
-                                    error={!!errors.newPassword}
-                                    helperText={
-                                        errors.newPassword?.message ??
-                                        "Sử dụng từ 8 đến 128 ký tự."
-                                    }
-                                    slotProps={{
-                                        htmlInput: { maxLength: 128 },
-                                    }}
-                                />
-                                <PasswordField
-                                    id="security-confirm-password"
-                                    label="Xác nhận mật khẩu mới"
-                                    autoComplete="new-password"
-                                    {...confirmField}
-                                    inputRef={confirmRef}
-                                    error={!!errors.confirmPassword}
-                                    helperText={errors.confirmPassword?.message}
-                                    slotProps={{
-                                        htmlInput: { maxLength: 128 },
-                                    }}
-                                />
-                            </Stack>
-                            <Divider />
-                            <Stack
-                                direction="row"
-                                justifyContent="flex-end"
-                                gap={1.5}
-                                sx={{ p: { xs: 2.5, sm: 3 } }}
-                            >
-                                <Button
-                                    color="secondary"
-                                    onClick={() => reset()}
-                                >
-                                    Hủy
-                                </Button>
-                                <Button type="submit" variant="contained">
-                                    Đổi mật khẩu
-                                </Button>
-                            </Stack>
-                        </Stack>
-                    </>
+                            </Button>
+                        </AccountSectionActions>
+                    </Stack>
                 )}
-            </Paper>
+            </AccountSection>
         </Stack>
     );
 }

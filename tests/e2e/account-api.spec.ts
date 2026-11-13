@@ -238,7 +238,9 @@ test("updates the profile through the API, preserves drafts on failure and persi
         .getByLabel("Số điện thoại", { exact: true })
         .fill("+84987654321");
     await page.getByRole("button", { name: "Lưu hồ sơ", exact: true }).click();
-    await expect(page.getByRole("alert")).toContainText("Chưa lưu được hồ sơ");
+    await expect(
+        page.getByRole("alert").filter({ hasText: "Chưa lưu được hồ sơ" }),
+    ).toBeVisible();
     await expect(page.getByLabel("Tên hiển thị", { exact: true })).toHaveValue(
         "Tên mới",
     );

@@ -5,24 +5,49 @@ import {
     CardContent,
     Typography,
 } from "@mui/material";
+import { styled, useTheme } from "@mui/material/styles";
 import { Link } from "react-router-dom";
 import type { ProductSummary } from "@/shared/types/database";
 import { money } from "@/shared/lib/format";
 import { ProductImage } from "@/modules/catalog/components/ProductImage";
 
+const ProductCardSurface = styled(Card, {
+    shouldForwardProp: (prop) => prop !== "home",
+})<{ home: boolean }>(({ theme, home }) => ({
+    height: "100%",
+    minWidth: 0,
+    ...(home && {
+        backgroundColor: theme.palette.productCard.background,
+        color: theme.palette.productCard.text,
+        borderColor: theme.palette.productCard.border,
+        "& .MuiTypography-colorTextSecondary": {
+            color: theme.palette.productCard.secondaryText,
+        },
+        "& .MuiTypography-colorWarningMain": {
+            color: theme.palette.productCard.warning,
+        },
+    }),
+}));
+
 export function ProductCard({
     product,
     returnTo,
-    dark = false,
     home = false,
 }: {
     product: ProductSummary;
     returnTo?: string;
-    dark?: boolean;
     home?: boolean;
 }) {
+    const dark = useTheme().palette.mode === "dark";
     return (
-        <Card className={home ? `home-hover-border${dark ? "" : " home-hover-border-light"}` : undefined} sx={{ height: "100%", minWidth: 0, ...(dark && { bgcolor: "#141a25", color: "#f2f4f8", borderColor: "#38465c", "& .MuiTypography-colorTextSecondary": { color: "#b8c5d8" }, "& .MuiTypography-colorWarningMain": { color: "#ffca80" } }) }}>
+        <ProductCardSurface
+            home={home}
+            className={
+                home
+                    ? `home-hover-border${dark ? "" : " home-hover-border-light"}`
+                    : undefined
+            }
+        >
             <CardActionArea
                 component={Link}
                 to={`/products/${product.id}`}
@@ -36,7 +61,9 @@ export function ProductCard({
             >
                 <Box
                     sx={{
-                        bgcolor: dark ? "#1b2230" : "background.default",
+                        bgcolor: home
+                            ? "productCard.mediaBackground"
+                            : "background.default",
                         p: 2,
                         height: { xs: 160, lg: 140 },
                         display: "flex",
@@ -71,7 +98,7 @@ export function ProductCard({
                         sx={{
                             mt: 1.25,
                             fontWeight: 700,
-                            color: dark ? "#a8c3ff" : "primary.main",
+                            color: home ? "productCard.price" : "primary.main",
                             fontVariantNumeric: "tabular-nums",
                         }}
                     >
@@ -97,6 +124,6 @@ export function ProductCard({
                     </Typography>
                 </CardContent>
             </CardActionArea>
-        </Card>
+        </ProductCardSurface>
     );
 }
