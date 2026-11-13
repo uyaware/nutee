@@ -1,4 +1,4 @@
-import { ServiceError } from "@/shared/lib/errors";
+import { httpErrorMessage, ServiceError } from "@/shared/lib/errors";
 
 export interface ApiRequest {
     method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -32,10 +32,7 @@ class ApiError extends ServiceError {
                       : status >= 500
                         ? "SERVER"
                         : "VALIDATION",
-            detail ??
-                (status >= 500
-                    ? "Hệ thống đang gặp sự cố, xin hãy thử lại sau."
-                    : "Có lỗi xảy ra."),
+            detail ?? httpErrorMessage(status),
             fieldErrors,
         );
     }

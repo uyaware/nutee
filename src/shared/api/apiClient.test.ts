@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createApiClient } from "@/shared/api/apiClient";
+import { httpErrorMessage } from "@/shared/lib/errors";
 
 const response = (body: unknown, status = 200) =>
     new Response(status === 204 ? null : JSON.stringify(body), { status });
@@ -18,9 +19,25 @@ describe("shared API client", () => {
             ).rejects.toMatchObject({
                 code: "SERVER",
                 status,
-                message: "Hệ thống đang gặp sự cố, xin hãy thử lại sau.",
+                message: httpErrorMessage(status),
             });
             expect(fetch).toHaveBeenCalledTimes(1);
+        },
+    );
+    it.each([400, 401, 403, 404, 409, 422, 429, 500, 503])(
+        "uses the status message for HTTP %s when the response has no message",
+        async (status) => {
+            const fetch = vi
+                .fn<typeof globalThis.fetch>()
+                .mockResolvedValue(response({}, status));
+            await expect(
+                createApiClient({ fetch }).request("/test", {
+                    authenticated: false,
+                }),
+            ).rejects.toMatchObject({
+                status,
+                message: httpErrorMessage(status),
+            });
         },
     );
     it("treats an HTML SPA fallback with status 200 as a system failure instead of exposing a JSON parser error", async () => {

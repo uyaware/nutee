@@ -140,6 +140,9 @@ test("ordinary API failures use one toast, preserve drafts and never show an inl
     const toast = page.getByTestId("error-toast");
     await expect(toast).toContainText("Không lưu được hồ sơ.");
     await expect(toast.getByRole("alert")).toHaveCount(1);
+    await expect(toast.getByRole("button")).toHaveCount(0);
+    await expect(toast.locator("svg")).toHaveCount(0);
+    await expect(toast).toHaveCSS("width", "360px");
     await expect(toast.getByRole("button", { name: "Thử lại" })).toHaveCount(0);
     await expect(page.getByTestId("system-error-banner")).toHaveCount(0);
     await expect(page.locator("main").getByRole("alert")).toHaveCount(0);
@@ -147,6 +150,7 @@ test("ordinary API failures use one toast, preserve drafts and never show an inl
         "Tên đang chỉnh sửa",
     );
     expect(state.writes).toBe(1);
+    await expect(toast).toHaveCount(0, { timeout: 3500 });
 });
 
 test("mutation 503 also shows the top banner without exposing backend details inside the form", async ({

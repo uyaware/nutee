@@ -18,7 +18,7 @@ export function GlobalErrorToast() {
             <Snackbar
                 key={notice?.id}
                 open={!!notice}
-                autoHideDuration={6000}
+                autoHideDuration={2000}
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                 data-testid="error-toast"
                 onClose={(_, reason) => {
@@ -27,18 +27,20 @@ export function GlobalErrorToast() {
                 }}
             >
                 <Alert
-                    severity="error"
                     variant="filled"
-                    closeText="Đóng thông báo"
+                    icon={false}
                     sx={{
-                        maxWidth: 480,
+                        width: { xs: "calc(100vw - 32px)", sm: 360 },
+                        maxWidth: "100%",
+                        bgcolor: "#1976d2",
+                        color: "#fff",
+                        alignItems: "center",
                         "& .MuiAlert-message": {
                             minWidth: 0,
+                            width: "100%",
+                            py: 0.5,
                             overflowWrap: "anywhere",
                         },
-                    }}
-                    onClose={() => {
-                        if (notice) dismissErrorToast(notice.id);
                     }}
                 >
                     {notice?.message}
