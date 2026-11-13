@@ -1,12 +1,14 @@
 import { useEffect } from "react";
-import { ServiceError } from "@/shared/lib/errors";
+import { isSystemError } from "@/shared/lib/errors";
 
 const errors = new Set<symbol>();
 const listeners = new Set<() => void>();
 
 export function subscribeSystemErrors(listener: () => void) {
     listeners.add(listener);
-    return () => { listeners.delete(listener); };
+    return () => {
+        listeners.delete(listener);
+    };
 }
 
 export function hasReportedSystemError() {
@@ -15,7 +17,7 @@ export function hasReportedSystemError() {
 
 export function useReportSystemError(error: unknown) {
     useEffect(() => {
-        if (!(error instanceof ServiceError) || error.code !== "NETWORK") return;
+        if (!isSystemError(error)) return;
         const id = Symbol();
         errors.add(id);
         listeners.forEach((listener) => listener());

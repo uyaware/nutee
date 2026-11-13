@@ -5,7 +5,8 @@ import {
     type CreateOrder,
     type CustomerOrder,
 } from "@/modules/orders/model/api";
-import { errorMessage, ServiceError } from "@/shared/lib/errors";
+import { ServiceError } from "@/shared/lib/errors";
+import { reportErrorToast } from "@/shared/lib/errorToast";
 import { money } from "@/shared/lib/format";
 import { services } from "@/app/services";
 import { VoucherPicker } from "@/modules/checkout/components/VoucherPicker";
@@ -49,8 +50,12 @@ export default function CheckoutPage() {
     const queryClient = useQueryClient();
     const [params, setParams] = useSearchParams();
     const [submitted, setSubmitted] = useState<CreateOrder | null>(null);
-    const [validation, setValidation] = useState("");
-    const [createdOrder, setCreatedOrder] = useState<CustomerOrder | null>(null);
+    const setValidation = (message: string) => {
+        if (message) reportErrorToast(message);
+    };
+    const [createdOrder, setCreatedOrder] = useState<CustomerOrder | null>(
+        null,
+    );
     const profile = useProfile();
     const config = useQuery({
         queryKey: ["checkout-config"],
@@ -71,10 +76,18 @@ export default function CheckoutPage() {
             }
         },
         onSuccess: (order) => {
-            if (order.paymentMethod === "qr" && order.paymentStatus !== "paid") {
+            if (
+                order.paymentMethod === "qr" &&
+                order.paymentStatus !== "paid"
+            ) {
                 if (order.payment) {
                     queryClient.setQueryData(
-                        ["customer", profile.data?.user.id, "payments", order.id],
+                        [
+                            "customer",
+                            profile.data?.user.id,
+                            "payments",
+                            order.id,
+                        ],
                         order.payment,
                     );
                 }
@@ -148,7 +161,12 @@ export default function CheckoutPage() {
         });
     const paymentOrderId = createdOrder?.id ?? Number(params.get("order"));
     if (Number.isSafeInteger(paymentOrderId) && paymentOrderId > 0) {
-        return <PaymentPanel id={paymentOrderId} initialError={createdOrder?.paymentError} />;
+        return (
+            <PaymentPanel
+                id={paymentOrderId}
+                initialError={createdOrder?.paymentError}
+            />
+        );
     }
     if (profile.isPending) return <LoadingState />;
     if (profile.isError)
@@ -212,16 +230,7 @@ export default function CheckoutPage() {
                     retry={() => void config.refetch()}
                 />
             )}
-            {validation && <Alert severity="warning">{validation}</Alert>}
-            {placeOrder.isError && (
-                <Alert severity="error">
-                    {errorMessage(placeOrder.error)}{" "}
-                    {submitted
-                        ? "Nội dung yêu cầu được giữ để bạn có thể thử lại an toàn."
-                        : "Kiểm tra thông tin và xác nhận lại đơn hàng."}{" "}
-                    <Link to="/account/orders">Xem lịch sử đơn hàng</Link>
-                </Alert>
-            )}
+            {placeOrder.isError && <ErrorState error={placeOrder.error} />}
             <Stepper activeStep={step} alternativeLabel sx={{ py: 1 }}>
                 {["Giao hàng & thanh toán", "Xác nhận đơn hàng"].map(
                     (label) => (

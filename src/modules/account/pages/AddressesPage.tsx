@@ -140,14 +140,6 @@ function AddressEditor({
                             ].filter((error) => !!error.message)}
                         />
                         {save.isError && <ErrorState error={save.error} />}
-                        {save.error instanceof ServiceError &&
-                            save.error.code === "CONFLICT" && (
-                                <Alert severity="info">
-                                    Đóng form và tải lại danh sách để kiểm tra
-                                    dữ liệu mới. Nội dung đang nhập được giữ cho
-                                    đến khi bạn đóng.
-                                </Alert>
-                            )}
                         {(
                             [
                                 {

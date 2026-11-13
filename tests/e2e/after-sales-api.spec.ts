@@ -97,6 +97,16 @@ async function setup(page: Page, role = "CUSTOMER") {
             totalPages: content.length ? 1 : 0,
         });
         if (path === "/auth/me") return route.fulfill({ json: user });
+        if (path === "/cart")
+            return route.fulfill({
+                json: {
+                    ownerId: user.id,
+                    items: [],
+                    quantity: 0,
+                    subtotal: 0,
+                    hasIssues: false,
+                },
+            });
         if (path === "/auth/csrf")
             return route.fulfill({
                 json: { token: "after-sale-csrf", headerName: "X-XSRF-TOKEN" },
@@ -229,9 +239,9 @@ test("staff confirms API transitions and preserves errors without a fake success
         .getByRole("dialog")
         .getByRole("button", { name: "Xác nhận", exact: true })
         .click();
-    await expect(page.getByRole("dialog").getByRole("alert")).toContainText(
-        "Yêu cầu đã tồn tại",
-    );
+    await expect(
+        page.getByTestId("error-toast").getByRole("alert"),
+    ).toContainText("Yêu cầu đã tồn tại");
     expect(state.request.status).toBe("pending");
     state.reject = false;
     await page

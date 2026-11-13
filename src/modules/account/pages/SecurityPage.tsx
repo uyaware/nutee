@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Alert, Box, Button, Stack, Typography } from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
+import { ErrorState } from "@/shared/components/Feedback";
 import LockOutlined from "@mui/icons-material/LockOutlined";
 import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
 import { Link } from "react-router-dom";
@@ -70,9 +71,7 @@ export default function SecurityPage() {
                 spacing={0.75}
             />
             <GoogleLink />
-            {errors.root?.message && (
-                <Alert severity="warning">{errors.root.message}</Alert>
-            )}
+            {errors.root?.message && <ErrorState error={errors.root.message} />}
             <AccountSection
                 title={complete ? undefined : "Đổi mật khẩu"}
                 icon={<LockOutlined aria-hidden="true" />}

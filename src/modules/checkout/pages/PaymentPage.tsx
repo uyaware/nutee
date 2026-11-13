@@ -20,7 +20,6 @@ import { useSession } from "@/modules/auth/hooks/useSession";
 import { useOrder } from "@/modules/orders/hooks/useOrder";
 import { paymentLabels } from "@/modules/orders/model/api";
 import { money } from "@/shared/lib/format";
-import { errorMessage } from "@/shared/lib/errors";
 import {
     EmptyState,
     ErrorState,
@@ -264,11 +263,11 @@ export function PaymentPanel({
                                                     <>
                                                         {initialError &&
                                                             !action.isSuccess && (
-                                                                <Alert severity="warning">
-                                                                    {
+                                                                <ErrorState
+                                                                    error={
                                                                         initialError
                                                                     }
-                                                                </Alert>
+                                                                />
                                                             )}
                                                         <Button
                                                             variant="contained"
@@ -394,11 +393,7 @@ export function PaymentPanel({
                             retry={() => void paymentQuery.refetch()}
                         />
                     )}
-                    {action.isError && (
-                        <Alert severity="error">
-                            {errorMessage(action.error)}
-                        </Alert>
-                    )}
+                    {action.isError && <ErrorState error={action.error} />}
                     {!terminal && order.paymentMethod === "qr" && (
                         <Button
                             color="error"

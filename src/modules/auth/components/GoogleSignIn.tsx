@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Box, Button, CircularProgress, Stack } from "@mui/material";
+import { Box, Button, CircularProgress, Stack } from "@mui/material";
+import { ErrorState } from "@/shared/components/Feedback";
 import { services } from "@/app/services";
 import type { User } from "@/modules/auth/model/types";
-import { errorMessage, ServiceError } from "@/shared/lib/errors";
+import { isSystemError, ServiceError } from "@/shared/lib/errors";
 import { useReportSystemError } from "@/shared/lib/systemError";
 
 type GoogleId = {
@@ -32,10 +33,17 @@ function loadGoogle(): Promise<GoogleId> {
             script.onload = () =>
                 window.google
                     ? resolve(window.google.accounts.id)
-                    : reject(new ServiceError("NETWORK", "Không thể tải Google."));
+                    : reject(
+                          new ServiceError("NETWORK", "Không thể tải Google."),
+                      );
             script.onerror = () => {
                 script.remove();
-                reject(new ServiceError("NETWORK", "Không thể tải Google. Vui lòng thử lại."));
+                reject(
+                    new ServiceError(
+                        "NETWORK",
+                        "Không thể tải Google. Vui lòng thử lại.",
+                    ),
+                );
             };
             document.head.appendChild(script);
         }).catch((error) => {
@@ -63,7 +71,7 @@ export function GoogleSignIn({
     const [error, setError] = useState<unknown>(null);
     useReportSystemError(error);
     useEffect(() => {
-        if (!(error instanceof ServiceError) || error.code !== "NETWORK") return;
+        if (!isSystemError(error)) return;
         const timer = setTimeout(() => setAttempt((value) => value + 1), 10000);
         return () => clearTimeout(timer);
     }, [error]);
@@ -158,22 +166,14 @@ export function GoogleSignIn({
                     }
                 />
             )}
-            {!!error && !(error instanceof ServiceError && error.code === "NETWORK") && (
-                <Alert
-                    severity="error"
-                    action={
-                        <Button
-                            onClick={() => {
-                                setError(null);
-                                setAttempt((value) => value + 1);
-                            }}
-                        >
-                            Thử lại
-                        </Button>
-                    }
-                >
-                    {errorMessage(error)}
-                </Alert>
+            {!!error && (
+                <ErrorState
+                    error={error}
+                    retry={() => {
+                        setError(null);
+                        setAttempt((value) => value + 1);
+                    }}
+                />
             )}
         </Stack>
     );

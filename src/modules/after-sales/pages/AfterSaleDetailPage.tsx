@@ -1,5 +1,4 @@
 import {
-    Alert,
     Box,
     Button,
     Dialog,
@@ -31,7 +30,6 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { services } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
-import { errorMessage } from "@/shared/lib/errors";
 import { StatusHistoryStepper } from "@/shared/components/StatusHistoryStepper";
 import { OrderProducts } from "@/modules/checkout/components/CheckoutSummary";
 
@@ -226,9 +224,7 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                         <Paper variant="outlined" sx={{ p: 3 }}>
                             <Stack spacing={2}>
                                 {transition.isError && (
-                                    <Alert severity="error">
-                                        {errorMessage(transition.error)}
-                                    </Alert>
+                                    <ErrorState error={transition.error} />
                                 )}
                                 {(afterSaleActions[status] ?? []).map(
                                     (action) => (
@@ -284,9 +280,7 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                         Xác nhận cập nhật trạng thái yêu cầu {request.id}?
                     </Typography>
                     {transition.isError && (
-                        <Alert severity="error">
-                            {errorMessage(transition.error)}
-                        </Alert>
+                        <ErrorState error={transition.error} />
                     )}
                 </DialogContent>
                 <DialogActions>

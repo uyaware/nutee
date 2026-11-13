@@ -27,7 +27,6 @@ import {
     type ProfileInput,
 } from "@/modules/account/model/schemas";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
-import { errorMessage } from "@/shared/lib/errors";
 
 const InsetTextField = styled(TextField)(({ theme }) => ({
     "& .MuiOutlinedInput-root": {
@@ -183,18 +182,15 @@ export default function ProfilePage() {
                                 : "Thêm địa chỉ nhận hàng"}
                         </Button>
                         {save.isError && (
-                            <Alert severity="error">
-                                {errorMessage(save.error)}
-                                <Button
-                                    onClick={() => {
-                                        setEdit(null);
-                                        save.reset();
-                                        void profile.refetch();
-                                    }}
-                                >
-                                    Tải lại hồ sơ mới
-                                </Button>
-                            </Alert>
+                            <ErrorState
+                                error={save.error}
+                                retryLabel="Tải lại hồ sơ mới"
+                                retry={() => {
+                                    setEdit(null);
+                                    save.reset();
+                                    void profile.refetch();
+                                }}
+                            />
                         )}
                         {save.isSuccess && (
                             <Alert severity="success">Đã lưu hồ sơ.</Alert>

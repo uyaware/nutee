@@ -76,6 +76,16 @@ async function setup(page: Page, role = "CUSTOMER") {
             totalElements: content.length,
         });
         if (path === "/auth/me") return route.fulfill({ json: user });
+        if (path === "/cart")
+            return route.fulfill({
+                json: {
+                    ownerId: user.id,
+                    items: [],
+                    quantity: 0,
+                    subtotal: 0,
+                    hasIssues: false,
+                },
+            });
         if (path === "/auth/csrf")
             return route.fulfill({
                 json: { token: "review-csrf", headerName: "X-XSRF-TOKEN" },
@@ -191,7 +201,10 @@ test("review submits with CSRF, preserves failed drafts, reloads edits and updat
         .getByRole("link", { name: `Đánh giá: ${product.name}`, exact: true })
         .click();
     await page.getByLabel("Nhận xét của bạn").fill("  Sản phẩm sử dụng tốt  ");
-    await page.locator("label").filter({ hasText: "3 sao · Bình thường" }).click();
+    await page
+        .locator("label")
+        .filter({ hasText: "3 sao · Bình thường" })
+        .click();
     state.rejectReview = true;
     await page
         .getByRole("button", { name: "Gửi đánh giá", exact: true })

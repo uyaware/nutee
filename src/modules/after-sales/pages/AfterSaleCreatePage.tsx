@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-    Alert,
     Pagination,
     Button,
     MenuItem,
@@ -16,7 +15,6 @@ import { services } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
 import { useOrder } from "@/modules/orders/hooks/useOrder";
 import { orderProducts } from "@/modules/orders/model/api";
-import { errorMessage } from "@/shared/lib/errors";
 import {
     afterSaleTypes,
     type AfterSaleRequest,
@@ -217,11 +215,7 @@ export default function AfterSaleCreatePage() {
                         minRows={4}
                         slotProps={{ htmlInput: { maxLength: 2000 } }}
                     />
-                    {create.isError && (
-                        <Alert severity="error">
-                            {errorMessage(create.error)}
-                        </Alert>
-                    )}
+                    {create.isError && <ErrorState error={create.error} />}
                     <Stack
                         direction={{ xs: "column-reverse", sm: "row" }}
                         justifyContent="space-between"

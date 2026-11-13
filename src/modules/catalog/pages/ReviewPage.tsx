@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-    Alert,
     Box,
     Button,
     Chip,
@@ -26,7 +25,6 @@ import {
     LoadingState,
 } from "@/shared/components/Feedback";
 import { ProductImage } from "@/modules/catalog/components/ProductImage";
-import { errorMessage } from "@/shared/lib/errors";
 
 const ratingLabels = [
     "",
@@ -295,11 +293,7 @@ function ReviewForm({
                             slotProps={{ htmlInput: { maxLength: 1000 } }}
                             helperText={`${comment.length}/1000 ký tự`}
                         />
-                        {save.isError && (
-                            <Alert severity="error">
-                                {errorMessage(save.error)}
-                            </Alert>
-                        )}
+                        {save.isError && <ErrorState error={save.error} />}
                         <Divider />
                         <Stack
                             direction="row"

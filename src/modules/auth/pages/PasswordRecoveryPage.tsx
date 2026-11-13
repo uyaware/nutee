@@ -1,3 +1,4 @@
+import { ErrorState } from "@/shared/components/Feedback";
 import { useState } from "react";
 import {
     Alert,
@@ -15,7 +16,6 @@ import { z } from "zod";
 import { services } from "@/app/services";
 import { authPasswordSchema } from "@/modules/auth/model/schemas";
 import { PasswordField } from "@/shared/components/PasswordField";
-import { errorMessage } from "@/shared/lib/errors";
 import { safeReturnTo } from "@/modules/auth/model/redirect";
 
 const emailSchema = z.object({ email: z.email("Nhập địa chỉ email hợp lệ.") });
@@ -123,9 +123,7 @@ export default function PasswordRecoveryPage({
                                 </Alert>
                             )}
                             {forgot.isError && (
-                                <Alert severity="error">
-                                    {errorMessage(forgot.error)}
-                                </Alert>
+                                <ErrorState error={forgot.error} />
                             )}
                             <Button
                                 type="submit"
@@ -155,9 +153,7 @@ export default function PasswordRecoveryPage({
                                 </Alert>
                             )}
                             {forgot.isError && (
-                                <Alert severity="error">
-                                    {errorMessage(forgot.error)}
-                                </Alert>
+                                <ErrorState error={forgot.error} />
                             )}
                             <TextField
                                 label="Email"
@@ -238,9 +234,7 @@ export default function PasswordRecoveryPage({
                                 }
                             />
                             {reset.isError && (
-                                <Alert severity="error">
-                                    {errorMessage(reset.error)}
-                                </Alert>
+                                <ErrorState error={reset.error} />
                             )}
                             <Button
                                 type="submit"
