@@ -37,7 +37,6 @@ export function LandingBackground() {
         <Box aria-hidden="true" sx={{
             position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none",
             backgroundColor: dark ? "#070910" : "#fafbfe",
-            backgroundImage: dark ? "none" : "radial-gradient(ellipse at 75% 20%, rgba(169, 198, 255, .28), transparent 42%), radial-gradient(ellipse at 20% 35%, rgba(217, 229, 255, .32), transparent 45%)",
         }}>
             {dark ? (
                 <>
@@ -56,11 +55,11 @@ export function LandingBackground() {
                 </>
             ) : (
                 <Box sx={{
-                    position: "absolute", inset: 0,
-                    backgroundImage: "radial-gradient(circle, rgba(70, 93, 130, .35) 2px, transparent 2.4px)",
+                    position: "absolute", inset: "0 0 auto", height: "75%",
+                    backgroundImage: "linear-gradient(rgba(55, 70, 105, .14) 1px, transparent 1px), linear-gradient(90deg, rgba(55, 70, 105, .14) 1px, transparent 1px)",
                     backgroundSize: "28px 28px",
-                    maskImage: "linear-gradient(to bottom, #000, transparent 50%)",
-                    WebkitMaskImage: "linear-gradient(to bottom, #000, transparent 50%)",
+                    maskImage: "linear-gradient(to bottom, #000, transparent)",
+                    WebkitMaskImage: "linear-gradient(to bottom, #000, transparent)",
                 }} />
             )}
         </Box>

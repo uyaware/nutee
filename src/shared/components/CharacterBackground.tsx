@@ -26,16 +26,16 @@ export function CharacterBackground() {
             canvas.width = width * ratio;
             canvas.height = height * ratio;
             context.setTransform(ratio, 0, 0, ratio, 0, 0);
-            context.font = "10px monospace";
-            columns = Math.ceil(width / 16);
-            rows = Math.ceil(height / 19);
+            context.font = "12px monospace";
+            columns = Math.ceil(width / 20);
+            rows = Math.ceil(height / 23);
             phases = Array.from({ length: columns * rows }, () => Math.random());
         };
         const draw = () => {
             context.clearRect(0, 0, width, height);
             const time = motion.matches ? 0 : performance.now() / 4000;
             for (let row = 0; row < rows; row++) {
-                const y = 12 + row * 19;
+                const y = 14 + row * 23;
                 const fade = Math.max(0, 1 - y / height);
                 for (let column = 0; column < columns; column++) {
                     const index = row * columns + column;
@@ -43,7 +43,7 @@ export function CharacterBackground() {
                     const visibility = (1 - Math.cos((cycle % 1) * Math.PI * 2)) / 2;
                     const character = (index * 17 + Math.floor(cycle) * 13) % characters.length;
                     context.fillStyle = mode === "dark" ? `rgba(218, 224, 233, ${0.16 * fade * visibility})` : `rgba(67, 76, 88, ${0.16 * fade * visibility})`;
-                    context.fillText(characters[character], 5 + column * 16, y);
+                    context.fillText(characters[character], 5 + column * 20, y);
                 }
             }
         };

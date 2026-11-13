@@ -112,7 +112,7 @@ export default function HomePage() {
             </Box>
           )}
         </Box>
-        <Box className="hero-product" sx={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 0, animation: "heroFloat 7s ease-in-out infinite", filter: "drop-shadow(0 25px 45px rgba(31, 64, 160, .4))" }}>
+        <Box className="hero-product" sx={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 0, animation: "heroFloat 7s ease-in-out infinite", filter: dark ? "drop-shadow(0 25px 45px rgba(31, 64, 160, .4))" : "drop-shadow(0 25px 45px rgba(80, 80, 80, .22))" }}>
           <Box
             component="img"
             src="/images/hero-medion.png"
