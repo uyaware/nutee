@@ -1,5 +1,5 @@
+
 import { useEffect, useRef, useState } from "react";
-import { trackEvent } from "@/shared/analytics/posthog";
 import {
   Box,
   Button,
@@ -15,7 +15,9 @@ import {
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useLocation, useSearchParams } from "react-router-dom";
+
 import { services } from "@/app/services";
+import { trackEvent } from "@/shared/analytics/posthog";
 import {
   EmptyState,
   ErrorState,
@@ -32,25 +34,30 @@ import { ProductCard } from "@/modules/catalog/components/ProductCard";
 import { tokens } from "@/shared/theme/tokens";
 
 const sorts = {
-  featured: "Nổi bật",
+  "best-selling": "Bán nhiều nhất",
   "price-asc": "Giá tăng dần",
   "price-desc": "Giá giảm dần",
   name: "Tên A–Z",
   newest: "Cập nhật mới nhất",
 };
+
 export default function CatalogPage() {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const listId = `catalog:${location.key}`;
+
   const trackedSearch = useRef<string | null>(null);
   const requestedSearch = useRef<string | null>(null);
   const [open, setOpen] = useState(false);
+
   const filters = parseCatalogFilters(params);
+
   const query = useQuery({
     queryKey: ["catalog", "list", filters],
     queryFn: () => services.catalog.list(filters),
     placeholderData: keepPreviousData,
   });
+
   const update = (changes: Partial<Filters>) =>
     setParams(
       serializeCatalogFilters({
@@ -59,70 +66,139 @@ export default function CatalogPage() {
         page: changes.page ?? 1,
       }),
     );
+
+  // Track search results after a successful request
   useEffect(() => {
     if (requestedSearch.current !== filters.q) {
       requestedSearch.current = filters.q;
       trackedSearch.current = null;
     }
+
     if (!filters.q) {
       trackedSearch.current = null;
       return;
     }
-    if (!query.isSuccess || query.isPlaceholderData || query.isFetching || trackedSearch.current === filters.q) return;
+
+    if (
+      !query.isSuccess ||
+      query.isPlaceholderData ||
+      query.isFetching ||
+      trackedSearch.current === filters.q
+    ) {
+      return;
+    }
+
     trackedSearch.current = filters.q;
-    trackEvent("search", { query: filters.q, result_count: query.data.total, page: "search" });
-  }, [filters.q, query.isSuccess, query.isPlaceholderData, query.isFetching, query.data]);
+
+    trackEvent("search", {
+      query: filters.q,
+      result_count: query.data.total,
+      page: "search",
+    });
+  }, [
+    filters.q,
+    query.isSuccess,
+    query.isPlaceholderData,
+    query.isFetching,
+    query.data,
+  ]);
+
   const canonical = serializeCatalogFilters({
     ...filters,
     page: query.data?.page ?? filters.page,
   }).toString();
+
   useEffect(() => {
     if (
       query.data &&
       !query.isPlaceholderData &&
       params.toString() !== canonical
-    )
+    ) {
       setParams(canonical, { replace: true });
+    }
   }, [canonical, params, setParams, query.data, query.isPlaceholderData]);
-  const chips: { key: string; label: string; remove: () => void }[] = [];
-  if (filters.q)
+
+  const chips: {
+    key: string;
+    label: string;
+    remove: () => void;
+  }[] = [];
+
+  if (filters.q) {
     chips.push({
       key: "q",
       label: `Tìm: ${filters.q}`,
       remove: () => update({ q: "" }),
     });
-  if (filters.category)
+  }
+
+  if (filters.category) {
     chips.push({
       key: "category",
       label:
-        query.data?.facets.categories.find((c) => c.id === filters.category)
-          ?.name ?? filters.category,
+        query.data?.facets.categories.find(
+          (c) => c.id === filters.category,
+        )?.name ?? filters.category,
       remove: () => update({ category: "" }),
     });
+  }
+
   filters.brands.forEach((id) =>
     chips.push({
       key: `brand-${id}`,
-      label: query.data?.facets.brands.find((b) => b.id === id)?.name ?? id,
-      remove: () => update({ brands: filters.brands.filter((b) => b !== id) }),
+      label:
+        query.data?.facets.brands.find((b) => b.id === id)?.name ?? id,
+      remove: () =>
+        update({
+          brands: filters.brands.filter((b) => b !== id),
+        }),
     }),
   );
-  if (filters.minPrice !== undefined || filters.maxPrice !== undefined)
+
+  if (
+    filters.minPrice !== undefined ||
+    filters.maxPrice !== undefined
+  ) {
     chips.push({
       key: "price",
-      label: `${money(filters.minPrice ?? 0)} – ${filters.maxPrice === undefined ? "Không giới hạn" : money(filters.maxPrice)}`,
-      remove: () => update({ minPrice: undefined, maxPrice: undefined }),
+      label: `${money(filters.minPrice ?? 0)} – ${
+        filters.maxPrice === undefined
+          ? "Không giới hạn"
+          : money(filters.maxPrice)
+      }`,
+      remove: () =>
+        update({
+          minPrice: undefined,
+          maxPrice: undefined,
+        }),
     });
-  if (filters.inStock)
+  }
+
+  if (filters.inStock) {
     chips.push({
       key: "stock",
       label: "Còn hàng",
       remove: () => update({ inStock: false }),
     });
+  }
+
+  if (filters.discounted) {
+    chips.push({
+      key: "discounted",
+      label: "Đang giảm giá",
+      remove: () => update({ discounted: false }),
+    });
+  }
+
   Object.entries(filters.specifications).forEach(([key, values]) =>
     values.forEach((value) =>
       chips.push({
         key: `spec-${key}-${value}`,
-        label: `${query.data?.facets.specifications.find((s) => s.key === key)?.label ?? key}: ${value}`,
+        label: `${
+          query.data?.facets.specifications.find(
+            (s) => s.key === key,
+          )?.label ?? key
+        }: ${value}`,
         remove: () =>
           update({
             specifications: {
@@ -133,6 +209,7 @@ export default function CatalogPage() {
       }),
     ),
   );
+
   const filterPanel = query.data && (
     <CatalogFilters
       filters={filters}
@@ -140,13 +217,16 @@ export default function CatalogPage() {
       onChange={update}
     />
   );
+
   return (
     <Stack spacing={2}>
       <Box>
         <Typography variant="overline" color="primary">
           KHÁM PHÁ NUTEE
         </Typography>
+
         <Typography variant="h1">Sản phẩm</Typography>
+
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={2}
@@ -157,6 +237,7 @@ export default function CatalogPage() {
           <Typography color="text.secondary" sx={{ flex: 1 }}>
             Tìm sản phẩm phù hợp với nhu cầu của bạn.
           </Typography>
+
           <Box
             component="form"
             key={filters.q}
@@ -164,13 +245,30 @@ export default function CatalogPage() {
             aria-label="Tìm trong danh mục"
             onSubmit={(event) => {
               event.preventDefault();
-              const q = String(new FormData(event.currentTarget).get("q") ?? "").trim().slice(0, 160);
+
+              const q = String(
+                new FormData(event.currentTarget).get("q") ?? "",
+              )
+                .trim()
+                .slice(0, 160);
+
               if (q && q === filters.q && filters.page === 1) {
                 void query.refetch().then((result) => {
-                  if (result.isSuccess) trackEvent("search", { query: q, result_count: result.data.total, page: "search" });
+                  if (result.isSuccess) {
+                    trackedSearch.current = q;
+
+                    trackEvent("search", {
+                      query: q,
+                      result_count: result.data.total,
+                      page: "search",
+                    });
+                  }
                 });
               } else {
-                if (q === filters.q) trackedSearch.current = null;
+                if (q === filters.q) {
+                  trackedSearch.current = null;
+                }
+
                 update({ q });
               }
             }}
@@ -188,16 +286,30 @@ export default function CatalogPage() {
               name="q"
               label="Tìm tên, mã hoặc cấu hình"
               defaultValue={filters.q}
-              slotProps={{ htmlInput: { maxLength: 160 } }}
+              slotProps={{
+                htmlInput: { maxLength: 160 },
+              }}
               sx={{ flex: 1, minWidth: 0 }}
             />
-            <Button type="submit" variant="contained" disabled={query.isFetching} sx={{ flexShrink: 0 }}>
+
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={query.isFetching}
+              sx={{ flexShrink: 0 }}
+            >
               Tìm kiếm
             </Button>
           </Box>
         </Stack>
       </Box>
-      <Stack direction="row" useFlexGap flexWrap="wrap" spacing={1}>
+
+      <Stack
+        direction="row"
+        useFlexGap
+        flexWrap="wrap"
+        spacing={1}
+      >
         {chips.map((chip) => (
           <Chip
             key={chip.key}
@@ -212,10 +324,13 @@ export default function CatalogPage() {
                 py: 0.5,
                 overflowWrap: "anywhere",
               },
-              "& .MuiChip-deleteIcon": { flexShrink: 0 },
+              "& .MuiChip-deleteIcon": {
+                flexShrink: 0,
+              },
             }}
           />
         ))}
+
         {!!chips.length && (
           <Button
             onClick={() =>
@@ -232,6 +347,7 @@ export default function CatalogPage() {
           </Button>
         )}
       </Stack>
+
       <Box
         sx={{
           display: "grid",
@@ -253,7 +369,9 @@ export default function CatalogPage() {
             display: { xs: "none", md: "block" },
             position: "sticky",
             top: tokens.layout.storefrontHeaderHeight + 16,
-            maxHeight: `calc(100dvh - ${tokens.layout.storefrontHeaderHeight + 32}px)`,
+            maxHeight: `calc(100dvh - ${
+              tokens.layout.storefrontHeaderHeight + 32
+            }px)`,
             overflowY: "auto",
             overscrollBehavior: "contain",
             scrollbarWidth: "thin",
@@ -262,17 +380,23 @@ export default function CatalogPage() {
         >
           {filterPanel ?? <LoadingState />}
         </Paper>
+
         <Stack spacing={2} sx={{ minWidth: 0 }}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={2}
             alignItems={{ sm: "center" }}
           >
-            <Typography role="status" aria-label="Số sản phẩm" sx={{ flex: 1 }}>
+            <Typography
+              role="status"
+              aria-label="Số sản phẩm"
+              sx={{ flex: 1 }}
+            >
               {query.data
                 ? `${query.data.total} sản phẩm`
                 : "Đang tìm sản phẩm…"}
             </Typography>
+
             <Button
               variant="outlined"
               startIcon={<FilterListRounded />}
@@ -282,12 +406,15 @@ export default function CatalogPage() {
             >
               Bộ lọc
             </Button>
+
             <TextField
               select
               label="Sắp xếp"
               value={filters.sort}
               onChange={(e) =>
-                update({ sort: e.target.value as Filters["sort"] })
+                update({
+                  sort: e.target.value as Filters["sort"],
+                })
               }
               sx={{ width: { xs: "100%", sm: 220 } }}
             >
@@ -298,6 +425,7 @@ export default function CatalogPage() {
               ))}
             </TextField>
           </Stack>
+
           {query.isPending || query.isPlaceholderData ? (
             <LoadingState />
           ) : query.isError ? (
@@ -329,10 +457,13 @@ export default function CatalogPage() {
                     product={product}
                     listId={listId}
                     index={index}
-                    returnTo={`/products${canonical ? `?${canonical}` : ""}`}
+                    returnTo={`/products${
+                      canonical ? `?${canonical}` : ""
+                    }`}
                   />
                 ))}
               </Box>
+
               <Stack
                 direction={{ xs: "column", sm: "row" }}
                 spacing={2}
@@ -340,18 +471,25 @@ export default function CatalogPage() {
                 justifyContent="space-between"
               >
                 <Pagination
-                  count={Math.ceil(query.data.total / filters.pageSize)}
+                  count={Math.ceil(
+                    query.data.total / filters.pageSize,
+                  )}
                   page={query.data.page}
                   onChange={(_, page) => {
                     update({ page });
+
                     document
                       .getElementById("main-content")
                       ?.focus({ preventScroll: true });
+
                     window.scrollTo(0, 0);
                   }}
                   size="small"
                   sx={{
-                    "& .MuiPaginationItem-root": { minWidth: 44, height: 44 },
+                    "& .MuiPaginationItem-root": {
+                      minWidth: 44,
+                      height: 44,
+                    },
                   }}
                   getItemAriaLabel={(type, page) =>
                     type === "page"
@@ -365,11 +503,16 @@ export default function CatalogPage() {
                             : "Trang cuối"
                   }
                 />
+
                 <TextField
                   select
                   label="Số sản phẩm mỗi trang"
                   value={filters.pageSize}
-                  onChange={(e) => update({ pageSize: Number(e.target.value) })}
+                  onChange={(e) =>
+                    update({
+                      pageSize: Number(e.target.value),
+                    })
+                  }
                   sx={{ width: 200 }}
                 >
                   {[12, 24, 48].map((size) => (
@@ -383,7 +526,12 @@ export default function CatalogPage() {
           )}
         </Stack>
       </Box>
-      <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
+
+      <Drawer
+        anchor="right"
+        open={open}
+        onClose={() => setOpen(false)}
+      >
         <Stack
           sx={{
             width: {
@@ -408,6 +556,7 @@ export default function CatalogPage() {
             >
               Xem kết quả
             </Button>
+
             <Typography
               variant="body2"
               color="text.secondary"
@@ -416,6 +565,7 @@ export default function CatalogPage() {
               {query.data?.total ?? 0} sản phẩm phù hợp
             </Typography>
           </Box>
+
           <Box
             sx={{
               p: 2,

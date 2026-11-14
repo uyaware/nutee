@@ -204,9 +204,9 @@ test("admin assigns a voucher to customers and preserves edits when the API refu
     await page
         .getByRole("button", { name: "Xác nhận xóa", exact: true })
         .click();
-    await expect(page.getByRole("dialog").getByRole("alert")).toContainText(
-        "Ưu đãi đang được sử dụng",
-    );
+    await expect(
+        page.getByTestId("error-toast").getByRole("alert"),
+    ).toContainText("Ưu đãi đang được sử dụng");
     expect(state.rules).toHaveLength(1);
 });
 

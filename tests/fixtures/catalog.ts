@@ -26,7 +26,7 @@ export const product: ApiProduct = {
             quantity: 1,
             imageId: 8,
             specifications: [
-                { name: "configuration", value: "8 GB / 256 GB" },
+                { name: "color", value: "Đen" },
                 { name: "ram", value: "8 GB" },
             ],
         },
@@ -37,8 +37,19 @@ export const product: ApiProduct = {
             quantity: 3,
             imageId: 9,
             specifications: [
-                { name: "configuration", value: "16 GB / 512 GB" },
+                { name: "color", value: "Đen" },
                 { name: "ram", value: "16 GB" },
+            ],
+        },
+        {
+            id: 13,
+            sku: "SKU-WHITE",
+            price: 10500000,
+            quantity: 2,
+            imageId: 8,
+            specifications: [
+                { name: "color", value: "Trắng" },
+                { name: "ram", value: "8 GB" },
             ],
         },
     ],

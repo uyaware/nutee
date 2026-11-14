@@ -61,6 +61,16 @@ async function setup(
             addresses: state.addresses,
         });
         if (path === "/auth/me") return route.fulfill({ json: state.user });
+        if (path === "/cart")
+            return route.fulfill({
+                json: {
+                    ownerId: state.user.id,
+                    items: [],
+                    quantity: 0,
+                    subtotal: 0,
+                    hasIssues: false,
+                },
+            });
         if (path === "/auth/csrf")
             return route.fulfill({
                 json: { token: "account-csrf", headerName: "X-XSRF-TOKEN" },
@@ -203,9 +213,11 @@ test("links Google with a fresh nonce after a conflict and keeps the link after 
     await expect.poll(() => state.nonces).toBeGreaterThanOrEqual(2);
     state.rejectLink = false;
     await page.getByRole("button", { name: "Google test link" }).click();
-    await expect(page.getByRole("alert")).toContainText(
-        "Đã liên kết Google thành công.",
-    );
+    await expect(
+        page
+            .getByRole("alert")
+            .filter({ hasText: "Đã liên kết Google thành công." }),
+    ).toBeVisible();
     expect(
         state.writes
             .filter((request) => request.path.endsWith("/link"))
@@ -238,7 +250,7 @@ test("updates the profile through the API, preserves drafts on failure and persi
         .getByLabel("Số điện thoại", { exact: true })
         .fill("+84987654321");
     await page.getByRole("button", { name: "Lưu hồ sơ", exact: true }).click();
-    await expect(page.getByRole("alert")).toContainText("Chưa lưu được hồ sơ");
+    await expect(page.getByTestId("system-error-banner")).toBeVisible();
     await expect(page.getByLabel("Tên hiển thị", { exact: true })).toHaveValue(
         "Tên mới",
     );
@@ -380,7 +392,7 @@ test("keeps an address form open with its draft when the server rejects a save",
         .click();
     await expect(
         page
-            .getByRole("dialog")
+            .getByTestId("error-toast")
             .getByRole("alert")
             .filter({ hasText: "Địa chỉ đang được sử dụng" }),
     ).toBeVisible();

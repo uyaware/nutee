@@ -347,6 +347,9 @@ export type Order = Database["orders"][number];
 export type ProductSummary = Product & {
     brandName: string;
     imageUrl: string;
+    avgRating: number;
+    reviewCount: number;
+    soldCount: number;
     originalPrice?: number;
     promotionCode?: string | null;
 };

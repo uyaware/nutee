@@ -35,10 +35,10 @@ const OrderSuccessPage = lazy(
 );
 const ReviewPage = lazy(() => import("@/modules/catalog/pages/ReviewPage"));
 const AfterSalesPage = lazy(
-  () => import("@/modules/after-sales/pages/PrototypeAfterSales"),
+  () => import("@/modules/after-sales/pages/AfterSalesPage"),
 );
 const AfterSaleDetailPage = lazy(
-  () => import("@/modules/after-sales/pages/PrototypeAfterSaleDetail"),
+  () => import("@/modules/after-sales/pages/AfterSaleDetailPage"),
 );
 const AfterSaleCreatePage = lazy(
   () => import("@/modules/after-sales/pages/AfterSaleCreatePage"),

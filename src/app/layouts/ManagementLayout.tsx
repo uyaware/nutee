@@ -408,6 +408,8 @@ export function ManagementLayout() {
                         flexShrink: 0,
                         transition,
                         "& .MuiDrawer-paper": {
+                            top: "var(--system-alert-height, 0px)",
+                            height: "calc(100% - var(--system-alert-height, 0px))",
                             width,
                             transition,
                             boxSizing: "border-box",
@@ -428,6 +430,8 @@ export function ManagementLayout() {
                     transitionDuration={reduceMotion ? 0 : undefined}
                     sx={{
                         "& .MuiDrawer-paper": {
+                            top: "var(--system-alert-height, 0px)",
+                            height: "calc(100% - var(--system-alert-height, 0px))",
                             width: 288,
                             maxWidth: "100vw",
                             bgcolor: "background.paper",

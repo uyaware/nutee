@@ -10,6 +10,7 @@ import type {
 export interface CatalogService {
   categories(): Promise<CatalogFacets["categories"]>;
   brands(): Promise<CatalogFacets["brands"]>;
+  categoryBrands(id: string): Promise<CatalogFacets["brands"]>;
   featured(): Promise<ProductSummary[]>;
   list(filters: CatalogFilters): Promise<CatalogPage>;
   detail(id: string): Promise<ProductDetail>;

@@ -13,7 +13,7 @@ const unique = (values: string[]) =>
 export function parseCatalogFilters(params: URLSearchParams): CatalogFilters {
   const minPrice = price(params.get("minPrice"));
   const maxPrice = price(params.get("maxPrice"));
-  const sort = catalogSorts.find((s) => s === params.get("sort")) ?? "featured";
+  const sort = catalogSorts.find((s) => s === params.get("sort")) ?? "best-selling";
   const specifications: Record<string, string[]> = Object.create(null);
   for (const key of new Set(params.keys())) {
     if (key.startsWith("spec.") && key.length > 5) {
@@ -34,6 +34,7 @@ export function parseCatalogFilters(params: URLSearchParams): CatalogFilters {
         ? Math.max(minPrice, maxPrice)
         : maxPrice,
     inStock: params.get("inStock") === "true",
+    discounted: params.get("discounted") === "true",
     specifications,
     sort,
     page: Math.max(1, Math.min(price(params.get("page")) ?? 1, 1000000)),
@@ -54,12 +55,13 @@ export function serializeCatalogFilters(
   if (filters.maxPrice !== undefined)
     params.set("maxPrice", String(filters.maxPrice));
   if (filters.inStock) params.set("inStock", "true");
+  if (filters.discounted) params.set("discounted", "true");
   for (const key of Object.keys(filters.specifications).sort()) {
     unique(filters.specifications[key]).forEach((value) =>
       params.append(`spec.${key}`, value),
     );
   }
-  if (filters.sort !== "featured") params.set("sort", filters.sort);
+  if (filters.sort !== "best-selling") params.set("sort", filters.sort);
   if (filters.page > 1) params.set("page", String(filters.page));
   if (filters.pageSize !== 12) params.set("pageSize", String(filters.pageSize));
   return params;

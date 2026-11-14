@@ -57,12 +57,12 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
                 "customer",
             );
         },
-        async login(portal, email, password, remember = false) {
+        async login(portal, email, password) {
             generation++;
             return establish(
                 await api.request<AuthResponse>("/auth/login", {
                     method: "POST",
-                    body: { identifier: email, password, remember },
+                    body: { identifier: email, password },
                     authenticated: false,
                 }),
                 portal,
@@ -99,11 +99,11 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
             api.request<{ nonce: string }>("/auth/social/google/nonce", {
                 authenticated: false,
             }),
-        async google(credential, remember = false) {
+        async google(credential) {
             generation++;
             return establish(
                 await api.request<AuthResponse>(
-                    `/auth/social/google?remember=${remember}`,
+                    "/auth/social/google",
                     {
                         method: "POST",
                         body: { credential },
@@ -130,10 +130,10 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
                 body: { email },
                 authenticated: false,
             }),
-        resetPassword: async (token, password) => {
+        resetPassword: async (email, otp, password) => {
             await api.request<void>("/auth/reset-password", {
                 method: "POST",
-                body: { token, password },
+                body: { email, otp, password },
                 authenticated: false,
             });
         },

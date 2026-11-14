@@ -17,7 +17,6 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { services } from "@/app/services";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
 import type { ProductDetail } from "@/modules/catalog/model/types";
-import { prototypeOrders } from "@/modules/orders/fixtures/orders";
 
 export function ProductReviews({
   id,
@@ -27,15 +26,6 @@ export function ProductReviews({
   rating: ProductDetail["rating"];
 }) {
   const [page, setPage] = useState(1);
-  const purchasedOrder = prototypeOrders.find(
-    (order) =>
-      order.userId === "customer-1" &&
-      order.status === "delivered" &&
-      order.items.some((item) => item.productId === id),
-  );
-  const purchasedItem = purchasedOrder?.items.find(
-    (item) => item.productId === id,
-  );
   const query = useQuery({
     queryKey: ["catalog", "reviews", id, page],
     queryFn: () => services.catalog.reviews(id, page),
@@ -109,11 +99,7 @@ export function ProductReviews({
           </Typography>
           <Button
             component={Link}
-            to={
-              purchasedOrder && purchasedItem
-                ? `/account/orders/${purchasedOrder.id}/review/${purchasedItem.id}`
-                : "/account/orders?status=delivered"
-            }
+            to="/account/orders?status=delivered"
             variant="outlined"
             startIcon={<RateReviewOutlined />}
             fullWidth

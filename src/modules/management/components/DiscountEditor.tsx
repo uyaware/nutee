@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-    Alert,
     Autocomplete,
     Box,
     Button,
@@ -33,6 +32,7 @@ import {
     type DiscountRule,
 } from "@/modules/management/model/discounts";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
+import { reportErrorToast } from "@/shared/lib/errorToast";
 import { money } from "@/shared/lib/format";
 
 const localDateTime = (iso: string) =>
@@ -82,7 +82,9 @@ function Editor({
     );
     const [search, setSearch] = useState("");
     const [debounced, setDebounced] = useState("");
-    const [error, setError] = useState("");
+    const setError = (message: string) => {
+        if (message) reportErrorToast(message);
+    };
     const [remove, setRemove] = useState(false);
     const [now, setNow] = useState(Date.now);
     useEffect(() => {
@@ -192,7 +194,6 @@ function Editor({
                     </Button>
                 }
             />
-            {error && <Alert severity="error">{error}</Alert>}
             {save.isError && <ErrorState error={save.error} />}
             <Box
                 sx={{

@@ -2,6 +2,24 @@ import { alpha, createTheme } from "@mui/material/styles";
 import type { ThemeOptions } from "@mui/material/styles";
 import { tokens } from "@/shared/theme/tokens";
 
+declare module "@mui/material/styles" {
+    interface Palette {
+        productCard: {
+            background: string;
+            mediaBackground: string;
+            text: string;
+            secondaryText: string;
+            border: string;
+            price: string;
+            warning: string;
+        };
+    }
+
+    interface PaletteOptions {
+        productCard?: Palette["productCard"];
+    }
+}
+
 const base: ThemeOptions = {
   cssVariables: true,
   palette: {
@@ -18,6 +36,15 @@ const base: ThemeOptions = {
     background: { default: tokens.color.canvas, paper: tokens.color.surface },
     text: { primary: tokens.color.ink, secondary: tokens.color.muted },
     divider: tokens.color.border,
+    productCard: {
+      background: tokens.color.surface,
+      mediaBackground: tokens.color.canvas,
+      text: tokens.color.ink,
+      secondaryText: tokens.color.muted,
+      border: tokens.color.border,
+      price: tokens.color.blue,
+      warning: tokens.color.warning,
+    },
     success: { main: tokens.color.success },
     warning: { main: tokens.color.warning },
     error: { main: tokens.color.error },
@@ -206,11 +233,20 @@ export const customerDarkTheme = createTheme(
   {
     palette: {
       mode: "dark",
-      primary: { main: "#a8c3ff", light: "#c5d7ff", dark: "#719af0", contrastText: "#101b30" },
-      secondary: { main: "#c1cde0", contrastText: "#101b30" },
+      primary: { main: "#a9b9d3", light: "#c0cbdd", dark: "#8097ba", contrastText: "#101b30" },
+      secondary: { main: "#b3bece", contrastText: "#101b30" },
       background: { default: "#0b0d12", paper: "#171d28" },
-      text: { primary: "#f2f4f8", secondary: "#c1cad9" },
+      text: { primary: "#d8dee8", secondary: "#adb8c8" },
       divider: "#46556c",
+      productCard: {
+        background: "#141a25",
+        mediaBackground: "#1b2230",
+        text: "#f2f4f8",
+        secondaryText: "#b8c5d8",
+        border: "#38465c",
+        price: "#a8c3ff",
+        warning: "#ffca80",
+      },
       success: { main: "#65dba8" },
       warning: { main: "#ffd08a" },
       error: { main: "#ff9a9a" },

@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { backofficeTheme } from "@/shared/theme";
 import { RequireAuth } from "@/modules/auth/guards/RequireAuth";
 import { LoginPage } from "@/modules/auth/pages/LoginPage";
+import { CustomerThemeProvider } from "@/shared/theme/CustomerThemeProvider";
 import { OrderDetailPage } from "@/modules/orders/pages/OrdersPage";
 import { SystemPage } from "@/shared/components/SystemPage";
 import { ManagementLayout } from "@/app/layouts/ManagementLayout";
@@ -41,10 +42,10 @@ const OperationsOrdersPage = lazy(
     () => import("@/modules/orders/pages/ConnectedOperationsOrdersPage"),
 );
 const AfterSalesPage = lazy(
-    () => import("@/modules/after-sales/pages/PrototypeAfterSales"),
+    () => import("@/modules/after-sales/pages/AfterSalesPage"),
 );
 const AfterSaleDetailPage = lazy(
-    () => import("@/modules/after-sales/pages/PrototypeAfterSaleDetail"),
+    () => import("@/modules/after-sales/pages/AfterSaleDetailPage"),
 );
 export default function BackofficeRoutes() {
     return (
@@ -52,7 +53,7 @@ export default function BackofficeRoutes() {
             <Routes>
                 <Route
                     path="login"
-                    element={<LoginPage portal="backoffice" />}
+                    element={<CustomerThemeProvider><LoginPage portal="backoffice" /></CustomerThemeProvider>}
                 />
                 <Route element={<RequireAuth portal="backoffice" />}>
                     <Route element={<ManagementLayout />}>

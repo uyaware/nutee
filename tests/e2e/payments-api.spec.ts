@@ -233,11 +233,7 @@ test("checkout retries the identical order and displays the server-provided QR i
         .getByRole("button", { name: "Kiểm tra đơn hàng", exact: true })
         .click();
     await page.getByRole("button", { name: "Đặt hàng", exact: true }).click();
-    await expect(
-        page
-            .getByRole("alert")
-            .filter({ hasText: "Chưa nhận được kết quả đặt hàng" }),
-    ).toBeVisible();
+    await expect(page.getByTestId("system-error-banner")).toBeVisible();
     await expect(
         page.getByRole("button", { name: "Quay lại", exact: true }),
     ).toBeDisabled();
@@ -262,7 +258,7 @@ test("checkout retries the identical order and displays the server-provided QR i
     expect(state.paymentCreates).toBe(0);
     await expect(page.getByText("125.000 ₫", { exact: true })).toHaveCount(1);
     await expect(page.getByText("Số tiền", { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("alert")).toHaveCount(1);
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(1);
     await expect(
         page.getByRole("button", { name: "Kiểm tra thanh toán với payOS" }),
     ).toHaveCount(0);
@@ -422,11 +418,7 @@ test("returning from payOS verifies once with the server and never trusts a forg
     await page.goto(
         "/orders/42/payment?code=00&id=test-link&orderCode=123&status=PAID",
     );
-    await expect(
-        page
-            .getByRole("alert")
-            .filter({ hasText: "Chưa thể kiểm tra thanh toán" }),
-    ).toBeVisible();
+    await expect(page.getByTestId("system-error-banner")).toBeVisible();
     expect(state.refreshRequests).toBe(1);
     await expect(
         page.getByRole("heading", {
@@ -474,14 +466,12 @@ test("a payment without a saved QR opens the payment link only when requested", 
     const state = await setup(page);
     state.created = true;
     state.omitQr = true;
-    await page
-        .context()
-        .route("https://pay.payos.vn/**", (route) =>
-            route.fulfill({
-                contentType: "text/html",
-                body: "<h1>Trang thanh toán payOS</h1>",
-            }),
-        );
+    await page.context().route("https://pay.payos.vn/**", (route) =>
+        route.fulfill({
+            contentType: "text/html",
+            body: "<h1>Trang thanh toán payOS</h1>",
+        }),
+    );
     await page.goto("/orders/42/payment");
     await expect(
         page.getByRole("alert").filter({ hasText: "Chưa thể hiển thị mã QR" }),

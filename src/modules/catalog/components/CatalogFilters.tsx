@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
+import { orderedCategories } from "@/modules/catalog/model/categoryTree";
 import type {
   CatalogFacets,
   CatalogFilters as Filters,
@@ -155,9 +156,9 @@ export function CatalogFilters({
         }
       >
         <MenuItem value="">Tất cả danh mục</MenuItem>
-        {facets.categories.map((c) => (
+        {orderedCategories(facets.categories).map(({ category: c, depth }) => (
           <MenuItem key={c.id} value={c.id}>
-            {c.parentId ? "— " : ""}
+            {depth > 0 ? `${"— ".repeat(depth)}` : ""}
             {c.name}
           </MenuItem>
         ))}
@@ -173,7 +174,7 @@ export function CatalogFilters({
         selectedCount={filters.brands.length}
         defaultExpanded
       >
-        <Stack spacing={0.5}>
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: 1, rowGap: 0.5 }}>
           {facets.brands.map((b) => (
             <FormControlLabel
               key={b.id}
@@ -189,7 +190,7 @@ export function CatalogFilters({
               label={b.name}
             />
           ))}
-        </Stack>
+        </Box>
         {!facets.brands.length && (
           <Typography variant="body2" color="text.secondary">
             Không có thương hiệu trong danh mục này.
@@ -280,6 +281,11 @@ export function CatalogFilters({
         }
         label="Chỉ sản phẩm còn hàng"
       />
+      <FormControlLabel
+        sx={checkboxStyle}
+        control={<Checkbox checked={filters.discounted} onChange={(e) => onChange({ discounted: e.target.checked })} />}
+        label="Đang giảm giá"
+      />
       {facets.specifications.map((s) => (
         <FilterGroup
           key={s.key}
@@ -323,6 +329,7 @@ export function CatalogFilters({
             minPrice: undefined,
             maxPrice: undefined,
             inStock: false,
+            discounted: false,
             specifications: {},
           })
         }

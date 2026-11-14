@@ -9,6 +9,7 @@ import {
   Stack,
   TextField,
   Toolbar,
+  useScrollTrigger,
 } from "@mui/material";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import SearchRounded from "@mui/icons-material/SearchRounded";
@@ -26,6 +27,7 @@ export function StorefrontHeader() {
   const location = useLocation();
   const { mode } = useCustomerMode();
   const dark = mode === "dark";
+  const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 0 });
   const navigate = useNavigate();
   const session = useSession("customer");
   const cart = useCart();
@@ -39,18 +41,21 @@ export function StorefrontHeader() {
       color="inherit"
       elevation={0}
       sx={{
+        top: "var(--system-alert-height, 0px)",
         borderBottom: "1px solid",
-        borderColor: "divider",
+        borderColor: scrolled ? "divider" : "transparent",
+        backgroundColor: scrolled ? (dark ? "#090c13" : "background.paper") : "transparent",
+        backgroundImage: "none",
+        transition: "background-color 200ms, border-color 200ms",
         ...(dark && {
-          backgroundColor: "#090c13",
-          color: "#f2f4f8",
-          borderColor: "#293244",
-          "& .MuiIconButton-root": { color: "#dce5f5" },
-          "& .MuiButton-outlined": { color: "#dce5f5", borderColor: "#687a94" },
-          "& .MuiOutlinedInput-root": { backgroundColor: "#141a25", color: "#f2f4f8" },
+          color: "#d8dee8",
+          borderColor: scrolled ? "#293244" : "transparent",
+          "& .MuiIconButton-root": { color: "#bcc8d8" },
+          "& .MuiButton-outlined": { color: "#bcc8d8", borderColor: "#687a94" },
+          "& .MuiOutlinedInput-root": { color: "#d8dee8" },
           "& .MuiOutlinedInput-notchedOutline": { borderColor: "#687a94" },
           "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#b9ccff" },
-          "& .MuiInputLabel-root": { color: "#c0cadb" },
+          "& .MuiInputLabel-root": { color: "#adb8c8" },
           "& .MuiInputLabel-root.Mui-focused": { color: "#b9ccff" },
         }),
         height: {
@@ -134,7 +139,10 @@ export function StorefrontHeader() {
                   ),
                 },
               }}
-              sx={{ "& .MuiOutlinedInput-root": { pr: 0.5 } }}
+              sx={{
+                "& .MuiOutlinedInput-root": { pr: 0.5, backgroundColor: "transparent", color: dark ? "#fff" : "#000" },
+                "& .MuiInputLabel-root:not(.Mui-focused):not(.Mui-error)": { color: dark ? "#fff" : "#000" },
+              }}
             />
           </Box>
           <Stack

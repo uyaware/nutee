@@ -11,7 +11,7 @@ export interface ProductVariant {
 }
 
 export const catalogSorts = [
-    "featured",
+    "best-selling",
     "price-asc",
     "price-desc",
     "name",
@@ -25,6 +25,7 @@ export interface CatalogFilters {
     minPrice?: number;
     maxPrice?: number;
     inStock: boolean;
+    discounted: boolean;
     specifications: Record<string, string[]>;
     sort: CatalogSort;
     page: number;

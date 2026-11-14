@@ -112,11 +112,6 @@ test.beforeEach(async ({ page, context }) => {
         ) {
             return route.fulfill({ status: 401, json: {} });
         }
-        const remember = path.endsWith("/refresh")
-            ? headers.cookie?.includes("rememberLogin=true")
-            : path.endsWith("/google")
-              ? url.searchParams.get("remember") === "true"
-              : route.request().postDataJSON()?.remember === true;
         // Simulate backend Set-Cookie using the browser cookie jar; application JS never reads JWTs.
         await context.addCookies([
             {
@@ -126,7 +121,7 @@ test.beforeEach(async ({ page, context }) => {
                 path: "/api/v1",
                 httpOnly: true,
                 sameSite: "Lax",
-                expires: remember ? Date.now() / 1000 + 900 : -1,
+                expires: Date.now() / 1000 + 900,
             },
             {
                 name: "refreshToken",
@@ -135,15 +130,7 @@ test.beforeEach(async ({ page, context }) => {
                 path: "/api/v1",
                 httpOnly: true,
                 sameSite: "Lax",
-                expires: remember ? Date.now() / 1000 + 604800 : -1,
-            },
-            {
-                name: "rememberLogin",
-                value: String(!!remember),
-                domain: "localhost",
-                path: "/api/v1",
-                httpOnly: true,
-                sameSite: "Lax",
+                expires: Date.now() / 1000 + 604800,
             },
         ]);
         return route.fulfill({
@@ -162,13 +149,11 @@ test("login uses HttpOnly cookies, automatically refreshes, and logs out without
     await page
         .getByLabel("Mật khẩu", { exact: true })
         .fill("StrongPassword123!");
-    await page.getByRole("checkbox", { name: "Ghi nhớ đăng nhập" }).check();
     const request = page.waitForRequest("**/api/v1/auth/login");
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
     expect((await request).postDataJSON()).toEqual({
         identifier: user.email,
         password: "StrongPassword123!",
-        remember: true,
     });
     await expect(page).toHaveURL(/\/cart$/);
     const cookies = (await context.cookies()).filter((cookie) =>
@@ -235,7 +220,7 @@ for (const destination of ["/cart", "/account/profile"]) {
                 .click();
             await expect(page).toHaveURL(/\/register$/);
             await expect(
-                page.getByRole("heading", { name: "Tạo tài khoản NUTEE" }),
+                page.getByRole("heading", { name: "Tạo tài khoản" }),
             ).toBeVisible();
         }
         await page.getByLabel("Email", { exact: true }).fill(user.email);
@@ -264,11 +249,9 @@ for (const destination of ["/cart", "/account/profile"]) {
                 sessionStorage.getItem("nutee:auth:customer"),
             ),
         ).toBeNull();
-        expect(
-            (await context.cookies()).find(
-                (cookie) => cookie.name === "refreshToken",
-            ),
-        ).toMatchObject({ httpOnly: true, expires: -1 });
+        const refreshCookie = (await context.cookies()).find((cookie) => cookie.name === "refreshToken");
+        expect(refreshCookie?.httpOnly).toBe(true);
+        expect(refreshCookie?.expires).toBeGreaterThan(0);
     });
 }
 
@@ -279,14 +262,16 @@ test("forgot and reset password submit API shapes with CSRF and reject mismatche
     await page.getByLabel("Email", { exact: true }).fill(user.email);
     const forgot = page.waitForRequest("**/api/v1/auth/forgot-password");
     await page
-        .getByRole("button", { name: "Gửi liên kết đặt lại mật khẩu" })
+        .getByRole("button", { name: "Gửi mã OTP" })
         .click();
     expect((await forgot).postDataJSON()).toEqual({ email: user.email });
     await expect(page.getByRole("alert")).toContainText(
         "Nếu email có tài khoản phù hợp",
     );
-    const token = "a".repeat(43);
-    await page.goto(`/reset-password#token=${token}`);
+    const otp = "012345";
+    await page.getByRole("button", { name: "Gửi lại mã OTP" }).click();
+    await expect(page.getByText("Vui lòng đợi đủ 60 giây trước khi gửi lại mã.")).toBeVisible();
+    await page.getByLabel("Mã OTP", { exact: true }).fill(otp);
     await page
         .getByLabel("Mật khẩu mới", { exact: true })
         .fill("ReplacementPassword123!");
@@ -301,7 +286,8 @@ test("forgot and reset password submit API shapes with CSRF and reject mismatche
     const reset = page.waitForRequest("**/api/v1/auth/reset-password");
     await page.getByRole("button", { name: "Lưu mật khẩu mới" }).click();
     expect((await reset).postDataJSON()).toEqual({
-        token,
+        email: user.email,
+        otp,
         password: "ReplacementPassword123!",
     });
     await expect(page.getByRole("alert")).toContainText("Đã đổi mật khẩu");
@@ -323,7 +309,7 @@ test("Google login and API profile work when browser storage is blocked", async 
     });
     await page.goto("/login");
     const request = page.waitForRequest(
-        "**/api/v1/auth/social/google?remember=false",
+        "**/api/v1/auth/social/google",
     );
     await page.getByRole("button", { name: "Google test sign in" }).click();
     expect((await request).postDataJSON()).toEqual({
@@ -355,7 +341,7 @@ test("invalid credentials stay on login and show the API error", async ({
     await page.getByLabel("Mật khẩu", { exact: true }).fill("wrong");
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
     await expect(page.getByRole("alert")).toContainText(
-        "Thông tin đăng nhập không hợp lệ",
+        "Invalid credentials",
     );
     await expect(page).toHaveURL(/\/login$/);
 });
@@ -367,7 +353,7 @@ test("preserves storefront and management screens with empty data", async ({
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto("/");
     await expect(
-        page.getByRole("heading", { name: /Công nghệ cho/ }),
+        page.getByRole("heading", { name: /Đồ án chuyên ngành/ }),
     ).toBeVisible();
     await page.goto("/products");
     await expect(
@@ -383,12 +369,15 @@ test("preserves storefront and management screens with empty data", async ({
     await page.route("**/api/v1/auth/me", (route) =>
         route.fulfill({ json: { ...user, role: "ADMIN" } }),
     );
+    await page.route("**/api/v1/management/products?*", (route) =>
+        route.fulfill({ json: { content: [], totalElements: 0 } }),
+    );
     await page.goto("/management/products");
     await expect(
         page.getByRole("heading", { name: "Sản phẩm", exact: true }),
     ).toBeVisible();
     await expect(
-        page.getByText("Không có dữ liệu phù hợp.", { exact: true }),
+        page.getByRole("table", { name: "Danh sách sản phẩm" }),
     ).toBeVisible();
     expect(errors).toEqual([]);
 });

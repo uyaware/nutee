@@ -38,7 +38,6 @@ import {
     LoadingState,
 } from "@/shared/components/Feedback";
 import { dateTime, money } from "@/shared/lib/format";
-import { errorMessage } from "@/shared/lib/errors";
 import { OrderHistoryPanel } from "@/modules/orders/components/OrderHistoryPanel";
 
 const statuses = [
@@ -350,6 +349,34 @@ export function CustomerOrderDetail() {
                     )}
                     <Divider />
                     <OrderProducts items={orderProducts(order)} />
+                    {order.status === "delivered" && (
+                        <Stack spacing={1}>
+                            {order.items.map((item) => (
+                                <Stack
+                                    key={item.id}
+                                    direction={{ xs: "column", sm: "row" }}
+                                    gap={1}
+                                >
+                                    <Button
+                                        component={Link}
+                                        to={`/account/orders/${order.id}/review/${item.id}`}
+                                        variant="outlined"
+                                        sx={{ alignSelf: "flex-start" }}
+                                    >
+                                        Đánh giá: {item.name}
+                                    </Button>
+                                    <Button
+                                        component={Link}
+                                        to={`/account/after-sales/new?orderId=${order.id}&itemId=${item.id}`}
+                                        variant="outlined"
+                                        sx={{ alignSelf: "flex-start" }}
+                                    >
+                                        Bảo hành / đổi trả: {item.name}
+                                    </Button>
+                                </Stack>
+                            ))}
+                        </Stack>
+                    )}
                     <Divider />
                     <OrderTotals quote={order} />
                     <Typography>
@@ -406,11 +433,7 @@ export function CustomerOrderDetail() {
                         khi hoàn kho. Trạng thái đơn sẽ hiển thị kết quả thực
                         tế.
                     </DialogContentText>
-                    {cancel.isError && (
-                        <Alert severity="error">
-                            {errorMessage(cancel.error)}
-                        </Alert>
-                    )}
+                    {cancel.isError && <ErrorState error={cancel.error} />}
                 </DialogContent>
                 <DialogActions>
                     <Button
