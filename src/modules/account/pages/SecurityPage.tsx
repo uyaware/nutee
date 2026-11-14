@@ -26,7 +26,8 @@ const passwordChangeSchema = z
         newPassword: z
             .string()
             .min(8, "Mật khẩu mới cần ít nhất 8 ký tự.")
-            .max(100, "Mật khẩu tối đa 100 ký tự."),
+            .max(100, "Mật khẩu tối đa 100 ký tự.")
+            .regex(/^[\x20-\x7E]*$/, "Mật khẩu chỉ dùng ký tự ASCII, không có dấu."),
         confirmPassword: z
             .string()
             .min(1, "Nhập lại mật khẩu mới.")

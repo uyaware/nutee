@@ -256,7 +256,7 @@ function CreateUserDialog({
                             }
                             helperText="Từ 8 đến 100 ký tự."
                             slotProps={{
-                                htmlInput: { minLength: 8, maxLength: 100 },
+                                htmlInput: { minLength: 8, maxLength: 100, pattern: "[\x20-\x7E]*" },
                             }}
                         />
                         <TextField
