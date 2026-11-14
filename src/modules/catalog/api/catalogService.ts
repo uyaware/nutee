@@ -96,6 +96,8 @@ export function createCatalogService(api: ApiClient): CatalogService {
         categories: async () =>
             (await get<ApiCategory[]>("/categories")).map(category),
         brands: async () => (await get<ApiBrand[]>("/brands")).map(brand),
+        categoryBrands: async (id) =>
+            (await get<ApiFacets>(`/products/facets?${new URLSearchParams({ category: id })}`)).brands.map(brand),
         featured: async () =>
             (
                 await get<ApiPage<ApiProduct>>("/products?size=15&sort=featured")

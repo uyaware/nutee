@@ -218,7 +218,7 @@ export default function PasswordRecoveryPage({
                                 helperText={
                                     resetForm.formState.errors.password
                                         ?.message ??
-                                    "Ít nhất 12 ký tự, tối đa 72 byte UTF-8."
+                                    "Từ 8 đến 100 ký tự."
                                 }
                             />
                             <PasswordField

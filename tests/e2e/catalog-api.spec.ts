@@ -86,11 +86,29 @@ test("restores the requested variant from the URL", async ({ page }) => {
     await expect(page.getByText("Giá bán", { exact: true }).locator("..")).toContainText("10.000.000");
 });
 
+test("updates the selected variant image after resolving three specification groups", async ({ page }) => {
+    const data = structuredClone(product);
+    for (const variant of data.variants) {
+        variant.specifications.push({ name: "storage", value: variant.id === 12 ? "512 GB" : "256 GB" });
+    }
+    await openProduct(page, data);
+    const ram8 = page.getByRole("group", { name: "RAM" }).getByRole("button", { name: "8 GB" });
+    const storage = page.getByRole("group", { name: "Lưu trữ" });
+    await expect(ram8).toBeDisabled();
+    await storage.getByRole("button", { name: "512 GB" }).click();
+    await expect(ram8).toBeEnabled();
+    await ram8.click();
+    await storage.getByRole("button", { name: "256 GB" }).click();
+    await expect(page.getByRole("img", { name: product.name, exact: true })).toHaveAttribute("src", /images\.unsplash\.com/);
+});
+
 test("changing variant updates price, image, specifications and resets quantity", async ({
     page,
 }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await openProduct(page);
+    await page.getByRole("button", { name: "Xem ảnh sản phẩm 2" }).click();
+    await expect(page.getByRole("img", { name: product.name, exact: true })).toHaveAttribute("src", /images\.unsplash\.com/);
     await page
         .getByRole("spinbutton", { name: "Số lượng", exact: true })
         .fill("2");
@@ -118,6 +136,8 @@ test("changing variant updates price, image, specifications and resets quantity"
     await expect(
         page.getByRole("spinbutton", { name: "Số lượng", exact: true }),
     ).toHaveAttribute("max", "1");
+    await page.getByRole("group", { name: "RAM" }).getByRole("button", { name: "16 GB" }).click();
+    await expect(page.getByRole("img", { name: product.name, exact: true })).toHaveAttribute("src", "/images/laptop-overview.svg");
 });
 
 test("shows a sold-out combination and prevents adding it", async ({

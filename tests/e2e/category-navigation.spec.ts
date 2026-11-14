@@ -6,6 +6,7 @@ test("groups categories under their parents and requests category-specific facet
         { id: 2, name: "Bàn phím", parentId: null },
         { id: 3, name: "Laptop gaming", parentId: 1 },
         { id: 4, name: "Bàn phím cơ", parentId: 2 },
+        { id: 5, name: "Tai nghe", parentId: null },
     ];
     const facetRequests: string[] = [];
     await page.route("**/api/v1/**", (route) => {
@@ -16,7 +17,7 @@ test("groups categories under their parents and requests category-specific facet
         if (url.pathname.endsWith("/facets")) {
             const selected = url.searchParams.get("category") ?? "";
             facetRequests.push(selected);
-            return route.fulfill({ json: { categories, brands: selected === "1" ? [{ id: 1, name: "LaptopBrand" }] : [{ id: 2, name: "KeyBrand" }], specifications: [] } });
+            return route.fulfill({ json: { categories, brands: selected === "1" ? [{ id: 1, name: "LaptopBrand" }] : selected === "5" ? [{ id: 3, name: "AudioBrand" }] : [{ id: 2, name: "KeyBrand" }], specifications: [] } });
         }
         return route.fulfill({ json: { content: [], page: 0, size: 12, totalElements: 0 } });
     });
@@ -35,9 +36,16 @@ test("groups categories under their parents and requests category-specific facet
     const menu = page.getByRole("menu");
     await menu.getByRole("menuitem", { name: "Laptop", exact: true }).hover();
     await expect(menu.getByRole("menuitem", { name: "Laptop gaming" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "LaptopBrand" })).toBeVisible();
     await expect(menu.getByRole("menuitem", { name: "Bàn phím cơ" })).toHaveCount(0);
     await menu.getByRole("menuitem", { name: "Bàn phím", exact: true }).hover();
     await expect(menu.getByRole("menuitem", { name: "Bàn phím cơ" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "KeyBrand" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "LaptopBrand" })).toHaveCount(0);
+    await expect(menu.getByRole("menuitem", { name: "KeyBrand" })).toHaveAttribute("href", "/products?category=2&brand=2");
+    await menu.getByRole("menuitem", { name: "Tai nghe", exact: true }).hover();
+    await expect(menu.getByRole("menuitem", { name: "AudioBrand" })).toBeVisible();
+    await menu.getByRole("menuitem", { name: "Bàn phím", exact: true }).hover();
     await menu.getByRole("menuitem", { name: "Bàn phím cơ" }).click();
     await expect(page).toHaveURL(/category=4/);
 

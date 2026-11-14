@@ -22,15 +22,15 @@ const passwordChangeSchema = z
         currentPassword: z
             .string()
             .min(1, "Nhập mật khẩu hiện tại.")
-            .max(128, "Mật khẩu tối đa 128 ký tự."),
+            .max(100, "Mật khẩu tối đa 100 ký tự."),
         newPassword: z
             .string()
             .min(8, "Mật khẩu mới cần ít nhất 8 ký tự.")
-            .max(128, "Mật khẩu tối đa 128 ký tự."),
+            .max(100, "Mật khẩu tối đa 100 ký tự."),
         confirmPassword: z
             .string()
             .min(1, "Nhập lại mật khẩu mới.")
-            .max(128, "Mật khẩu tối đa 128 ký tự."),
+            .max(100, "Mật khẩu tối đa 100 ký tự."),
     })
     .refine((fields) => fields.newPassword !== fields.currentPassword, {
         path: ["newPassword"],
@@ -168,7 +168,7 @@ export default function SecurityPage() {
                                 error={!!errors.currentPassword}
                                 helperText={errors.currentPassword?.message}
                                 slotProps={{
-                                    htmlInput: { maxLength: 128 },
+                                    htmlInput: { maxLength: 100 },
                                 }}
                             />
                             <PasswordField
@@ -180,10 +180,10 @@ export default function SecurityPage() {
                                 error={!!errors.newPassword}
                                 helperText={
                                     errors.newPassword?.message ??
-                                    "Sử dụng từ 8 đến 128 ký tự."
+                                    "Sử dụng từ 8 đến 100 ký tự."
                                 }
                                 slotProps={{
-                                    htmlInput: { maxLength: 128 },
+                                    htmlInput: { maxLength: 100 },
                                 }}
                             />
                             <PasswordField
@@ -195,7 +195,7 @@ export default function SecurityPage() {
                                 error={!!errors.confirmPassword}
                                 helperText={errors.confirmPassword?.message}
                                 slotProps={{
-                                    htmlInput: { maxLength: 128 },
+                                    htmlInput: { maxLength: 100 },
                                 }}
                             />
                         </AccountSectionBody>

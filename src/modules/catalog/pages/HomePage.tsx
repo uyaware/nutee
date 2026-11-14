@@ -108,7 +108,7 @@ export default function HomePage() {
             </Box>
           )}
         </Box>
-        <Box className="hero-product" sx={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 0, animation: "heroFloat 7s ease-in-out infinite", filter: dark ? "drop-shadow(0 25px 45px rgba(31, 64, 160, .4))" : "drop-shadow(0 25px 45px rgba(80, 80, 80, .22))" }}>
+        <Box className="hero-product" sx={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 0, animation: "heroFloat 7s ease-in-out infinite" }}>
           <Box
             component="img"
             src="/images/hero-medion.png"
@@ -128,7 +128,7 @@ export default function HomePage() {
             src="/images/hero-keyboard.png"
             alt="Ảnh minh họa bàn phím Apple Magic Keyboard"
             aria-describedby="hero-image-credit"
-            sx={{ position: "absolute", right: { xs: "0%", md: "-2%" }, bottom: { xs: "7%", md: "10%" }, width: { xs: "58%", md: "60%" }, objectFit: "contain", transform: "rotate(-8deg)", filter: "drop-shadow(0 12px 18px rgba(0, 0, 0, .6))" }}
+            sx={{ position: "absolute", right: { xs: "0%", md: "-2%" }, bottom: { xs: "7%", md: "10%" }, width: { xs: "58%", md: "60%" }, objectFit: "contain", transform: "rotate(-8deg)" }}
           />
           <Box component="span" id="hero-image-credit" sx={{ position: "absolute", width: "1px", height: "1px", p: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
             Ảnh laptop của PantheraLeo1359531 và ảnh bàn phím của Fletcher, chỉnh sửa bởi AGreuet, từ Wikimedia Commons. Thông tin giấy phép tại /image-credits.txt.

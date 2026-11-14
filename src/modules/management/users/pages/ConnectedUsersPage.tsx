@@ -254,9 +254,9 @@ function CreateUserDialog({
                             onChange={(event) =>
                                 setPassword(event.target.value)
                             }
-                            helperText="Ít nhất 12 ký tự, tối đa 72 byte UTF-8."
+                            helperText="Từ 8 đến 100 ký tự."
                             slotProps={{
-                                htmlInput: { minLength: 12, maxLength: 72 },
+                                htmlInput: { minLength: 8, maxLength: 100 },
                             }}
                         />
                         <TextField

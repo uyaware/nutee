@@ -174,7 +174,7 @@ export function CatalogFilters({
         selectedCount={filters.brands.length}
         defaultExpanded
       >
-        <Stack spacing={0.5}>
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: 1, rowGap: 0.5 }}>
           {facets.brands.map((b) => (
             <FormControlLabel
               key={b.id}
@@ -190,7 +190,7 @@ export function CatalogFilters({
               label={b.name}
             />
           ))}
-        </Stack>
+        </Box>
         {!facets.brands.length && (
           <Typography variant="body2" color="text.secondary">
             Không có thương hiệu trong danh mục này.

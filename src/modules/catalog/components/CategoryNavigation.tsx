@@ -39,6 +39,12 @@ export function CategoryNavigation({ dark = false }: { dark?: boolean }) {
     queryKey: ["catalog", "brands"],
     queryFn: services.catalog.brands,
   });
+  const categoryBrands = useQuery({
+    queryKey: ["catalog", "category-brands", activeCategory],
+    queryFn: () => services.catalog.categoryBrands(activeCategory!),
+    enabled: !!anchor && !!activeCategory,
+    staleTime: 60_000,
+  });
   const ordered = orderedCategories(categories.data ?? []);
   const roots = ordered.filter(({ depth }) => depth === 0);
   const activeIndex = ordered.findIndex(({ category }) => category.id === activeCategory);
@@ -74,9 +80,9 @@ export function CategoryNavigation({ dark = false }: { dark?: boolean }) {
           paper: {
             sx: {
               mt: 1,
-              width: children.length ? "min(560px, calc(100vw - 32px))" : 280,
+              width: activeCategory ? "min(560px, calc(100vw - 32px))" : 280,
               maxWidth: "calc(100vw - 32px)",
-              "& .category-main": { width: children.length ? "50%" : "100%" },
+              "& .category-main": { width: activeCategory ? "50%" : "100%" },
               ...(dark && {
                 bgcolor: "#141a25",
                 color: "#f2f4f8",
@@ -134,8 +140,8 @@ export function CategoryNavigation({ dark = false }: { dark?: boolean }) {
               to={`/products?${new URLSearchParams({ category: category.id })}`}
               selected={selectedCategory === category.id}
               onClick={close}
-              onMouseEnter={() => setActiveCategory(hasChildren ? category.id : null)}
-              onFocus={() => setActiveCategory(hasChildren ? category.id : null)}
+              onMouseEnter={() => setActiveCategory(category.id)}
+              onFocus={() => setActiveCategory(category.id)}
               sx={{
                 minHeight: { xs: 48, sm: 48 },
                 pl: 2,
@@ -153,13 +159,14 @@ export function CategoryNavigation({ dark = false }: { dark?: boolean }) {
               >
                 {category.name}
               </Typography>
-              {hasChildren && <ChevronRightRounded fontSize="small" />}
+              {(hasChildren || activeCategory === category.id) && <ChevronRightRounded fontSize="small" />}
             </MenuItem>
           );
         })}
-        {children.length > 0 && (
+        {activeCategory && (
           <Box sx={{ position: "absolute", left: "50%", right: 0, top: 0, bottom: 0,
-            bgcolor: "#fff", color: "#172033", borderLeft: "1px solid #e2e8f0", overflowY: "auto", py: 1 }}>
+            bgcolor: dark ? "#1b293d" : "#eef4ff", color: dark ? "#edf3ff" : "#172b4d",
+            borderLeft: "1px solid", borderColor: dark ? "#405776" : "#cbdcf4", overflowY: "auto", py: 1 }}>
             <Typography sx={{ px: 2, py: 1.5, fontWeight: 700, fontSize: 14 }}>
               {ordered[activeIndex]?.category.name}
             </Typography>
@@ -172,13 +179,25 @@ export function CategoryNavigation({ dark = false }: { dark?: boolean }) {
                 selected={selectedCategory === category.id} onClick={close}
                 sx={{ aspectRatio: "1", minWidth: 0, p: 1, display: "flex", flexDirection: "column", gap: 0.75,
                   alignItems: "center", justifyContent: "center", textAlign: "center", whiteSpace: "normal",
-                  borderRadius: 2, border: "1px solid #dce4f0", bgcolor: "#f8faff", color: "#25354f",
-                  "&:hover, &.Mui-selected": { bgcolor: "#e8f0ff", color: "#174aa8" } }}>
-                <Icon fontSize="small" sx={{ color: "#3462aa" }} />
+                  borderRadius: 2, border: "1px solid", borderColor: dark ? "#485d7a" : "#cfddf2",
+                  bgcolor: dark ? "#263a56" : "#fff", color: dark ? "#e4eeff" : "#25354f",
+                  "&:hover, &.Mui-selected": { bgcolor: dark ? "#38577d" : "#dbe9ff", color: dark ? "#fff" : "#174aa8" } }}>
+                <Icon fontSize="small" sx={{ color: dark ? "#b8d1ff" : "#3462aa" }} />
                 <Typography variant="caption" sx={{ fontWeight: 600, overflowWrap: "anywhere" }}>{category.name}</Typography>
               </MenuItem>
             ); })}
             </Box>
+            <Typography sx={{ px: 2, pt: 2, pb: 0.75, fontWeight: 700, fontSize: 13 }}>Thương hiệu</Typography>
+            {categoryBrands.isPending && <Typography sx={{ px: 2 }} variant="caption">Đang tải thương hiệu…</Typography>}
+            {categoryBrands.isError && <Box sx={{ px: 2 }}><ErrorState error={categoryBrands.error} /></Box>}
+            {categoryBrands.isSuccess && categoryBrands.data.length === 0 && <Typography sx={{ px: 2 }} variant="caption">Chưa có thương hiệu</Typography>}
+            {categoryBrands.data?.map((brand) => (
+              <MenuItem key={brand.id} component={Link} onClick={close}
+                to={`/products?${new URLSearchParams({ category: activeCategory, brand: brand.id })}`}
+                sx={{ minHeight: 40, color: "inherit", whiteSpace: "normal" }}>
+                {brand.name}
+              </MenuItem>
+            ))}
           </Box>
         )}
         <Divider className="category-main" />

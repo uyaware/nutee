@@ -79,6 +79,13 @@ function setup() {
 }
 
 describe("catalog API contract", () => {
+    it("loads brands for the requested category", async () => {
+        const { fetch, catalog } = setup();
+        await expect(catalog.categoryBrands("22")).resolves.toEqual([{ id: "4", name: "Brand" }]);
+        const request = new URL(String(fetch.mock.calls[0][0]), "http://localhost");
+        expect(request.pathname).toBe("/api/v1/products/facets");
+        expect(request.searchParams.get("category")).toBe("22");
+    });
     it("requests up to 15 featured products without duplicating the response", async () => {
         const { fetch, catalog } = setup();
         const featured = await catalog.featured();
