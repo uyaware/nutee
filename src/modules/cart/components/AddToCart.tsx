@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { trackEvent } from "@/shared/analytics/posthog";
 import {
     Alert,
     Button,
@@ -19,9 +20,11 @@ import { useSession } from "@/modules/auth/hooks/useSession";
 import { ServiceError } from "@/shared/lib/errors";
 
 export function AddToCart({
+    productId,
     variantId,
     stock,
 }: {
+    productId: string;
     variantId: string | undefined;
     stock: number;
 }) {
@@ -31,16 +34,18 @@ export function AddToCart({
     const location = useLocation();
     const navigate = useNavigate();
     const add = useMutation({
-        mutationFn: () => {
+        mutationFn: (requestedQuantity: number) => {
             if (!variantId)
                 throw new ServiceError(
                     "VALIDATION",
                     "Hãy chọn một phiên bản sản phẩm.",
                 );
-            return services.cart.add(variantId, Number(quantity));
+            return services.cart.add(variantId, requestedQuantity);
         },
-        onSuccess: (cart) =>
-            client.setQueryData(["customer", cart.ownerId, "cart"], cart),
+        onSuccess: (cart, requestedQuantity) => {
+            client.setQueryData(["customer", cart.ownerId, "cart"], cart);
+            trackEvent("add_to_cart", { product_id: productId, variant_id: variantId ?? null, quantity: requestedQuantity, page: "product_detail" });
+        },
         onSettled: () =>
             client.invalidateQueries({
                 queryKey: ["customer", session.data?.id, "cart"],
@@ -150,7 +155,7 @@ export function AddToCart({
                             );
                             return;
                         }
-                        add.mutate();
+                        add.mutate(Number(quantity));
                     }}
                     sx={{ flex: 1, minHeight: 44 }}
                 >

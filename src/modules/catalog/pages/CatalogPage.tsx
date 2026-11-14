@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { trackEvent } from "@/shared/analytics/posthog";
 import {
   Box,
   Button,
@@ -13,7 +14,7 @@ import {
 } from "@mui/material";
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { services } from "@/app/services";
 import {
   EmptyState,
@@ -39,6 +40,10 @@ const sorts = {
 };
 export default function CatalogPage() {
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const listId = `catalog:${location.key}`;
+  const trackedSearch = useRef<string | null>(null);
+  const requestedSearch = useRef<string | null>(null);
   const [open, setOpen] = useState(false);
   const filters = parseCatalogFilters(params);
   const query = useQuery({
@@ -54,6 +59,19 @@ export default function CatalogPage() {
         page: changes.page ?? 1,
       }),
     );
+  useEffect(() => {
+    if (requestedSearch.current !== filters.q) {
+      requestedSearch.current = filters.q;
+      trackedSearch.current = null;
+    }
+    if (!filters.q) {
+      trackedSearch.current = null;
+      return;
+    }
+    if (!query.isSuccess || query.isPlaceholderData || query.isFetching || trackedSearch.current === filters.q) return;
+    trackedSearch.current = filters.q;
+    trackEvent("search", { query: filters.q, result_count: query.data.total, page: "search" });
+  }, [filters.q, query.isSuccess, query.isPlaceholderData, query.isFetching, query.data]);
   const canonical = serializeCatalogFilters({
     ...filters,
     page: query.data?.page ?? filters.page,
@@ -146,9 +164,15 @@ export default function CatalogPage() {
             aria-label="Tìm trong danh mục"
             onSubmit={(event) => {
               event.preventDefault();
-              update({
-                q: String(new FormData(event.currentTarget).get("q") ?? ""),
-              });
+              const q = String(new FormData(event.currentTarget).get("q") ?? "").trim().slice(0, 160);
+              if (q && q === filters.q && filters.page === 1) {
+                void query.refetch().then((result) => {
+                  if (result.isSuccess) trackEvent("search", { query: q, result_count: result.data.total, page: "search" });
+                });
+              } else {
+                if (q === filters.q) trackedSearch.current = null;
+                update({ q });
+              }
             }}
             sx={{
               display: "flex",
@@ -167,7 +191,7 @@ export default function CatalogPage() {
               slotProps={{ htmlInput: { maxLength: 160 } }}
               sx={{ flex: 1, minWidth: 0 }}
             />
-            <Button type="submit" variant="contained" sx={{ flexShrink: 0 }}>
+            <Button type="submit" variant="contained" disabled={query.isFetching} sx={{ flexShrink: 0 }}>
               Tìm kiếm
             </Button>
           </Box>
@@ -299,10 +323,12 @@ export default function CatalogPage() {
                   gap: 2,
                 }}
               >
-                {query.data.items.map((product) => (
+                {query.data.items.map((product, index) => (
                   <ProductCard
                     key={product.id}
                     product={product}
+                    listId={listId}
+                    index={index}
                     returnTo={`/products${canonical ? `?${canonical}` : ""}`}
                   />
                 ))}

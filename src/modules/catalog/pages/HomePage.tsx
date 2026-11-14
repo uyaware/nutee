@@ -237,8 +237,8 @@ export default function HomePage() {
               gap: 2,
             }}
           >
-            {products.data.map((p) => (
-              <ProductCard key={p.id} product={p} dark={dark} home />
+            {products.data.map((p, index) => (
+              <ProductCard key={p.id} product={p} dark={dark} home listId="home-featured" index={index} />
             ))}
           </Box>
         )}

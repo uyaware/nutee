@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { trackEvent } from "@/shared/analytics/posthog";
 import {
     Box,
     Button,
@@ -38,6 +39,7 @@ export default function CartPage() {
         excluded: Set<string>;
     }>({ ownerId: undefined, excluded: new Set() });
     const change = useMutation({
+        onMutate: () => ({ previousItems: cart.data?.items ?? [] }),
         mutationFn: (action: CartChange) => {
             switch (action.type) {
                 case "clear":
@@ -51,7 +53,19 @@ export default function CartPage() {
                     );
             }
         },
-        onSuccess: (updated) => {
+        onSuccess: (updated, action, context) => {
+            for (const item of context?.previousItems ?? []) {
+                if (action.type !== "clear" && item.variantId !== action.variantId) continue;
+                const properties = { product_id: item.productId, variant_id: item.variantId, page: "cart" };
+                if (action.type === "quantity") {
+                    const next = updated.items.find((entry) => entry.variantId === item.variantId);
+                    if (next && next.quantity !== item.quantity) trackEvent("cart_quantity_changed", {
+                        ...properties, old_quantity: item.quantity, new_quantity: next.quantity,
+                    });
+                } else if (!updated.items.some((entry) => entry.variantId === item.variantId)) {
+                    trackEvent("remove_from_cart", { ...properties, quantity: item.quantity });
+                }
+            }
             client.setQueryData(["customer", updated.ownerId, "cart"], updated);
             setSelection((current) => ({
                 ownerId: updated.ownerId,

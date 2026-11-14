@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { product } from "../fixtures/catalog";
+import { captureTracking } from "../fixtures/tracking";
 import type { ApiCart, ApiCartItem } from "@/modules/cart/model/api";
 
 const user = {
@@ -39,7 +40,9 @@ async function setup(
         rejectAdd?: boolean;
     } = {},
 ) {
+    const events = await captureTracking(page);
     const state = {
+        events,
         items: options.items ?? [],
         writes: [] as { method: string; path: string; body: unknown }[],
         cartReads: 0,
@@ -189,6 +192,7 @@ test("adds the selected variants, updates the badge and quantities, selects chec
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     const state = await setup(page);
+    const events = state.events;
     await page.goto("/products/7");
     await page
         .getByRole("spinbutton", { name: "Số lượng", exact: true })
@@ -285,6 +289,16 @@ test("adds the selected variants, updates the badge and quantities, selects chec
         "DELETE",
     ]);
     expect(errors).toEqual([]);
+    expect(events.filter((event) => event.name === "product_view")).toHaveLength(1);
+    expect(events.filter((event) => event.name === "add_to_cart").map((event) => event.properties)).toEqual([
+        { product_id: "7", variant_id: "12", quantity: 2, page: "product_detail" },
+        { product_id: "7", variant_id: "11", quantity: 1, page: "product_detail" },
+    ]);
+    expect(events.filter((event) => event.name === "cart_quantity_changed").map((event) => event.properties)).toEqual([
+        { product_id: "7", variant_id: "12", old_quantity: 2, new_quantity: 3, page: "cart" },
+    ]);
+    expect(events.filter((event) => event.name === "checkout_started")).toHaveLength(1);
+    expect(events.filter((event) => event.name === "remove_from_cart").map((event) => event.properties.variant_id)).toEqual(["11", "12"]);
 });
 
 test("requires login and preserves the selected variant in the return URL without browser storage", async ({
@@ -301,6 +315,7 @@ test("requires login and preserves the selected variant in the return URL withou
     );
     expect(state.writes).toHaveLength(0);
     expect(state.cartReads).toBe(0);
+    expect(state.events.filter((event) => event.name === "add_to_cart")).toHaveLength(0);
 });
 
 test("shows stock conflicts without claiming success and lets customers fix or remove unavailable rows on mobile", async ({
@@ -315,7 +330,7 @@ test("shows stock conflicts without claiming success and lets customers fix or r
         stock: 0,
         status: "out-of-stock" as const,
     };
-    await setup(page, { items: [insufficient, soldOut], rejectAdd: true });
+    const state = await setup(page, { items: [insufficient, soldOut], rejectAdd: true });
     await page.goto("/products/7");
     await page
         .getByRole("button", { name: "Thêm vào giỏ", exact: true })
@@ -326,6 +341,7 @@ test("shows stock conflicts without claiming success and lets customers fix or r
     await expect(
         page.getByText("Đã thêm vào giỏ.", { exact: true }),
     ).toHaveCount(0);
+    expect(state.events.filter((event) => event.name === "add_to_cart")).toHaveLength(0);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/cart");
     await expect(

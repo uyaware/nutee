@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { trackEvent } from "@/shared/analytics/posthog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     createOrderSchema,
@@ -45,6 +46,7 @@ import { tokens } from "@/shared/theme/tokens";
 import { PaymentPanel } from "@/modules/checkout/pages/PaymentPage";
 
 export default function CheckoutPage() {
+    const trackedCheckout = useRef(false);
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [params, setParams] = useSearchParams();
@@ -147,6 +149,19 @@ export default function CheckoutPage() {
             paymentMethod: method,
         });
     const paymentOrderId = createdOrder?.id ?? Number(params.get("order"));
+    useEffect(() => {
+        if (trackedCheckout.current || submitted || paymentOrderId > 0 || !fromCart ||
+            !profile.isSuccess || !profile.data || !config.isSuccess || !cart.isSuccess || cart.isError ||
+            !quoteQuery.isSuccess || quoteQuery.isFetching || !quoteQuery.data.items.length ||
+            quoteQuery.data.items.some((item) => item.status !== "available" || item.price === null)) return;
+        trackedCheckout.current = true;
+        trackEvent("checkout_started", {
+            quantity: quoteQuery.data.items.reduce((total, item) => total + item.quantity, 0),
+            total_amount: quoteQuery.data.total + config.data.shippingFee,
+            currency: "VND",
+        });
+    }, [submitted, paymentOrderId, fromCart, profile.isSuccess, profile.data, config.isSuccess, config.data,
+        cart.isSuccess, cart.isError, quoteQuery.isSuccess, quoteQuery.isFetching, quoteQuery.data]);
     if (Number.isSafeInteger(paymentOrderId) && paymentOrderId > 0) {
         return <PaymentPanel id={paymentOrderId} initialError={createdOrder?.paymentError} />;
     }

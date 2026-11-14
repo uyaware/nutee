@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { trackEvent } from "@/shared/analytics/posthog";
 import {
     Box,
     Breadcrumbs,
@@ -196,6 +197,7 @@ function ProductGallery({ product }: { product: ProductDetail }) {
 }
 
 export default function ProductDetailPage() {
+    const trackedId = useRef<string | null>(null);
     const [variantId, setVariantId] = useState<number | null>(null);
     const { id = "" } = useParams();
     const location = useLocation();
@@ -204,6 +206,13 @@ export default function ProductDetailPage() {
         queryFn: () => services.catalog.detail(id),
     });
     const state = location.state as { catalogReturnTo?: unknown } | null;
+    useEffect(() => {
+        if (!query.isSuccess || !query.data?.id) return;
+        const productId = String(query.data.id);
+        if (trackedId.current === productId) return;
+        trackedId.current = productId;
+        trackEvent("product_view", { product_id: productId, page: "product_detail" });
+    }, [query.isSuccess, query.data?.id]);
     const returnTo =
         typeof state?.catalogReturnTo === "string" &&
         /^\/products(?:\?|$)/.test(state.catalogReturnTo)
@@ -520,6 +529,7 @@ export default function ProductDetailPage() {
                         )}
                         <Divider />
                         <AddToCart
+                            productId={String(product.id)}
                             key={`${product.id}:${variant?.id}`}
                             variantId={variant ? String(variant.id) : undefined}
                             stock={variant?.quantity ?? 0}
