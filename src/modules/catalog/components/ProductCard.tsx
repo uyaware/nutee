@@ -3,6 +3,7 @@ import {
     Card,
     CardActionArea,
     CardContent,
+    Rating,
     Typography,
 } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
@@ -16,6 +17,22 @@ const ProductCardSurface = styled(Card, {
 })<{ home: boolean }>(({ theme, home }) => ({
     height: "100%",
     minWidth: 0,
+    overflow: "visible",
+    boxShadow: theme.palette.mode === "dark"
+        ? "0 3px 12px rgba(0, 0, 0, 0.24)"
+        : "0 3px 12px rgba(35, 54, 82, 0.10)",
+    "@media (prefers-reduced-motion: no-preference)": {
+        "&&": { transition: "transform 200ms ease, border-color 180ms ease" },
+        "& .product-card-image img": { transition: "transform 250ms ease" },
+        "&:hover, &:focus-within": { transform: "translateY(-4px)" },
+        "&:hover .product-card-image img, &:focus-within .product-card-image img": {
+            transform: "scale(1.05)",
+        },
+    },
+    ...(!home && {
+        borderWidth: 2,
+        borderColor: theme.palette.divider,
+    }),
     ...(home && {
         backgroundColor: theme.palette.productCard.background,
         color: theme.palette.productCard.text,
@@ -39,6 +56,11 @@ export function ProductCard({
     home?: boolean;
 }) {
     const dark = useTheme().palette.mode === "dark";
+    const saving =
+        product.originalPrice !== undefined &&
+        product.originalPrice > product.price
+            ? product.originalPrice - product.price
+            : 0;
     return (
         <ProductCardSurface
             home={home}
@@ -57,6 +79,7 @@ export function ProductCard({
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "stretch",
+                    overflow: "visible",
                 }}
             >
                 <Box
@@ -64,22 +87,64 @@ export function ProductCard({
                         bgcolor: home
                             ? "productCard.mediaBackground"
                             : "background.default",
-                        p: 2,
                         height: { xs: 160, lg: 140 },
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        position: "relative",
+                        borderRadius: "8px 8px 0 0",
                     }}
                 >
-                    <ProductImage
-                        src={product.imageUrl}
-                        alt={`Minh họa ${product.name}`}
-                    />
+                    <Box className="product-card-image" sx={{ width: "100%", height: "100%", overflow: "hidden", borderRadius: "inherit" }}>
+                        <ProductImage
+                            src={product.imageUrl}
+                            alt={`Minh họa ${product.name}`}
+                            fit="cover"
+                        />
+                    </Box>
+                    {saving > 0 && (
+                        <Typography
+                            component="span"
+                            variant="caption"
+                            sx={{
+                                position: "absolute",
+                                top: -10,
+                                right: 0,
+                                transform: "translateX(6px)",
+                                px: 1,
+                                py: 0.4,
+                                borderRadius: 1,
+                                bgcolor: dark ? "#bcd4ff" : "#244e9e",
+                                color: dark ? "#132a4e" : "#fff",
+                                fontWeight: 700,
+                                boxShadow: 2,
+                                zIndex: 1,
+                            }}
+                        >
+                            Tiết kiệm {money(saving)}
+                        </Typography>
+                    )}
                 </Box>
                 <CardContent sx={{ flex: 1, overflowWrap: "anywhere" }}>
-                    <Typography variant="caption" color="text.secondary">
-                        {product.brandName}
-                    </Typography>
+                    {product.brandName && (
+                        <Typography
+                            component="span"
+                            variant="caption"
+                            sx={{
+                                display: "inline-flex",
+                                px: 1,
+                                py: 0.25,
+                                borderRadius: 1,
+                                bgcolor: dark
+                                    ? "rgba(148, 174, 222, 0.15)"
+                                    : "#edf2fa",
+                                color: dark ? "#c4d2e9" : "#526782",
+                                fontWeight: 600,
+                            }}
+                        >
+                            {product.brandName}
+                        </Typography>
+                    )}
                     <Typography
                         component="h3"
                         variant="body1"
@@ -87,13 +152,58 @@ export function ProductCard({
                     >
                         {product.name}
                     </Typography>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 1 }}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                            justifyContent: "space-between",
+                            gap: 0.5,
+                            mt: 1,
+                        }}
                     >
-                        {product.specifications[0]?.value}
-                    </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                            }}
+                        >
+                            <Rating
+                                value={
+                                    product.reviewCount ? product.avgRating : 0
+                                }
+                                precision={0.5}
+                                readOnly
+                                size="small"
+                                sx={{
+                                    "& .MuiRating-iconEmpty": {
+                                        color: dark ? "#aeb8c8" : "#a5afbd",
+                                    },
+                                }}
+                                aria-label={
+                                    product.reviewCount
+                                        ? `${product.avgRating.toFixed(1)} trên 5 sao`
+                                        : "Chưa có đánh giá"
+                                }
+                            />
+                            {product.reviewCount > 0 && (
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                    {product.avgRating.toFixed(1)}
+                                </Typography>
+                            )}
+                        </Box>
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: "0.7rem" }}
+                        >
+                            Đã bán {product.soldCount.toLocaleString("vi-VN")}
+                        </Typography>
+                    </Box>
                     <Typography
                         sx={{
                             mt: 1.25,
@@ -106,22 +216,37 @@ export function ProductCard({
                     </Typography>
                     {product.originalPrice !== undefined &&
                         product.originalPrice > product.price && (
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ textDecoration: "line-through" }}
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    flexWrap: "wrap",
+                                    gap: 0.75,
+                                    mt: 0.25,
+                                }}
                             >
-                                {money(product.originalPrice)}
-                            </Typography>
+                                <Typography
+                                    component="del"
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                    {money(product.originalPrice)}
+                                </Typography>
+                            </Box>
                         )}
-                    <Typography
-                        variant="caption"
-                        color={
-                            product.stock ? "text.secondary" : "warning.main"
-                        }
-                    >
-                        {product.stock ? "Còn hàng" : "Hết hàng"}
-                    </Typography>
+                    {!product.stock && (
+                        <Typography
+                            component="div"
+                            variant="caption"
+                            color={
+                                product.stock
+                                    ? "text.secondary"
+                                    : "warning.main"
+                            }
+                        >
+                            Hết hàng
+                        </Typography>
+                    )}
                 </CardContent>
             </CardActionArea>
         </ProductCardSurface>

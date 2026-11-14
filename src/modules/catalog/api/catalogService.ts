@@ -71,6 +71,9 @@ function summary(item: ApiProduct): ProductSummary {
         brandName: item.brands[0]?.name ?? "",
         sku: variant?.sku ?? "",
         price: item.price,
+        avgRating: item.avgRating,
+        reviewCount: item.reviewCount,
+        soldCount: item.soldCount,
         originalPrice: variant?.originalPrice ?? item.price,
         promotionCode: variant?.promotionCode ?? null,
         stock: item.stock,
@@ -111,12 +114,17 @@ export function createCatalogService(api: ApiClient): CatalogService {
             if (filters.maxPrice !== undefined)
                 params.set("maxPrice", String(filters.maxPrice));
             if (filters.inStock) params.set("inStock", "true");
+            if (filters.discounted) params.set("discounted", "true");
             Object.entries(filters.specifications).forEach(([name, values]) =>
                 values.forEach((value) => params.append(`spec.${name}`, value)),
             );
             const [page, facets] = await Promise.all([
                 get<ApiPage<ApiProduct>>(`/products?${params}`),
-                get<ApiFacets>("/products/facets"),
+                get<ApiFacets>(
+                    filters.category
+                        ? `/products/facets?${new URLSearchParams({ category: filters.category })}`
+                        : "/products/facets",
+                ),
             ]);
             return {
                 items: page.content.map(summary),

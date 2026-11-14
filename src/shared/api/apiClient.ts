@@ -1,4 +1,4 @@
-import { httpErrorMessage, ServiceError } from "@/shared/lib/errors";
+import { ServiceError } from "@/shared/lib/errors";
 
 export interface ApiRequest {
     method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -32,7 +32,7 @@ class ApiError extends ServiceError {
                       : status >= 500
                         ? "SERVER"
                         : "VALIDATION",
-            detail ?? httpErrorMessage(status),
+            detail ?? `Mã lỗi: ${problemCode ?? `HTTP ${status}`}`,
             fieldErrors,
         );
     }
@@ -90,7 +90,9 @@ export function createApiClient(
             };
             throw new ApiError(
                 response.status,
-                problem.code,
+                typeof problem.code === "string" && problem.code.trim()
+                    ? problem.code.trim()
+                    : undefined,
                 [problem.message, problem.detail].find(
                     (message): message is string =>
                         typeof message === "string" &&

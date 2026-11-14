@@ -12,9 +12,9 @@ const product = {
     defaultVariantId: 12,
     name: "Laptop 7",
     description: "Thông tin sản phẩm",
-    avgRating: 0,
-    soldCount: 0,
-    reviewCount: 0,
+    avgRating: 4.5,
+    soldCount: 35,
+    reviewCount: 12,
     price: 200,
     maxPrice: 200,
     stock: 3,
@@ -86,13 +86,14 @@ describe("catalog API contract", () => {
         expect(request.searchParams.get("size")).toBe("15");
         expect(request.searchParams.get("sort")).toBe("featured");
         expect(featured.map((item) => item.id)).toEqual(["7"]);
+        expect(featured[0]).toMatchObject({ avgRating: 4.5, reviewCount: 12, soldCount: 35 });
     });
     it("sends filters to the backend and translates zero-based pages and numeric IDs for the existing UI", async () => {
         const { fetch, catalog } = setup();
         const page = await catalog.list(
             parseCatalogFilters(
                 new URLSearchParams(
-                    "q=Laptop&category=22&brand=4&spec.ram=16+GB&page=2",
+                    "q=Laptop&category=22&brand=4&spec.ram=16+GB&page=2&discounted=true",
                 ),
             ),
         );
@@ -107,6 +108,10 @@ describe("catalog API contract", () => {
         expect(request.searchParams.get("page")).toBe("1");
         expect(request.searchParams.get("brand")).toBe("4");
         expect(request.searchParams.get("spec.ram")).toBe("16 GB");
+        expect(request.searchParams.get("discounted")).toBe("true");
+        expect(request.searchParams.get("sort")).toBe("best-selling");
+        const facetsRequest = new URL(String(fetch.mock.calls.find(([url]) => String(url).includes("/products/facets"))![0]), "http://localhost");
+        expect(facetsRequest.searchParams.get("category")).toBe("22");
         expect(page).toMatchObject({
             page: 2,
             total: 20,

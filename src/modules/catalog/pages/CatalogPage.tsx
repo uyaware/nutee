@@ -31,7 +31,7 @@ import { ProductCard } from "@/modules/catalog/components/ProductCard";
 import { tokens } from "@/shared/theme/tokens";
 
 const sorts = {
-  featured: "Nổi bật",
+  "best-selling": "Bán nhiều nhất",
   "price-asc": "Giá tăng dần",
   "price-desc": "Giá giảm dần",
   name: "Tên A–Z",
@@ -100,6 +100,12 @@ export default function CatalogPage() {
       label: "Còn hàng",
       remove: () => update({ inStock: false }),
     });
+  if (filters.discounted)
+    chips.push({
+      key: "discounted",
+      label: "Đang giảm giá",
+      remove: () => update({ discounted: false }),
+    });
   Object.entries(filters.specifications).forEach(([key, values]) =>
     values.forEach((value) =>
       chips.push({
@@ -129,49 +135,6 @@ export default function CatalogPage() {
           KHÁM PHÁ NUTEE
         </Typography>
         <Typography variant="h1">Sản phẩm</Typography>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          alignItems={{ md: "center" }}
-          justifyContent="space-between"
-          sx={{ mt: 2 }}
-        >
-          <Typography color="text.secondary" sx={{ flex: 1 }}>
-            Tìm sản phẩm phù hợp với nhu cầu của bạn.
-          </Typography>
-          <Box
-            component="form"
-            key={filters.q}
-            role="search"
-            aria-label="Tìm trong danh mục"
-            onSubmit={(event) => {
-              event.preventDefault();
-              update({
-                q: String(new FormData(event.currentTarget).get("q") ?? ""),
-              });
-            }}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              width: { xs: "100%", md: "50%" },
-              maxWidth: { md: 520 },
-              minWidth: 0,
-            }}
-          >
-            <TextField
-              type="search"
-              name="q"
-              label="Tìm tên, mã hoặc cấu hình"
-              defaultValue={filters.q}
-              slotProps={{ htmlInput: { maxLength: 160 } }}
-              sx={{ flex: 1, minWidth: 0 }}
-            />
-            <Button type="submit" variant="contained" sx={{ flexShrink: 0 }}>
-              Tìm kiếm
-            </Button>
-          </Box>
-        </Stack>
       </Box>
       <Stack direction="row" useFlexGap flexWrap="wrap" spacing={1}>
         {chips.map((chip) => (

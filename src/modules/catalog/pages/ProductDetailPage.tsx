@@ -12,8 +12,6 @@ import {
     Link as MuiLink,
     Paper,
     Rating,
-    MenuItem,
-    TextField,
     Stack,
     Table,
     TableBody,
@@ -23,7 +21,6 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
-import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import OpenInFullRounded from "@mui/icons-material/OpenInFullRounded";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
@@ -43,6 +40,14 @@ import type { ProductDetail } from "@/modules/catalog/model/types";
 import { ProductImage } from "@/modules/catalog/components/ProductImage";
 import { AddToCart } from "@/modules/cart/components/AddToCart";
 import { ProductReviews } from "@/modules/catalog/components/ProductReviews";
+import {
+    initialVariantSelection,
+    isVariantOptionAvailable,
+    isVariantSelectionComplete,
+    matchingVariants,
+    specificationGroups,
+    type VariantSelection,
+} from "@/modules/catalog/model/variantSelection";
 
 function ProductGallery({ product }: { product: ProductDetail }) {
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -196,7 +201,11 @@ function ProductGallery({ product }: { product: ProductDetail }) {
 }
 
 export default function ProductDetailPage() {
-    const [variantId, setVariantId] = useState<number | null>(null);
+    const [choice, setChoice] = useState<{
+        key: string;
+        values: VariantSelection;
+        variantId?: number;
+    } | null>(null);
     const { id = "" } = useParams();
     const location = useLocation();
     const query = useQuery({
@@ -236,30 +245,44 @@ export default function ProductDetailPage() {
             </Stack>
         );
     const detail = query.data;
+    const requestedId =
+        Number(new URLSearchParams(location.search).get("variant")) ||
+        undefined;
+    const initialVariant = detail.variants.find((item) => item.id === requestedId)
+        ?? detail.variants.find((item) => item.id === detail.defaultVariantId)
+        ?? detail.variants.find((item) => item.quantity > 0)
+        ?? detail.variants[0];
+    const choiceKey = `${id}:${requestedId ?? ""}`;
+    const values =
+        choice?.key === choiceKey
+            ? choice.values
+            : initialVariantSelection(detail.variants, initialVariant?.id);
+    const groups = specificationGroups(detail.variants);
+    const candidates = matchingVariants(detail.variants, values);
+    const complete = candidates.filter((item) =>
+        isVariantSelectionComplete(item, values),
+    );
     const variant =
-        detail.variants.find(
-            (item) =>
-                item.id ===
-                (variantId ??
-                    Number(
-                        new URLSearchParams(location.search).get("variant"),
-                    )),
-        ) ??
-        detail.variants.find((item) => item.id === detail.defaultVariantId) ??
-        detail.variants.find((item) => item.quantity > 0) ??
-        detail.variants[0];
+        candidates.length === 1 && complete.length === 1
+            ? complete[0]
+            : complete.find(
+                  (item) =>
+                      item.id ===
+                      (choice?.key === choiceKey
+                          ? choice.variantId
+                          : initialVariant?.id),
+              );
     const variantImage = detail.images.find(
         (image) => image.id === String(variant?.imageId),
     );
     const product = {
         ...detail,
         price: variant?.price ?? detail.price,
-        originalPrice:
-            variant?.originalPrice ?? variant?.price ?? detail.originalPrice,
+        originalPrice: variant ? (variant.originalPrice ?? variant.price) : undefined,
         promotionCode: variant?.promotionCode ?? null,
         stock: variant?.quantity ?? detail.stock,
         sku: variant?.sku ?? detail.sku,
-        specifications: variant?.specifications ?? detail.specifications,
+        specifications: variant?.specifications ?? [],
         imageUrl: variantImage?.url ?? detail.imageUrl,
         images: variantImage
             ? [
@@ -295,7 +318,16 @@ export default function ProductDetailPage() {
             </Breadcrumbs>
             <Paper
                 variant="outlined"
-                sx={{ p: { xs: 2, sm: 3, lg: 4 }, borderRadius: 2 }}
+                sx={(theme) => ({
+                    p: { xs: 2, sm: 3, lg: 4 },
+                    borderRadius: 3,
+                    borderColor:
+                        theme.palette.mode === "dark" ? "#334b6d" : "#d6e5fa",
+                    background:
+                        theme.palette.mode === "dark"
+                            ? "linear-gradient(145deg, #162337, #101925)"
+                            : "linear-gradient(145deg, #ffffff, #f5f9ff)",
+                })}
             >
                 <Box
                     sx={{
@@ -330,7 +362,15 @@ export default function ProductDetailPage() {
                                 <MuiLink
                                     component={Link}
                                     to={`/products?brand=${encodeURIComponent(product.brandId)}`}
-                                    sx={{ fontWeight: 600, fontSize: 13 }}
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: 13,
+                                        px: 1.25,
+                                        py: 0.5,
+                                        borderRadius: 1.5,
+                                        bgcolor: "action.selected",
+                                        textDecoration: "none",
+                                    }}
                                 >
                                     {product.brandName}
                                 </MuiLink>
@@ -352,15 +392,18 @@ export default function ProductDetailPage() {
                                 direction="row"
                                 gap={1}
                                 alignItems="center"
+                                justifyContent="space-between"
                                 sx={{ mt: 1.5 }}
                                 useFlexGap
                                 flexWrap="wrap"
                             >
+                                <Stack direction="row" gap={1} alignItems="center" useFlexGap flexWrap="wrap">
                                 <Rating
                                     value={product.rating.average}
                                     precision={0.1}
                                     readOnly
                                     size="small"
+                                    sx={(theme) => ({ "& .MuiRating-iconEmpty": { color: theme.palette.mode === "dark" ? "#8c9bb0" : "#a5afbd" } })}
                                     aria-label={`${product.rating.average.toFixed(1)} trên 5 sao`}
                                 />
                                 <MuiLink
@@ -371,6 +414,14 @@ export default function ProductDetailPage() {
                                         ? `${product.rating.average.toFixed(1)} · ${product.rating.count} đánh giá`
                                         : "Chưa có đánh giá"}
                                 </MuiLink>
+                                </Stack>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                    Đã bán{" "}
+                                    {product.soldCount.toLocaleString("vi-VN")}
+                                </Typography>
                             </Stack>
                         </Box>
                         {product.description && (
@@ -378,47 +429,129 @@ export default function ProductDetailPage() {
                                 {product.description}
                             </Typography>
                         )}
-                        {detail.variants.length > 0 && (
-                            <TextField
-                                select
-                                label="Phiên bản"
-                                value={variant?.id ?? ""}
-                                onChange={(event) =>
-                                    setVariantId(Number(event.target.value))
-                                }
+                        {groups.map((group) => (
+                            <Stack
+                                key={group.key}
+                                spacing={1}
+                                role="group"
+                                aria-label={group.label}
                             >
-                                {detail.variants.map((item) => {
-                                    const configuration =
-                                        item.specifications.find(
-                                            (spec) =>
-                                                spec.key === "configuration",
-                                        )?.value;
-                                    return (
-                                        <MenuItem
-                                            key={item.id}
-                                            value={item.id}
-                                            sx={{
-                                                whiteSpace: "normal",
-                                                overflowWrap: "anywhere",
+                                <Typography variant="body2" fontWeight={700}>
+                                    {group.label}
+                                </Typography>
+                                <Stack
+                                    direction="row"
+                                    gap={1}
+                                    useFlexGap
+                                    flexWrap="wrap"
+                                >
+                                    {group.values.map((value) => (
+                                        <Button
+                                            key={value}
+                                            variant={
+                                                values[group.key] === value
+                                                    ? "contained"
+                                                    : "outlined"
+                                            }
+                                            aria-pressed={
+                                                values[group.key] === value
+                                            }
+                                            disabled={
+                                                !isVariantOptionAvailable(
+                                                    detail.variants,
+                                                    values,
+                                                    group.key,
+                                                    value,
+                                                )
+                                            }
+                                            onClick={() => {
+                                                const next = { ...values };
+                                                if (next[group.key] === value)
+                                                    delete next[group.key];
+                                                else next[group.key] = value;
+                                                setChoice({
+                                                    key: choiceKey,
+                                                    values: next,
+                                                });
                                             }}
+                                            sx={(theme) => ({
+                                                minHeight: 36,
+                                                borderRadius: 0,
+                                                fontSize: "0.75rem",
+                                                px: 1,
+                                                py: 0.5,
+                                                textTransform: "none",
+                                                ...(theme.palette.mode === "dark" && {
+                                                    color: values[group.key] === value ? "#102139" : "#e3edff",
+                                                    bgcolor: values[group.key] === value ? "#a9c9ff" : "#293e5d",
+                                                    borderColor: "#7894be",
+                                                    "&:hover": { bgcolor: values[group.key] === value ? "#c2d9ff" : "#385578" },
+                                                    "&.Mui-disabled": { color: "#8492a7", bgcolor: "#1a2637", borderColor: "#394a61" },
+                                                }),
+                                            })}
                                         >
-                                            {configuration
-                                                ? `${configuration} · `
-                                                : ""}
+                                            {value}
+                                        </Button>
+                                    ))}
+                                </Stack>
+                            </Stack>
+                        ))}
+                        {complete.length > 0 && candidates.length > 1 && (
+                            <Stack
+                                spacing={1}
+                                role="group"
+                                aria-label="Phiên bản"
+                            >
+                                <Typography variant="body2" fontWeight={700}>
+                                    Phiên bản
+                                </Typography>
+                                <Stack
+                                    direction="row"
+                                    gap={1}
+                                    useFlexGap
+                                    flexWrap="wrap"
+                                >
+                                    {complete.map((item) => (
+                                        <Button
+                                            key={item.id}
+                                            variant={
+                                                variant?.id === item.id
+                                                    ? "contained"
+                                                    : "outlined"
+                                            }
+                                            aria-pressed={
+                                                variant?.id === item.id
+                                            }
+                                            onClick={() =>
+                                                setChoice({
+                                                    key: choiceKey,
+                                                    values,
+                                                    variantId: item.id,
+                                                })
+                                            }
+                                        >
                                             {item.sku} · {money(item.price)}
                                             {item.quantity === 0
                                                 ? " · Hết hàng"
                                                 : ""}
-                                        </MenuItem>
-                                    );
-                                })}
-                            </TextField>
+                                        </Button>
+                                    ))}
+                                </Stack>
+                            </Stack>
                         )}
                         <Box
                             sx={{
                                 p: 2.5,
                                 borderRadius: 2,
-                                bgcolor: "action.selected",
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "#1a2b46"
+                                        : "#edf4ff",
+                                border: "1px solid",
+                                borderColor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "#38557d"
+                                        : "#d0e2ff",
                             }}
                         >
                             <Typography variant="body2" color="text.secondary">
@@ -435,7 +568,7 @@ export default function ProductDetailPage() {
                                     fontVariantNumeric: "tabular-nums",
                                 }}
                             >
-                                {money(product.price)}
+                                {variant ? money(product.price) : "—"}
                             </Typography>
                             {product.originalPrice !== undefined &&
                                 product.originalPrice > product.price && (
@@ -445,8 +578,10 @@ export default function ProductDetailPage() {
                                         alignItems="center"
                                     >
                                         <Typography
+                                            component="del"
                                             sx={{
-                                                textDecoration: "line-through",
+                                                fontVariantNumeric:
+                                                    "tabular-nums",
                                             }}
                                             color="text.secondary"
                                         >
@@ -454,13 +589,13 @@ export default function ProductDetailPage() {
                                         </Typography>
                                         <Chip
                                             size="small"
-                                            label={`Promotion ${product.promotionCode}`}
+                                            label={`Tiết kiệm ${money(product.originalPrice - product.price)}`}
                                             color="success"
                                             variant="outlined"
                                         />
                                     </Stack>
                                 )}
-                            <Stack
+                            {variant && <Stack
                                 direction="row"
                                 gap={0.75}
                                 alignItems="center"
@@ -483,56 +618,16 @@ export default function ProductDetailPage() {
                                             : "warning.main"
                                     }
                                 >
-                                    {product.stock
-                                        ? "Còn hàng · Sẵn sàng đặt mua"
-                                        : "Tạm hết hàng"}
+                                    {product.stock ? "Còn hàng · Sẵn sàng đặt mua" : "Tạm hết hàng"}
                                 </Typography>
-                            </Stack>
+                            </Stack>}
                         </Box>
-                        {product.specifications.length > 0 && (
-                            <Stack spacing={1.5}>
-                                <Typography variant="body2" fontWeight={600}>
-                                    Cấu hình sản phẩm
-                                </Typography>
-                                <Typography>
-                                    {product.specifications[0].value}
-                                </Typography>
-                                {product.specifications.length > 1 && (
-                                    <Stack
-                                        direction="row"
-                                        gap={1}
-                                        useFlexGap
-                                        flexWrap="wrap"
-                                    >
-                                        {product.specifications
-                                            .slice(1, 4)
-                                            .map((spec) => (
-                                                <Chip
-                                                    key={spec.key}
-                                                    label={`${spec.label}: ${spec.value}`}
-                                                    variant="outlined"
-                                                    size="small"
-                                                />
-                                            ))}
-                                    </Stack>
-                                )}
-                            </Stack>
-                        )}
                         <Divider />
                         <AddToCart
                             key={`${product.id}:${variant?.id}`}
                             variantId={variant ? String(variant.id) : undefined}
                             stock={variant?.quantity ?? 0}
                         />
-                        <Button
-                            component={Link}
-                            to={returnTo}
-                            startIcon={<ArrowBackRounded />}
-                            color="secondary"
-                            sx={{ alignSelf: "flex-start" }}
-                        >
-                            Tiếp tục xem sản phẩm
-                        </Button>
                     </Stack>
                 </Box>
             </Paper>
@@ -576,7 +671,9 @@ export default function ProductDetailPage() {
                 </Typography>
                 {!product.specifications.length ? (
                     <Typography color="text.secondary">
-                        Thông số đang được cập nhật.
+                        {variant
+                            ? "Thông số đang được cập nhật."
+                            : "Chọn thông số để xem chi tiết phiên bản."}
                     </Typography>
                 ) : (
                     <TableContainer>

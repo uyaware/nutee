@@ -9,12 +9,7 @@ import {
 } from "@mui/material";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import LaptopMacRounded from "@mui/icons-material/LaptopMacRounded";
-import SmartphoneRounded from "@mui/icons-material/SmartphoneRounded";
-import KeyboardRounded from "@mui/icons-material/KeyboardRounded";
-import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
-import MouseOutlined from "@mui/icons-material/MouseOutlined";
-import HeadphonesOutlined from "@mui/icons-material/HeadphonesOutlined";
-import MonitorOutlined from "@mui/icons-material/MonitorOutlined";
+import { categoryIcon } from "@/modules/catalog/model/categoryIcons";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { services } from "@/app/services";
@@ -50,6 +45,7 @@ export default function HomePage() {
     queryKey: ["catalog", "brands"],
     queryFn: services.catalog.brands,
   });
+  const rootCategories = categories.data?.filter((category) => !category.parentId) ?? [];
   const statistics = [
     { label: "Sản phẩm", value: productCount.data?.total, failed: productCount.isError },
     { label: "Thương hiệu", value: brands.data?.length, failed: brands.isError },
@@ -144,7 +140,7 @@ export default function HomePage() {
         <LoadingState />
       ) : categories.isError ? (
         <ErrorState error={categories.error} retry={() => void categories.refetch()} />
-      ) : categories.data.length === 0 ? (
+      ) : rootCategories.length === 0 ? (
         <Box>
           <EmptyState title="Chưa có danh mục" description="Danh mục sản phẩm sẽ xuất hiện tại đây." />
         </Box>
@@ -155,9 +151,8 @@ export default function HomePage() {
           gap: 2,
         }}
       >
-        {categories.data.map((category) => {
-          const name = category.name.toLocaleLowerCase("vi");
-          const Icon = name.includes("laptop") ? LaptopMacRounded : name.includes("điện thoại") ? SmartphoneRounded : name.includes("bàn phím") ? KeyboardRounded : name.includes("chuột") ? MouseOutlined : name.includes("tai nghe") ? HeadphonesOutlined : name.includes("màn hình") ? MonitorOutlined : CategoryOutlined;
+        {rootCategories.map((category) => {
+          const Icon = categoryIcon(category.name);
           return (
           <Paper key={category.id} className={`home-hover-border${dark ? "" : " home-hover-border-light"}`} variant="outlined" sx={{ overflow: "hidden", bgcolor: dark ? "#141a25" : "#fff", color: "text.primary", borderColor: "divider" }}>
             <CardActionArea

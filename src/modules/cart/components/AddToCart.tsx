@@ -72,6 +72,17 @@ export function AddToCart({
                 >
                     <IconButton
                         aria-label="Giảm số lượng"
+                        sx={(theme) => ({
+                            color: theme.palette.text.primary,
+                            bgcolor: theme.palette.action.hover,
+                            "&:hover": {
+                                bgcolor: theme.palette.action.selected,
+                            },
+                            "&.Mui-disabled": {
+                                color: theme.palette.mode === "dark" ? "#8291a7" : "#9aa5b5",
+                                bgcolor: theme.palette.mode === "dark" ? "#202e42" : "#edf1f6",
+                            },
+                        })}
                         disabled={
                             !valid || Number(quantity) <= 1 || add.isPending
                         }
@@ -110,12 +121,24 @@ export function AddToCart({
                                 px: 0.5,
                                 MozAppearance: "textfield",
                             },
+                            "& input.Mui-disabled": { WebkitTextFillColor: (theme) => theme.palette.mode === "dark" ? "#8291a7" : "#9aa5b5" },
                             "& input::-webkit-inner-spin-button, & input::-webkit-outer-spin-button":
                                 { WebkitAppearance: "none", margin: 0 },
                         }}
                     />
                     <IconButton
                         aria-label="Tăng số lượng"
+                        sx={(theme) => ({
+                            color: theme.palette.text.primary,
+                            bgcolor: theme.palette.action.hover,
+                            "&:hover": {
+                                bgcolor: theme.palette.action.selected,
+                            },
+                            "&.Mui-disabled": {
+                                color: theme.palette.mode === "dark" ? "#8291a7" : "#9aa5b5",
+                                bgcolor: theme.palette.mode === "dark" ? "#202e42" : "#edf1f6",
+                            },
+                        })}
                         disabled={
                             !valid ||
                             Number(quantity) >=
@@ -152,7 +175,8 @@ export function AddToCart({
                         }
                         add.mutate();
                     }}
-                    sx={{ flex: 1, minHeight: 44 }}
+                    sx={(theme) => ({ flex: 1, minHeight: 44,
+                        "&.Mui-disabled": theme.palette.mode === "dark" ? { color: "#8291a7", bgcolor: "#202e42" } : {} })}
                 >
                     {add.isPending ? "Đang thêm…" : "Thêm vào giỏ"}
                 </Button>
