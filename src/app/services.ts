@@ -1,5 +1,6 @@
 import { createApiAuth } from "@/modules/auth/api/authService";
 import { createApiClient } from "@/shared/api/apiClient";
+import { requestEmailVerification } from "@/modules/auth/model/verificationEvents";
 import { createCatalogService } from "@/modules/catalog/api/catalogService";
 import { createCartService } from "@/modules/cart/api/cartService";
 import { createProfileService } from "@/modules/account/api/profileService";
@@ -12,6 +13,7 @@ import { createDashboardService } from "@/modules/management/dashboard/api/dashb
 
 export const api = createApiClient({
     baseUrl: import.meta.env.VITE_API_BASE_URL ?? "/api/v1",
+    onEmailNotVerified: requestEmailVerification,
 });
 
 const auth = createApiAuth({ api });

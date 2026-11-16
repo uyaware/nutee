@@ -18,7 +18,9 @@ const AddressesPage = lazy(
 );
 const SecurityPage = lazy(() => import("@/modules/account/pages/SecurityPage"));
 const CartPage = lazy(() => import("@/modules/cart/pages/CartPage"));
-const AuthDemoPage = lazy(() => import("@/modules/auth/pages/AuthDemoPage"));
+const VerifyEmailPage = lazy(
+  () => import("@/modules/auth/pages/VerifyEmailPage"),
+);
 const PasswordRecoveryPage = lazy(
   () => import("@/modules/auth/pages/PasswordRecoveryPage"),
 );
@@ -45,14 +47,11 @@ const AfterSaleCreatePage = lazy(
 );
 export default function CustomerRoutes() {
   return (
-    <CustomerThemeProvider><Routes>
-      <Route path="login" element={<LoginPage portal="customer" />} />
-      <Route path="register" element={<RegisterPage />} />
-      <Route element={<StorefrontLayout />}>
-        <Route
-          path="verify-email"
-          element={<AuthDemoPage mode="verify-email" />}
-        />
+    <CustomerThemeProvider>
+      <Routes>
+        <Route path="login" element={<LoginPage portal="customer" />} />
+        <Route path="register" element={<RegisterPage />} />
+        <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route
           path="forgot-password"
           element={<PasswordRecoveryPage mode="forgot-password" />}
@@ -61,52 +60,54 @@ export default function CustomerRoutes() {
           path="reset-password"
           element={<PasswordRecoveryPage mode="reset-password" />}
         />
-        <Route path="cart" element={<CartPage />} />
-        <Route index element={<HomePage />} />
-        <Route path="products" element={<CatalogPage />} />
-        <Route path="products/:id" element={<ProductDetailPage />} />
-        <Route element={<RequireAuth portal="customer" />}>
-          <Route path="checkout" element={<CheckoutPage />} />
-          <Route path="orders/:id/payment" element={<PaymentPage />} />
-          <Route path="orders/:id/success" element={<OrderSuccessPage />} />
-          <Route path="account/setup" element={<ProfileSetupPage />} />
-          <Route element={<AccountLayout />}>
-            <Route
-              path="account"
-              element={<Navigate to="/account/profile" replace />}
-            />
-            <Route path="account/profile" element={<ProfilePage />} />
-            <Route path="account/addresses" element={<AddressesPage />} />
-            <Route path="account/security" element={<SecurityPage />} />
-            <Route
-              path="account/orders"
-              element={<OrdersPage portal="customer" />}
-            />
-            <Route
-              path="account/orders/:id"
-              element={<OrderDetailPage portal="customer" />}
-            />
-            <Route
-              path="account/orders/:id/review/:itemId"
-              element={<ReviewPage />}
-            />
-            <Route
-              path="account/after-sales"
-              element={<AfterSalesPage portal="customer" />}
-            />
-            <Route
-              path="account/after-sales/new"
-              element={<AfterSaleCreatePage />}
-            />
-            <Route
-              path="account/after-sales/:id"
-              element={<AfterSaleDetailPage portal="customer" />}
-            />
+        <Route element={<StorefrontLayout />}>
+          <Route path="cart" element={<CartPage />} />
+          <Route index element={<HomePage />} />
+          <Route path="products" element={<CatalogPage />} />
+          <Route path="products/:id" element={<ProductDetailPage />} />
+          <Route element={<RequireAuth portal="customer" />}>
+            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="orders/:id/payment" element={<PaymentPage />} />
+            <Route path="orders/:id/success" element={<OrderSuccessPage />} />
+            <Route path="account/setup" element={<ProfileSetupPage />} />
+            <Route element={<AccountLayout />}>
+              <Route
+                path="account"
+                element={<Navigate to="/account/profile" replace />}
+              />
+              <Route path="account/profile" element={<ProfilePage />} />
+              <Route path="account/addresses" element={<AddressesPage />} />
+              <Route path="account/security" element={<SecurityPage />} />
+              <Route
+                path="account/orders"
+                element={<OrdersPage portal="customer" />}
+              />
+              <Route
+                path="account/orders/:id"
+                element={<OrderDetailPage portal="customer" />}
+              />
+              <Route
+                path="account/orders/:id/review/:itemId"
+                element={<ReviewPage />}
+              />
+              <Route
+                path="account/after-sales"
+                element={<AfterSalesPage portal="customer" />}
+              />
+              <Route
+                path="account/after-sales/new"
+                element={<AfterSaleCreatePage />}
+              />
+              <Route
+                path="account/after-sales/:id"
+                element={<AfterSaleDetailPage portal="customer" />}
+              />
+            </Route>
           </Route>
+          <Route path="403" element={<SystemPage forbidden />} />
+          <Route path="*" element={<SystemPage />} />
         </Route>
-        <Route path="403" element={<SystemPage forbidden />} />
-        <Route path="*" element={<SystemPage />} />
-      </Route>
-    </Routes></CustomerThemeProvider>
+      </Routes>
+    </CustomerThemeProvider>
   );
 }

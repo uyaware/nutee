@@ -13,12 +13,13 @@ export function RequireAuth({
 }) {
   const session = useSession(portal);
   const location = useLocation();
-  if (session.isPending) return <LoadingState />;
+  if (session.isPending || (session.isFetching && !session.isFetchedAfterMount))
+    return <LoadingState />;
   if (session.isError)
     return (
       <ErrorState error={session.error} retry={() => void session.refetch()} />
     );
-  if (!session.data)
+  if (!session.data || !session.data.emailVerified)
     return (
       <Navigate
         replace

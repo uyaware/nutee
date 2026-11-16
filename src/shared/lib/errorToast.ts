@@ -16,6 +16,7 @@ const publish = () => listeners.forEach((listener) => listener());
 /** Query/mutation và component có thể báo cùng một lỗi; chỉ tạo một toast cho mỗi lỗi. */
 export function reportErrorToast(error: unknown) {
     if (!error) return;
+    if (error instanceof ServiceError && error.code === "EMAIL_NOT_VERIFIED") return;
     if (typeof error === "object" && seen.has(error)) return;
     if (typeof error === "object") seen.add(error);
     const message =

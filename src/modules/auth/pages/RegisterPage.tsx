@@ -16,6 +16,7 @@ import { PasswordField } from "@/shared/components/PasswordField";
 import { RegistrationFrame } from "@/modules/auth/components/RegistrationFrame";
 import { GoogleSignIn } from "@/modules/auth/components/GoogleSignIn";
 import type { User } from "@/modules/auth/model/types";
+import { clearPrivateSession } from "@/modules/auth/model/sessionCache";
 
 export default function RegisterPage() {
   const [params] = useSearchParams();
@@ -36,7 +37,7 @@ export default function RegisterPage() {
   });
   /** Dùng phiên backend vừa cấp để mở hồ sơ hoặc trang đích của khách hàng. */
   const onRegistered = async (user: User) => {
-    await client.cancelQueries({ queryKey: ["session"] });
+    await clearPrivateSession(client);
     client.setQueryData(["session", "backoffice"], null);
     client.setQueryData(["session", "customer"], user);
     navigate(returnTo, { replace: true });
@@ -82,17 +83,26 @@ export default function RegisterPage() {
             ...(mode === "dark" && {
               color: "#e1e7f0",
               "& .MuiOutlinedInput-notchedOutline": { borderColor: "#576780" },
-              "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#aebbd0" },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#829bc5" },
-              "&.Mui-error .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.error.main },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#aebbd0",
+              },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#829bc5",
+              },
+              "&.Mui-error .MuiOutlinedInput-notchedOutline": {
+                borderColor: theme.palette.error.main,
+              },
               "& .MuiIconButton-root": { color: "#aebbd0" },
             }),
           },
-          ...(mode === "dark" && { "& .MuiInputLabel-root:not(.Mui-error)": { color: "#aebbd0" } }),
+          ...(mode === "dark" && {
+            "& .MuiInputLabel-root:not(.Mui-error)": { color: "#aebbd0" },
+          }),
           "& input:is(:-webkit-autofill, :autofill)": {
             WebkitBoxShadow: `0 0 0 1000px ${mode === "dark" ? "#171e2b" : theme.palette.background.paper} inset`,
             boxShadow: `0 0 0 1000px ${mode === "dark" ? "#171e2b" : theme.palette.background.paper} inset`,
-            WebkitTextFillColor: theme.palette.text.primary, caretColor: theme.palette.text.primary,
+            WebkitTextFillColor: theme.palette.text.primary,
+            caretColor: theme.palette.text.primary,
           },
         })}
         noValidate
@@ -142,11 +152,21 @@ export default function RegisterPage() {
           type="submit"
           variant="contained"
           sx={{
-            color: mode === "dark" ? "#e0e6ef" : "#fff", borderRadius: 2, background: "linear-gradient(180deg, #3978ed, #1f55c7)",
-            border: "1px solid #6197ff", borderBottom: "4px solid #173d94", boxShadow: "none",
+            color: mode === "dark" ? "#e0e6ef" : "#fff",
+            borderRadius: 2,
+            background: "linear-gradient(180deg, #3978ed, #1f55c7)",
+            border: "1px solid #6197ff",
+            borderBottom: "4px solid #173d94",
+            boxShadow: "none",
             transition: "background 200ms, transform 150ms, border-width 150ms",
-            "&:hover": { background: "linear-gradient(180deg, #3270df, #1d4daf)", boxShadow: "none" },
-            "&:active": { transform: "translateY(2px)", borderBottomWidth: "2px" },
+            "&:hover": {
+              background: "linear-gradient(180deg, #3270df, #1d4daf)",
+              boxShadow: "none",
+            },
+            "&:active": {
+              transform: "translateY(2px)",
+              borderBottomWidth: "2px",
+            },
             "@media (prefers-reduced-motion: reduce)": { transition: "none" },
           }}
           disabled={create.isPending}
@@ -174,6 +194,16 @@ export default function RegisterPage() {
             Đăng nhập
           </Button>
         </Stack>
+        {create.isError &&
+          create.error instanceof ServiceError &&
+          create.error.code === "CONFLICT" && (
+            <Button
+              component={Link}
+              to={`/forgot-password?${new URLSearchParams({ returnTo })}`}
+            >
+              Quên mật khẩu?
+            </Button>
+          )}
         <Divider>hoặc</Divider>
         <GoogleSignIn onSuccess={onRegistered} />
       </Stack>

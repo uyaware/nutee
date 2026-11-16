@@ -1,13 +1,6 @@
 import { ErrorState } from "@/shared/components/Feedback";
 import { useState } from "react";
-import {
-    Alert,
-    Button,
-    Paper,
-    Stack,
-    TextField,
-    Typography,
-} from "@mui/material";
+import { Alert, Button, Stack, TextField, Typography } from "@mui/material";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -17,11 +10,23 @@ import { services } from "@/app/services";
 import { authPasswordSchema } from "@/modules/auth/model/schemas";
 import { PasswordField } from "@/shared/components/PasswordField";
 import { safeReturnTo } from "@/modules/auth/model/redirect";
+import { RegistrationFrame } from "@/modules/auth/components/RegistrationFrame";
+import { clearPrivateSession } from "@/modules/auth/model/sessionCache";
 
-const emailSchema = z.object({ email: z.email("Nhập địa chỉ email hợp lệ.") });
+const emailSchema = z.object({
+    email: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .pipe(z.email("Nhập địa chỉ email hợp lệ.")),
+});
 const resetSchema = z
     .object({
-        email: z.email("Nhập địa chỉ email hợp lệ."),
+        email: z
+            .string()
+            .trim()
+            .toLowerCase()
+            .pipe(z.email("Nhập địa chỉ email hợp lệ.")),
         otp: z.string().regex(/^[0-9]{6}$/, "Nhập mã OTP gồm đúng 6 chữ số."),
         password: authPasswordSchema,
         confirmPassword: z.string(),
@@ -73,188 +78,162 @@ export default function PasswordRecoveryPage({
         onSuccess: async () => {
             resetForm.reset();
             await services.auth.logout("customer");
-            await client.cancelQueries({ queryKey: ["session"] });
-            client.setQueryData(["session", "customer"], null);
-            client.setQueryData(["session", "backoffice"], null);
+            await clearPrivateSession(client);
         },
     });
     const isReset = mode === "reset-password" || requested;
     return (
-        <Stack spacing={3} sx={{ maxWidth: 540, mx: "auto" }}>
-            <Paper variant="outlined" sx={{ p: 3 }}>
-                <Stack spacing={2}>
-                    <Typography
-                        variant="h2"
-                        component="h1"
-                        sx={{ fontSize: { xs: "1.4rem", sm: "1.6rem" } }}
+        <RegistrationFrame
+            title={isReset ? "Đặt lại mật khẩu" : "Quên mật khẩu"}
+            subtitle="Khôi phục tài khoản bằng email"
+        >
+            <Stack spacing={2}>
+                <Typography
+                    color="text.secondary"
+                    sx={{ fontSize: "1rem", lineHeight: 1.65 }}
+                >
+                    {isReset
+                        ? "Nhập email, mã OTP 6 số trong thư và mật khẩu mới. Mã có hiệu lực 15 phút."
+                        : "Nhập email để nhận mã OTP 6 số đặt lại mật khẩu."}
+                </Typography>
+                {!isReset ? (
+                    <Stack
+                        component="form"
+                        spacing={2}
+                        noValidate
+                        onSubmit={emailForm.handleSubmit((fields) =>
+                            forgot.mutate(fields.email),
+                        )}
                     >
-                        {isReset ? "Đặt lại mật khẩu" : "Quên mật khẩu"}
-                    </Typography>
-                    <Typography
-                        color="text.secondary"
-                        sx={{ fontSize: "1rem", lineHeight: 1.65 }}
+                        <TextField
+                            label="Email"
+                            type="email"
+                            autoComplete="email"
+                            {...emailForm.register("email")}
+                            error={!!emailForm.formState.errors.email}
+                            helperText={
+                                emailForm.formState.errors.email?.message
+                            }
+                        />
+                        {forgot.isSuccess && (
+                            <Alert severity="success">
+                                {forgot.data.message}
+                            </Alert>
+                        )}
+                        {forgot.isError && <ErrorState error={forgot.error} />}
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={forgot.isPending}
+                        >
+                            {forgot.isPending ? "Đang gửi…" : "Gửi mã OTP"}
+                        </Button>
+                    </Stack>
+                ) : reset.isSuccess ? (
+                    <Alert severity="success">
+                        Đã đổi mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.
+                    </Alert>
+                ) : (
+                    <Stack
+                        component="form"
+                        spacing={2}
+                        noValidate
+                        onSubmit={resetForm.handleSubmit((fields) =>
+                            reset.mutate(fields),
+                        )}
                     >
-                        {isReset
-                            ? "Nhập email, mã OTP 6 số trong thư và mật khẩu mới. Mã có hiệu lực 15 phút."
-                            : "Nhập email để nhận mã OTP 6 số đặt lại mật khẩu."}
-                    </Typography>
-                    {!isReset ? (
-                        <Stack
-                            component="form"
-                            spacing={2}
-                            noValidate
-                            onSubmit={emailForm.handleSubmit((fields) =>
-                                forgot.mutate(fields.email),
-                            )}
+                        {forgot.isSuccess && (
+                            <Alert severity="success">
+                                {forgot.data.message}
+                            </Alert>
+                        )}
+                        {forgot.isError && <ErrorState error={forgot.error} />}
+                        <TextField
+                            label="Email"
+                            type="email"
+                            autoComplete="email"
+                            {...resetForm.register("email")}
+                            error={!!resetForm.formState.errors.email}
+                            helperText={
+                                resetForm.formState.errors.email?.message
+                            }
+                        />
+                        <TextField
+                            label="Mã OTP"
+                            autoComplete="one-time-code"
+                            slotProps={{
+                                htmlInput: {
+                                    inputMode: "numeric",
+                                    maxLength: 6,
+                                    pattern: "[0-9]{6}",
+                                },
+                            }}
+                            {...resetForm.register("otp")}
+                            error={!!resetForm.formState.errors.otp}
+                            helperText={
+                                resetForm.formState.errors.otp?.message ??
+                                "Mã chỉ dùng một lần. Tối đa 5 lần nhập sai."
+                            }
+                        />
+                        <Button
+                            type="button"
+                            disabled={forgot.isPending}
+                            onClick={() => {
+                                const email = resetForm.getValues("email");
+                                if (!emailSchema.safeParse({ email }).success) {
+                                    resetForm.setError("email", {
+                                        message: "Nhập địa chỉ email hợp lệ.",
+                                    });
+                                } else if (Date.now() < resendAt) {
+                                    resetForm.setError("otp", {
+                                        message:
+                                            "Vui lòng đợi đủ 60 giây trước khi gửi lại mã.",
+                                    });
+                                } else {
+                                    resetForm.clearErrors("otp");
+                                    forgot.mutate(email);
+                                }
+                            }}
                         >
-                            <TextField
-                                label="Email"
-                                type="email"
-                                autoComplete="email"
-                                {...emailForm.register("email")}
-                                error={!!emailForm.formState.errors.email}
-                                helperText={
-                                    emailForm.formState.errors.email?.message
-                                }
-                            />
-                            {forgot.isSuccess && (
-                                <Alert severity="success">
-                                    {forgot.data.message}
-                                </Alert>
-                            )}
-                            {forgot.isError && (
-                                <ErrorState error={forgot.error} />
-                            )}
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                disabled={forgot.isPending}
-                            >
-                                {forgot.isPending ? "Đang gửi…" : "Gửi mã OTP"}
-                            </Button>
-                        </Stack>
-                    ) : reset.isSuccess ? (
-                        <Alert severity="success">
-                            Đã đổi mật khẩu. Bạn có thể đăng nhập bằng mật khẩu
-                            mới.
-                        </Alert>
-                    ) : (
-                        <Stack
-                            component="form"
-                            spacing={2}
-                            noValidate
-                            onSubmit={resetForm.handleSubmit((fields) =>
-                                reset.mutate(fields),
-                            )}
+                            {forgot.isPending ? "Đang gửi…" : "Gửi lại mã OTP"}
+                        </Button>
+                        <PasswordField
+                            label="Mật khẩu mới"
+                            autoComplete="new-password"
+                            {...resetForm.register("password")}
+                            error={!!resetForm.formState.errors.password}
+                            helperText={
+                                resetForm.formState.errors.password?.message ??
+                                "Từ 8 đến 100 ký tự."
+                            }
+                        />
+                        <PasswordField
+                            label="Xác nhận mật khẩu"
+                            autoComplete="new-password"
+                            {...resetForm.register("confirmPassword")}
+                            error={!!resetForm.formState.errors.confirmPassword}
+                            helperText={
+                                resetForm.formState.errors.confirmPassword
+                                    ?.message
+                            }
+                        />
+                        {reset.isError && <ErrorState error={reset.error} />}
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={reset.isPending}
                         >
-                            {forgot.isSuccess && (
-                                <Alert severity="success">
-                                    {forgot.data.message}
-                                </Alert>
-                            )}
-                            {forgot.isError && (
-                                <ErrorState error={forgot.error} />
-                            )}
-                            <TextField
-                                label="Email"
-                                type="email"
-                                autoComplete="email"
-                                {...resetForm.register("email")}
-                                error={!!resetForm.formState.errors.email}
-                                helperText={
-                                    resetForm.formState.errors.email?.message
-                                }
-                            />
-                            <TextField
-                                label="Mã OTP"
-                                autoComplete="one-time-code"
-                                slotProps={{
-                                    htmlInput: {
-                                        inputMode: "numeric",
-                                        maxLength: 6,
-                                        pattern: "[0-9]{6}",
-                                    },
-                                }}
-                                {...resetForm.register("otp")}
-                                error={!!resetForm.formState.errors.otp}
-                                helperText={
-                                    resetForm.formState.errors.otp?.message ??
-                                    "Mã chỉ dùng một lần. Tối đa 5 lần nhập sai."
-                                }
-                            />
-                            <Button
-                                type="button"
-                                disabled={forgot.isPending}
-                                onClick={() => {
-                                    const email = resetForm.getValues("email");
-                                    if (
-                                        !emailSchema.safeParse({ email })
-                                            .success
-                                    ) {
-                                        resetForm.setError("email", {
-                                            message:
-                                                "Nhập địa chỉ email hợp lệ.",
-                                        });
-                                    } else if (Date.now() < resendAt) {
-                                        resetForm.setError("otp", {
-                                            message:
-                                                "Vui lòng đợi đủ 60 giây trước khi gửi lại mã.",
-                                        });
-                                    } else {
-                                        resetForm.clearErrors("otp");
-                                        forgot.mutate(email);
-                                    }
-                                }}
-                            >
-                                {forgot.isPending
-                                    ? "Đang gửi…"
-                                    : "Gửi lại mã OTP"}
-                            </Button>
-                            <PasswordField
-                                label="Mật khẩu mới"
-                                autoComplete="new-password"
-                                {...resetForm.register("password")}
-                                error={!!resetForm.formState.errors.password}
-                                helperText={
-                                    resetForm.formState.errors.password
-                                        ?.message ??
-                                    "Từ 8 đến 100 ký tự."
-                                }
-                            />
-                            <PasswordField
-                                label="Xác nhận mật khẩu"
-                                autoComplete="new-password"
-                                {...resetForm.register("confirmPassword")}
-                                error={
-                                    !!resetForm.formState.errors.confirmPassword
-                                }
-                                helperText={
-                                    resetForm.formState.errors.confirmPassword
-                                        ?.message
-                                }
-                            />
-                            {reset.isError && (
-                                <ErrorState error={reset.error} />
-                            )}
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                disabled={reset.isPending}
-                            >
-                                {reset.isPending
-                                    ? "Đang lưu…"
-                                    : "Lưu mật khẩu mới"}
-                            </Button>
-                        </Stack>
-                    )}
-                </Stack>
-            </Paper>
+                            {reset.isPending ? "Đang lưu…" : "Lưu mật khẩu mới"}
+                        </Button>
+                    </Stack>
+                )}
+            </Stack>
             <Button
                 component={Link}
                 to={`/login?${new URLSearchParams({ returnTo })}`}
             >
                 Đến đăng nhập
             </Button>
-        </Stack>
+        </RegistrationFrame>
     );
 }

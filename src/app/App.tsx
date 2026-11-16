@@ -19,6 +19,7 @@ import {
 } from "@/shared/lib/systemError";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { LoadingState } from "@/shared/components/Feedback";
+import { EmailVerificationBoundary } from "@/modules/auth/components/EmailVerificationBoundary";
 const CustomerRoutes = lazy(() => import("@/app/routes/CustomerRoutes"));
 const BackofficeRoutes = lazy(() => import("@/app/routes/BackofficeRoutes"));
 const customerTitles: Record<string, string> = {
@@ -53,7 +54,9 @@ async function checkBackendConnection() {
     } catch (error) {
         if (
             error instanceof ServiceError &&
-            (error.code === "UNAUTHORIZED" || error.code === "FORBIDDEN")
+            ["UNAUTHORIZED", "FORBIDDEN", "EMAIL_NOT_VERIFIED"].includes(
+                error.code,
+            )
         )
             return true;
         throw error;
@@ -227,15 +230,17 @@ export default function App() {
                     pt: `${hasSystemError ? alertHeight : 0}px`,
                 }}
             >
-                <Suspense fallback={<LoadingState />}>
-                    <Routes>
-                        <Route
-                            path="/management/*"
-                            element={<BackofficeRoutes />}
-                        />
-                        <Route path="/*" element={<CustomerRoutes />} />
-                    </Routes>
-                </Suspense>
+                <EmailVerificationBoundary>
+                    <Suspense fallback={<LoadingState />}>
+                        <Routes>
+                            <Route
+                                path="/management/*"
+                                element={<BackofficeRoutes />}
+                            />
+                            <Route path="/*" element={<CustomerRoutes />} />
+                        </Routes>
+                    </Suspense>
+                </EmailVerificationBoundary>
             </Box>
             <GlobalErrorToast />
         </>

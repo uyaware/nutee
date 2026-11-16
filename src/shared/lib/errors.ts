@@ -3,6 +3,7 @@ export type ErrorCode =
     | "SERVER"
     | "VALIDATION"
     | "UNAUTHORIZED"
+    | "EMAIL_NOT_VERIFIED"
     | "FORBIDDEN"
     | "CONFLICT"
     | "NOT_FOUND"

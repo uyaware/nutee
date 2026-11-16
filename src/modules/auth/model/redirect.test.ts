@@ -8,6 +8,11 @@ describe("return URL stays within its portal", () => {
     "/\\evil.example",
     "/management/users",
     "/login",
+    "/LOGIN/",
+    "/%6cogin",
+    "/../management/users",
+    "/\n/evil.example",
+    "/%2f%2fevil.example",
   ])("rejects customer return URL %s", (value) => {
     expect(safeReturnTo(value, "customer")).toBe("/account/profile");
   });
@@ -19,5 +24,8 @@ describe("return URL stays within its portal", () => {
       "/management/products",
     );
     expect(safeReturnTo("/management/login", "backoffice")).toBe("/management");
+    expect(safeReturnTo("/management/../login", "backoffice")).toBe(
+      "/management",
+    );
   });
 });

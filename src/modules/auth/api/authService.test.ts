@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createApiAuth } from "@/modules/auth/api/authService";
 import { createApiClient } from "@/shared/api/apiClient";
+import { subscribeEmailVerification } from "@/modules/auth/model/verificationEvents";
 
 const user = {
     id: "remote-id",
@@ -34,6 +35,40 @@ function setup() {
     return { auth, fetch };
 }
 describe("JWT authentication via HttpOnly cookies", () => {
+    it("registration and unverified login enter verification without establishing a user session", async () => {
+        const { auth, fetch } = setup();
+        const listener = vi.fn();
+        const unsubscribe = subscribeEmailVerification(listener);
+        try {
+            fetch.mockImplementation(async (url) =>
+                String(url).endsWith("/csrf")
+                    ? response({ token: "csrf", headerName: "X-XSRF-TOKEN" })
+                    : response({
+                          user: null,
+                          verificationRequired: true,
+                          verification: {
+                              email: user.email,
+                              mailSent: false,
+                              message: "Tài khoản đang chờ xác thực.",
+                          },
+                      }),
+            );
+            await expect(
+                auth.register(user.email, "Password12345!"),
+            ).rejects.toMatchObject({ code: "EMAIL_NOT_VERIFIED" });
+            await expect(
+                auth.login("customer", user.email, "Password12345!"),
+            ).rejects.toMatchObject({ code: "EMAIL_NOT_VERIFIED" });
+            expect(listener).toHaveBeenCalledTimes(2);
+            expect(
+                fetch.mock.calls.some(([url]) =>
+                    String(url).endsWith("/logout"),
+                ),
+            ).toBe(false);
+        } finally {
+            unsubscribe();
+        }
+    });
     it("registers with credentials only and relies on HttpOnly cookies", async () => {
         const { auth, fetch } = setup();
         await expect(
@@ -150,7 +185,10 @@ describe("JWT authentication via HttpOnly cookies", () => {
         const { auth, fetch } = setup();
         await auth.googleNonce();
         await expect(auth.linkGoogle("link-credential")).resolves.toMatchObject(
-            { id: user.id, name: "Tester" },
+            {
+                id: user.id,
+                name: "Tester",
+            },
         );
         expect(fetch).toHaveBeenLastCalledWith(
             "/api/v1/auth/social/google/link",

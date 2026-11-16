@@ -9,6 +9,12 @@ afterEach(() => {
 });
 
 describe("shared error toast reporting", () => {
+    it("leaves email verification transitions to the session boundary", async () => {
+        const { reportErrorToast, currentErrorToast } = await import("@/shared/lib/errorToast");
+        const { ServiceError } = await import("@/shared/lib/errors");
+        reportErrorToast(new ServiceError("EMAIL_NOT_VERIFIED", "Đã gửi mã xác thực email."));
+        expect(currentErrorToast()).toBeUndefined();
+    });
     it("shows the newest failure immediately and hides unexpected technical exception text", async () => {
         const { reportErrorToast, currentErrorToast } =
             await import("@/shared/lib/errorToast");

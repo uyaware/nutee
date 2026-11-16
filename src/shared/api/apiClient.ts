@@ -21,17 +21,19 @@ class ApiError extends ServiceError {
         fieldErrors?: Record<string, string>,
     ) {
         super(
-            status === 401
-                ? "UNAUTHORIZED"
-                : status === 403
-                  ? "FORBIDDEN"
-                  : status === 409
-                    ? "CONFLICT"
-                    : status === 404
-                      ? "NOT_FOUND"
-                      : status >= 500
-                        ? "SERVER"
-                        : "VALIDATION",
+            problemCode === "EMAIL_NOT_VERIFIED"
+                ? "EMAIL_NOT_VERIFIED"
+                : status === 401
+                  ? "UNAUTHORIZED"
+                  : status === 403
+                    ? "FORBIDDEN"
+                    : status === 409
+                      ? "CONFLICT"
+                      : status === 404
+                        ? "NOT_FOUND"
+                        : status >= 500
+                          ? "SERVER"
+                          : "VALIDATION",
             detail ?? `Mã lỗi: ${problemCode ?? `HTTP ${status}`}`,
             fieldErrors,
         );
@@ -40,12 +42,17 @@ class ApiError extends ServiceError {
 
 /** All API domains use this client so cookies, CSRF and refresh work consistently. */
 export function createApiClient(
-    options: { baseUrl?: string; fetch?: typeof fetch } = {},
+    options: {
+        baseUrl?: string;
+        fetch?: typeof fetch;
+        onEmailNotVerified?: () => void;
+    } = {},
 ): ApiClient {
     const base = (options.baseUrl ?? "/api/v1").replace(/\/+$/, "");
     const requestFetch = options.fetch ?? globalThis.fetch.bind(globalThis);
     let csrf: Promise<CsrfResponse> | undefined;
     let refreshing: Promise<void> | undefined;
+    let verificationRequired = false;
     let sessionQueue: Promise<unknown> = Promise.resolve();
 
     function withSessionLock<T>(action: () => Promise<T>): Promise<T> {
@@ -174,12 +181,21 @@ export function createApiClient(
     function refresh(): Promise<void> {
         if (refreshing) return refreshing;
         async function rotate() {
+            if (verificationRequired)
+                throw new ServiceError(
+                    "EMAIL_NOT_VERIFIED",
+                    "Vui lòng xác thực email để tiếp tục.",
+                );
             // A different tab may have refreshed while this tab waited for the lock.
             try {
                 await send("/auth/me", {});
                 return;
             } catch (error) {
-                if (!(error instanceof ApiError) || error.status !== 401)
+                if (
+                    !(error instanceof ApiError) ||
+                    error.status !== 401 ||
+                    error.code === "EMAIL_NOT_VERIFIED"
+                )
                     throw error;
             }
             try {
@@ -200,29 +216,53 @@ export function createApiClient(
     }
     return {
         async request<T>(path: string, request: ApiRequest = {}): Promise<T> {
-            if (
-                request.method === "POST" &&
-                /^\/auth\/(login|register|logout|google|social\/google)(\?|$)/.test(
-                    path,
-                )
-            ) {
-                return withSessionLock(async () => {
-                    const result = await send<T>(path, request);
-                    csrf = undefined;
-                    return result;
-                });
-            }
             try {
-                return await send<T>(path, request);
+                if (
+                    request.method === "POST" &&
+                    /^\/auth\/(login|register|logout|google|social\/google|verification\/confirm)(\?|$)/.test(
+                        path,
+                    )
+                ) {
+                    return await withSessionLock(async () => {
+                        const result = await send<T>(path, request);
+                        csrf = undefined;
+                        verificationRequired = !!(
+                            result &&
+                            typeof result === "object" &&
+                            "verificationRequired" in result &&
+                            result.verificationRequired
+                        );
+                        return result;
+                    });
+                }
+                try {
+                    return await send<T>(path, request);
+                } catch (error) {
+                    if (
+                        request.authenticated === false ||
+                        !(error instanceof ApiError) ||
+                        error.code === "EMAIL_NOT_VERIFIED" ||
+                        error.status !== 401
+                    )
+                        throw error;
+                    if (verificationRequired)
+                        throw new ServiceError(
+                            "EMAIL_NOT_VERIFIED",
+                            "Vui lòng xác thực email để tiếp tục.",
+                        );
+                    await refresh();
+                    return await send<T>(path, request);
+                }
             } catch (error) {
                 if (
-                    request.authenticated === false ||
-                    !(error instanceof ApiError) ||
-                    error.status !== 401
-                )
-                    throw error;
-                await refresh();
-                return send<T>(path, request);
+                    error instanceof ServiceError &&
+                    error.code === "EMAIL_NOT_VERIFIED"
+                ) {
+                    verificationRequired = true;
+                    csrf = undefined;
+                    options.onEmailNotVerified?.();
+                }
+                throw error;
             }
         },
         invalidateCsrf() {

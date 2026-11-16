@@ -1,6 +1,7 @@
 import { ErrorState } from "@/shared/components/Feedback";
 import {
     Box,
+    Alert,
     Button,
     Paper,
     Stack,
@@ -23,9 +24,14 @@ import { useCustomerMode } from "@/shared/theme/customerMode";
 import { PasswordField } from "@/shared/components/PasswordField";
 import { GoogleSignIn } from "@/modules/auth/components/GoogleSignIn";
 import type { User } from "@/modules/auth/model/types";
+import { clearPrivateSession } from "@/modules/auth/model/sessionCache";
 
 const schema = z.object({
-    email: z.email("Nhập địa chỉ email hợp lệ."),
+    email: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .pipe(z.email("Nhập địa chỉ email hợp lệ.")),
     password: z.string().min(1, "Nhập mật khẩu."),
 });
 type Fields = z.infer<typeof schema>;
@@ -44,7 +50,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
         defaultValues: { email: "", password: "" },
     });
     const onSignedIn = async (user: User) => {
-        await client.cancelQueries({ queryKey: ["session"] });
+        await clearPrivateSession(client);
         client.setQueryData(["session", portal], user);
         const returnTo = safeReturnTo(params.get("returnTo"), portal);
         navigate(returnTo, { replace: true });
@@ -162,9 +168,13 @@ export function LoginPage({ portal }: { portal: Portal }) {
                                             borderColor: "#576780",
                                         },
                                         "&:hover .MuiOutlinedInput-notchedOutline":
-                                            { borderColor: "#aebbd0" },
+                                            {
+                                                borderColor: "#aebbd0",
+                                            },
                                         "&.Mui-focused .MuiOutlinedInput-notchedOutline":
-                                            { borderColor: "#829bc5" },
+                                            {
+                                                borderColor: "#829bc5",
+                                            },
                                         "&.Mui-error .MuiOutlinedInput-notchedOutline":
                                             {
                                                 borderColor:
@@ -190,6 +200,12 @@ export function LoginPage({ portal }: { portal: Portal }) {
                                 },
                             })}
                         >
+                            {params.get("reason") === "verify-email" && (
+                                <Alert severity="info">
+                                    Đăng nhập bằng email và mật khẩu để tiếp tục
+                                    xác thực email.
+                                </Alert>
+                            )}
                             <TextField
                                 label="Email"
                                 autoComplete="username"

@@ -1,12 +1,16 @@
 import type { AuthService } from "@/modules/auth/model/contracts";
 import type { Portal } from "@/modules/auth/model/types";
+import type { VerificationState } from "@/modules/auth/model/types";
+import { requestEmailVerification } from "@/modules/auth/model/verificationEvents";
 import { mapApiUser, type ApiUser } from "@/modules/auth/model/api";
 import { belongsToPortal } from "@/modules/auth/model/permissions";
 import { ServiceError } from "@/shared/lib/errors";
 import type { ApiClient } from "@/shared/api/apiClient";
 
 interface AuthResponse {
-    user: ApiUser;
+    user: ApiUser | null;
+    verificationRequired?: boolean;
+    verification?: VerificationState;
 }
 
 /** Gọi API xác thực; backend quản lý phiên bằng cookie HttpOnly. */
@@ -22,7 +26,27 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
     async function establish(response: AuthResponse, portal: Portal) {
         api.invalidateCsrf();
         clear();
+        if (response.verificationRequired) {
+            requestEmailVerification();
+            throw new ServiceError(
+                "EMAIL_NOT_VERIFIED",
+                response.verification?.message ??
+                    "Vui lòng xác thực email để tiếp tục.",
+            );
+        }
+        if (!response.user)
+            throw new ServiceError(
+                "SERVER",
+                "Phản hồi đăng nhập không hợp lệ.",
+            );
         const user = mapApiUser(response.user);
+        if (!user.emailVerified) {
+            requestEmailVerification();
+            throw new ServiceError(
+                "EMAIL_NOT_VERIFIED",
+                "Vui lòng xác thực email để tiếp tục.",
+            );
+        }
         if (!belongsToPortal(user.role, portal)) {
             await api.request("/auth/logout", {
                 method: "POST",
@@ -46,6 +70,34 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
         return current;
     }
     return {
+        clearSession: clear,
+        verification: () =>
+            api.request<VerificationState>("/auth/verification", {
+                authenticated: false,
+            }),
+        resendVerification: () =>
+            api.request<VerificationState>("/auth/verification/resend", {
+                method: "POST",
+                authenticated: false,
+            }),
+        async verifyEmail(otp) {
+            const response = await api.request<AuthResponse>(
+                "/auth/verification/confirm",
+                {
+                    method: "POST",
+                    body: { otp },
+                    authenticated: false,
+                },
+            );
+            api.invalidateCsrf();
+            clear();
+            if (!response.user)
+                throw new ServiceError(
+                    "SERVER",
+                    "Phản hồi xác thực không hợp lệ.",
+                );
+            return mapApiUser(response.user);
+        },
         async register(email, password) {
             generation++;
             return establish(
@@ -73,6 +125,10 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
             try {
                 const user = mapApiUser(await me());
                 if (observed !== generation) return null;
+                if (!user.emailVerified) {
+                    requestEmailVerification();
+                    return null;
+                }
                 if (!belongsToPortal(user.role, portal)) {
                     return null;
                 }
@@ -80,7 +136,11 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
             } catch (error) {
                 if (
                     error instanceof ServiceError &&
-                    ["UNAUTHORIZED", "FORBIDDEN"].includes(error.code)
+                    [
+                        "UNAUTHORIZED",
+                        "FORBIDDEN",
+                        "EMAIL_NOT_VERIFIED",
+                    ].includes(error.code)
                 ) {
                     return null;
                 }
@@ -102,14 +162,11 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
         async google(credential) {
             generation++;
             return establish(
-                await api.request<AuthResponse>(
-                    "/auth/social/google",
-                    {
-                        method: "POST",
-                        body: { credential },
-                        authenticated: false,
-                    },
-                ),
+                await api.request<AuthResponse>("/auth/social/google", {
+                    method: "POST",
+                    body: { credential },
+                    authenticated: false,
+                }),
                 "customer",
             );
         },

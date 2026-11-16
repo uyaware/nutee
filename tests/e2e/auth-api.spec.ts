@@ -10,6 +10,13 @@ const user = {
     imageUrl: null,
 };
 const session = { expiresIn: 900, refreshExpiresIn: 604800, user };
+const verification = {
+    email: user.email,
+    expiresIn: 900,
+    resendAfter: 60,
+    mailSent: true,
+    message: "Đã gửi mã xác thực email.",
+};
 test.beforeEach(async ({ page, context }) => {
     await page.route("**/api/v1/account/profile", (route) =>
         route.fulfill({
@@ -105,6 +112,41 @@ test.beforeEach(async ({ page, context }) => {
         if (path.endsWith("/logout")) {
             await context.clearCookies();
             return route.fulfill({ status: 204 });
+        }
+        if (path.endsWith("/register")) {
+            await context.addCookies([
+                {
+                    name: "emailVerification",
+                    value: "pending-email",
+                    domain: "localhost",
+                    path: "/api/v1",
+                    httpOnly: true,
+                    sameSite: "Lax",
+                    expires: Date.now() / 1000 + 900,
+                },
+            ]);
+            return route.fulfill({
+                status: 201,
+                json: { verificationRequired: true, verification, user: null },
+            });
+        }
+        if (path.endsWith("/verification")) {
+            return route.fulfill(
+                headers.cookie?.includes("emailVerification=pending-email")
+                    ? { json: verification }
+                    : { status: 401, json: {} },
+            );
+        }
+        if (path.endsWith("/verification/resend"))
+            return route.fulfill({ json: verification });
+        if (
+            path.endsWith("/verification/confirm") &&
+            route.request().postDataJSON().otp !== "123456"
+        ) {
+            return route.fulfill({
+                status: 400,
+                json: { detail: "Mã OTP không hợp lệ." },
+            });
         }
         if (
             path.endsWith("/refresh") &&
@@ -238,6 +280,18 @@ for (const destination of ["/cart", "/account/profile"]) {
             email: user.email,
             password: "StrongPassword123!",
         });
+        await expect(page).toHaveURL(/\/verify-email\?/);
+        expect(
+            (await context.cookies()).some(
+                (cookie) => cookie.name === "refreshToken",
+            ),
+        ).toBe(false);
+        await page.reload();
+        await expect(page.getByText(user.email, { exact: true })).toBeVisible();
+        await page.getByLabel("Mã OTP 6 số").fill("123456");
+        await page
+            .getByRole("button", { name: "Xác thực email", exact: true })
+            .click();
         await expect(page).toHaveURL(new URL(destination, page.url()).href);
         expect(
             await page.evaluate(
@@ -249,7 +303,9 @@ for (const destination of ["/cart", "/account/profile"]) {
                 sessionStorage.getItem("nutee:auth:customer"),
             ),
         ).toBeNull();
-        const refreshCookie = (await context.cookies()).find((cookie) => cookie.name === "refreshToken");
+        const refreshCookie = (await context.cookies()).find(
+            (cookie) => cookie.name === "refreshToken",
+        );
         expect(refreshCookie?.httpOnly).toBe(true);
         expect(refreshCookie?.expires).toBeGreaterThan(0);
     });
@@ -261,16 +317,16 @@ test("forgot and reset password submit API shapes with CSRF and reject mismatche
     await page.goto("/forgot-password");
     await page.getByLabel("Email", { exact: true }).fill(user.email);
     const forgot = page.waitForRequest("**/api/v1/auth/forgot-password");
-    await page
-        .getByRole("button", { name: "Gửi mã OTP" })
-        .click();
+    await page.getByRole("button", { name: "Gửi mã OTP" }).click();
     expect((await forgot).postDataJSON()).toEqual({ email: user.email });
     await expect(page.getByRole("alert")).toContainText(
         "Nếu email có tài khoản phù hợp",
     );
     const otp = "012345";
     await page.getByRole("button", { name: "Gửi lại mã OTP" }).click();
-    await expect(page.getByText("Vui lòng đợi đủ 60 giây trước khi gửi lại mã.")).toBeVisible();
+    await expect(
+        page.getByText("Vui lòng đợi đủ 60 giây trước khi gửi lại mã."),
+    ).toBeVisible();
     await page.getByLabel("Mã OTP", { exact: true }).fill(otp);
     await page
         .getByLabel("Mật khẩu mới", { exact: true })
@@ -308,9 +364,7 @@ test("Google login and API profile work when browser storage is blocked", async 
         }
     });
     await page.goto("/login");
-    const request = page.waitForRequest(
-        "**/api/v1/auth/social/google",
-    );
+    const request = page.waitForRequest("**/api/v1/auth/social/google");
     await page.getByRole("button", { name: "Google test sign in" }).click();
     expect((await request).postDataJSON()).toEqual({
         credential: "google-test-credential",
@@ -340,11 +394,157 @@ test("invalid credentials stay on login and show the API error", async ({
     await page.getByLabel("Email", { exact: true }).fill(user.email);
     await page.getByLabel("Mật khẩu", { exact: true }).fill("wrong");
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
-    await expect(page.getByRole("alert")).toContainText(
-        "Invalid credentials",
-    );
+    await expect(page.getByRole("alert")).toContainText("Invalid credentials");
     await expect(page).toHaveURL(/\/login$/);
 });
+
+test("unverified login uses pending cookie, rejects wrong OTP, supports resend and logout", async ({
+    page,
+    context,
+}) => {
+    let refreshes = 0;
+    page.on("request", (request) => {
+        if (request.url().endsWith("/auth/refresh")) refreshes++;
+    });
+    await page.route("**/api/v1/auth/login", async (route) => {
+        await context.addCookies([
+            {
+                name: "emailVerification",
+                value: "pending-email",
+                domain: "localhost",
+                path: "/api/v1",
+                httpOnly: true,
+                sameSite: "Lax",
+            },
+        ]);
+        return route.fulfill({
+            json: { verificationRequired: true, verification, user: null },
+        });
+    });
+    await page.goto("/login?returnTo=%2Faccount%2Forders");
+    await page.getByLabel("Email", { exact: true }).fill(user.email);
+    await page.getByLabel("Mật khẩu", { exact: true }).fill("Password123!");
+    await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+    await expect(page).toHaveURL(
+        /\/verify-email\?returnTo=%2Faccount%2Forders/,
+    );
+    await expect(
+        page.getByRole("button", { name: /Gửi lại mã sau/ }),
+    ).toBeDisabled();
+    await page.getByLabel("Mã OTP 6 số").fill("000000");
+    await page
+        .getByRole("button", { name: "Xác thực email", exact: true })
+        .click();
+    await expect(
+        page.getByRole("alert").filter({ hasText: "Mã OTP không hợp lệ." }),
+    ).toBeVisible();
+    await page.clock.install();
+    await page.clock.fastForward(61_000);
+    await page
+        .getByRole("button", { name: "Gửi lại mã OTP", exact: true })
+        .click();
+    await expect(
+        page.getByRole("button", { name: /Gửi lại mã sau/ }),
+    ).toBeDisabled();
+    await page
+        .getByRole("button", {
+            name: "Đăng xuất / Dùng tài khoản khác",
+            exact: true,
+        })
+        .click();
+    await expect(page).toHaveURL(/\/login\?.*reason=verify-email/);
+    expect(
+        (await context.cookies()).some(
+            (cookie) => cookie.name === "emailVerification",
+        ),
+    ).toBe(false);
+    expect(refreshes).toBe(0);
+});
+
+for (const pending of [true, false]) {
+    test(`old unverified session redirects safely with pending state ${pending}`, async ({
+        page,
+        context,
+    }) => {
+        let refreshes = 0;
+        let profiles = 0;
+        page.on("request", (request) => {
+            if (request.url().endsWith("/auth/refresh")) refreshes++;
+            if (request.url().endsWith("/api/v1/account/profile")) profiles++;
+        });
+        await page.route("**/api/v1/auth/me", async (route) => {
+            if (pending)
+                await context.addCookies([
+                    {
+                        name: "emailVerification",
+                        value: "pending-email",
+                        domain: "localhost",
+                        path: "/api/v1",
+                        httpOnly: true,
+                        sameSite: "Lax",
+                    },
+                ]);
+            return route.fulfill({
+                status: 401,
+                json: {
+                    code: "EMAIL_NOT_VERIFIED",
+                    detail: "Vui lòng xác thực email.",
+                },
+            });
+        });
+        await page.goto("/account/profile");
+        await expect(page).toHaveURL(
+            pending
+                ? /\/verify-email\?returnTo=%2Faccount%2Fprofile/
+                : /\/login\?.*reason=verify-email/,
+        );
+        await expect(
+            page.getByRole("heading", {
+                name: pending ? "Xác thực email" : "Đăng nhập",
+                exact: true,
+            }),
+        ).toBeVisible();
+        expect(refreshes).toBe(0);
+        expect(profiles).toBe(0);
+    });
+}
+
+test("verification cannot be authorized by an email in the URL", async ({
+    page,
+}) => {
+    await page.goto(
+        "/verify-email?email=someone%40example.com&returnTo=https%3A%2F%2Fevil.example",
+    );
+    await expect(page).toHaveURL(/\/login\?returnTo=%2Faccount%2Fprofile/);
+    await expect(
+        page.getByText(
+            "Đăng nhập bằng email và mật khẩu để tiếp tục xác thực email.",
+        ),
+    ).toBeVisible();
+});
+
+for (const [status, detail] of [
+    [404, "Email chưa được đăng ký."],
+    [400, "Tài khoản này đăng nhập bằng Google."],
+    [503, "Chưa gửi được email khôi phục."],
+] as const) {
+    test(`password recovery reports ${status} without opening OTP form`, async ({
+        page,
+    }) => {
+        await page.route("**/api/v1/auth/forgot-password", (route) =>
+            route.fulfill({ status, json: { detail } }),
+        );
+        await page.goto("/forgot-password");
+        await page.getByLabel("Email", { exact: true }).fill(user.email);
+        await page
+            .getByRole("button", { name: "Gửi mã OTP", exact: true })
+            .click();
+        await expect(
+            page.getByRole("alert").filter({ hasText: detail }),
+        ).toBeVisible();
+        await expect(page.getByLabel("Mã OTP", { exact: true })).toHaveCount(0);
+    });
+}
 
 test("preserves storefront and management screens with empty data", async ({
     page,

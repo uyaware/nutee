@@ -5,6 +5,75 @@ const response = (body: unknown, status = 200) =>
     new Response(status === 204 ? null : JSON.stringify(body), { status });
 const csrf = { token: "csrf-value", headerName: "X-XSRF-TOKEN" };
 describe("shared API client", () => {
+    it("rejects an unverified account without refreshing and notifies the session boundary", async () => {
+        const rejected = vi.fn();
+        const fetch = vi
+            .fn<typeof globalThis.fetch>()
+            .mockResolvedValue(
+                response(
+                    { code: "EMAIL_NOT_VERIFIED", detail: "Verify email" },
+                    401,
+                ),
+            );
+        const api = createApiClient({ fetch, onEmailNotVerified: rejected });
+        await expect(api.request("/cart")).rejects.toMatchObject({
+            code: "EMAIL_NOT_VERIFIED",
+        });
+        expect(rejected).toHaveBeenCalledTimes(1);
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(fetch).not.toHaveBeenCalledWith(
+            "/api/v1/auth/refresh",
+            expect.anything(),
+        );
+    });
+
+    it.each(["/auth/me", "/auth/refresh"])(
+        "stops refresh recovery if %s reports an unverified account",
+        async (failing) => {
+            const rejected = vi.fn();
+            const fetch = vi.fn<typeof globalThis.fetch>(async (url) => {
+                if (String(url).endsWith("/csrf")) return response(csrf);
+                return response(
+                    String(url).endsWith(failing)
+                        ? { code: "EMAIL_NOT_VERIFIED" }
+                        : {},
+                    401,
+                );
+            });
+            await expect(
+                createApiClient({
+                    fetch,
+                    onEmailNotVerified: rejected,
+                }).request("/orders"),
+            ).rejects.toMatchObject({ code: "EMAIL_NOT_VERIFIED" });
+            expect(rejected).toHaveBeenCalledTimes(1);
+            expect(
+                fetch.mock.calls.filter(([url]) =>
+                    String(url).endsWith("/auth/refresh"),
+                ),
+            ).toHaveLength(failing.endsWith("/refresh") ? 1 : 0);
+        },
+    );
+
+    it("does not let stale unauthorized requests refresh after login enters pending verification", async () => {
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url) => {
+            if (String(url).endsWith("/csrf")) return response(csrf);
+            if (String(url).endsWith("/login"))
+                return response({ verificationRequired: true, user: null });
+            return response({}, 401);
+        });
+        const api = createApiClient({ fetch });
+        await api.request("/auth/login", {
+            method: "POST",
+            authenticated: false,
+        });
+        await expect(api.request("/auth/me")).rejects.toMatchObject({
+            code: "EMAIL_NOT_VERIFIED",
+        });
+        expect(
+            fetch.mock.calls.some(([url]) => String(url).endsWith("/refresh")),
+        ).toBe(false);
+    });
     it.each([500, 502, 503, 504])(
         "classifies HTTP %s as a server failure even when a proxy returns HTML",
         async (status) => {

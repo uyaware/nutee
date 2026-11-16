@@ -6,7 +6,7 @@ const initialUser = {
     email: "account@example.invalid",
     fullName: "Tên ban đầu",
     role: "CUSTOMER",
-    emailVerified: false,
+    emailVerified: true,
     imageUrl: null,
 };
 type Address = {
