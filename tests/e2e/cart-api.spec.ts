@@ -203,8 +203,7 @@ test("adds the selected variants, updates the badge and quantities, selects chec
     await expect(
         page.getByRole("link", { name: "Giỏ hàng, 2 sản phẩm", exact: true }),
     ).toBeVisible();
-    await page.getByRole("combobox", { name: "Phiên bản" }).click();
-    await page.getByRole("option", { name: /SKU-8/ }).click();
+    await page.getByRole("button", { name: "8 GB", exact: true }).click();
     await page
         .getByRole("button", { name: "Thêm vào giỏ", exact: true })
         .click();
@@ -241,17 +240,14 @@ test("adds the selected variants, updates the badge and quantities, selects chec
             .first(),
     ).toBeVisible();
     await expect(
-        page.getByText("16 GB / 512 GB", { exact: true }),
+        page.getByText("Đen / 16 GB", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("8 GB / 256 GB", { exact: true })).toHaveCount(
+    await expect(page.getByText("Đen / 8 GB", { exact: true })).toHaveCount(
         0,
     );
     await expect(
         page.getByText(/Thanh toán payOS hiện chưa khả dụng/),
     ).toBeVisible();
-    await page
-        .getByRole("button", { name: "Kiểm tra đơn hàng", exact: true })
-        .click();
     await expect(
         page.getByRole("button", { name: "Đặt hàng", exact: true }),
     ).toBeEnabled();

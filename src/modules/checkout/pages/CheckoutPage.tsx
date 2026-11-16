@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     createOrderSchema,
     type CreateOrder,
-    type CustomerOrder,
 } from "@/modules/orders/model/api";
 import { ServiceError } from "@/shared/lib/errors";
 import { reportErrorToast } from "@/shared/lib/errorToast";
@@ -23,9 +22,6 @@ import {
     Radio,
     RadioGroup,
     Stack,
-    Step,
-    StepLabel,
-    Stepper,
     TextField,
     Typography,
 } from "@mui/material";
@@ -48,14 +44,11 @@ import { PaymentPanel } from "@/modules/checkout/pages/PaymentPage";
 export default function CheckoutPage() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const [params, setParams] = useSearchParams();
+    const [params] = useSearchParams();
     const [submitted, setSubmitted] = useState<CreateOrder | null>(null);
     const setValidation = (message: string) => {
         if (message) reportErrorToast(message);
     };
-    const [createdOrder, setCreatedOrder] = useState<CustomerOrder | null>(
-        null,
-    );
     const profile = useProfile();
     const config = useQuery({
         queryKey: ["checkout-config"],
@@ -70,7 +63,6 @@ export default function CheckoutPage() {
                 ["VALIDATION", "CONFLICT", "NOT_FOUND"].includes(error.code)
             ) {
                 setSubmitted(null);
-                setStep(0);
                 void queryClient.invalidateQueries({ queryKey: ["customer"] });
                 void config.refetch();
             }
@@ -91,8 +83,10 @@ export default function CheckoutPage() {
                         order.payment,
                     );
                 }
-                setCreatedOrder(order);
-                setParams({ order: String(order.id) }, { replace: true });
+                navigate(`/orders/${order.id}/payment`, {
+                    replace: true,
+                    state: { paymentError: order.paymentError },
+                });
             } else {
                 navigate(`/orders/${order.id}/success`, { replace: true });
             }
@@ -100,7 +94,6 @@ export default function CheckoutPage() {
         },
     });
     const cart = useCart();
-    const [step, setStep] = useState(0);
     const [selection, setSelection] = useState<{
         ownerId: string;
         id: string;
@@ -115,11 +108,6 @@ export default function CheckoutPage() {
         savedAddresses.find((item) => item.isDefault) ??
         savedAddresses[0];
     const addressId = selectedAddress?.id ?? "";
-    const address = {
-        recipient: profile.data?.user.name ?? "",
-        phone: profile.data?.user.phone ?? "",
-        line: selectedAddress?.line ?? "",
-    };
     const [method, setMethod] = useState("cod");
     const [note, setNote] = useState("");
     const [voucherCode, setVoucherCode] = useState("");
@@ -159,14 +147,9 @@ export default function CheckoutPage() {
             note,
             paymentMethod: method,
         });
-    const paymentOrderId = createdOrder?.id ?? Number(params.get("order"));
+    const paymentOrderId = Number(params.get("order"));
     if (Number.isSafeInteger(paymentOrderId) && paymentOrderId > 0) {
-        return (
-            <PaymentPanel
-                id={paymentOrderId}
-                initialError={createdOrder?.paymentError}
-            />
-        );
+        return <PaymentPanel id={paymentOrderId} />;
     }
     if (profile.isPending) return <LoadingState />;
     if (profile.isError)
@@ -219,9 +202,17 @@ export default function CheckoutPage() {
                 Quay lại giỏ hàng
             </Button>
             <Box>
-                <Typography variant="h1">Thanh toán</Typography>
+                <Typography
+                    variant="overline"
+                    color="primary.main"
+                    fontWeight={700}
+                >
+                    NUTEE / CHECKOUT
+                </Typography>
+                <Typography variant="h1">Hoàn tất đơn hàng</Typography>
                 <Typography color="text.secondary" sx={{ mt: 1 }}>
-                    Chỉ vài bước nữa, công nghệ mới sẽ đến với bạn.
+                    Chọn địa chỉ, phương thức thanh toán và kiểm tra đơn hàng
+                    trước khi đặt.
                 </Typography>
             </Box>
             {config.isError && (
@@ -231,15 +222,6 @@ export default function CheckoutPage() {
                 />
             )}
             {placeOrder.isError && <ErrorState error={placeOrder.error} />}
-            <Stepper activeStep={step} alternativeLabel sx={{ py: 1 }}>
-                {["Giao hàng & thanh toán", "Xác nhận đơn hàng"].map(
-                    (label) => (
-                        <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
-                        </Step>
-                    ),
-                )}
-            </Stepper>
             <Box
                 sx={{
                     display: "grid",
@@ -252,7 +234,14 @@ export default function CheckoutPage() {
                 }}
             >
                 <Stack spacing={3}>
-                    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: { xs: 2, sm: 3.5 },
+                            borderRadius: 3,
+                            boxShadow: "0 12px 40px rgba(20, 38, 70, 0.04)",
+                        }}
+                    >
                         <Stack
                             component="form"
                             spacing={3}
@@ -271,219 +260,66 @@ export default function CheckoutPage() {
                                     return;
                                 }
                                 setValidation("");
-                                if (step === 0) setStep(1);
-                                else {
-                                    setSubmitted(parsed.data);
-                                    placeOrder.mutate(parsed.data);
-                                }
+                                setSubmitted(parsed.data);
+                                placeOrder.mutate(parsed.data);
                             }}
                         >
-                            {step === 0 && (
-                                <>
-                                    <Stack
-                                        direction="row"
-                                        spacing={1}
-                                        alignItems="center"
-                                    >
-                                        <LocalShippingOutlined color="primary" />
-                                        <Typography variant="h2">
-                                            Thông tin giao hàng
-                                        </Typography>
-                                    </Stack>
-                                    <FormControl>
-                                        <FormLabel id="delivery-address-label">
-                                            Địa chỉ nhận hàng
-                                        </FormLabel>
-                                        <RadioGroup
-                                            aria-labelledby="delivery-address-label"
-                                            value={addressId}
-                                            onChange={(event) => {
-                                                setSelection({
-                                                    ownerId:
-                                                        profile.data.user.id,
-                                                    id: event.target.value,
-                                                });
-                                            }}
-                                        >
-                                            {savedAddresses.map((item) => (
-                                                <Paper
-                                                    key={item.id}
-                                                    variant="outlined"
-                                                    sx={{
-                                                        mt: 1.5,
-                                                        p: 1.5,
-                                                        borderColor:
-                                                            addressId ===
-                                                            item.id
-                                                                ? "primary.main"
-                                                                : "divider",
-                                                    }}
-                                                >
-                                                    <FormControlLabel
-                                                        value={item.id}
-                                                        control={<Radio />}
-                                                        sx={{
-                                                            m: 0,
-                                                            alignItems:
-                                                                "flex-start",
-                                                            width: "100%",
-                                                        }}
-                                                        label={
-                                                            <Box sx={{ pt: 1 }}>
-                                                                <Stack
-                                                                    direction="row"
-                                                                    gap={1}
-                                                                    alignItems="center"
-                                                                >
-                                                                    <Typography
-                                                                        fontWeight={
-                                                                            600
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            item.recipient
-                                                                        }
-                                                                    </Typography>
-                                                                    {item.isDefault && (
-                                                                        <Chip
-                                                                            size="small"
-                                                                            label="Mặc định"
-                                                                            variant="outlined"
-                                                                            color="primary"
-                                                                        />
-                                                                    )}
-                                                                </Stack>
-                                                                <Typography variant="body2">
-                                                                    {
-                                                                        item.recipient
-                                                                    }{" "}
-                                                                    ·{" "}
-                                                                    {item.phone}
-                                                                </Typography>
-                                                                <Typography
-                                                                    variant="body2"
-                                                                    color="text.secondary"
-                                                                >
-                                                                    {item.line}
-                                                                </Typography>
-                                                            </Box>
-                                                        }
-                                                    />
-                                                </Paper>
-                                            ))}
-                                        </RadioGroup>
-                                    </FormControl>
-                                    <Button
-                                        component={Link}
-                                        to="/account/addresses"
-                                        sx={{ alignSelf: "flex-start" }}
-                                    >
-                                        {savedAddresses.length
-                                            ? "Quản lý sổ địa chỉ"
-                                            : "Thêm địa chỉ vào sổ địa chỉ"}
-                                    </Button>
-                                    <Divider />
-                                    <Typography>
-                                        {address.recipient} · {address.phone}
-                                    </Typography>
-                                    <Typography color="text.secondary">
-                                        {address.line}
-                                    </Typography>
-                                    {!profile.data.user.profileCompleted && (
-                                        <Alert severity="warning">
-                                            Cập nhật họ tên và số điện thoại
-                                            trong{" "}
-                                            <Link to="/account/profile">
-                                                hồ sơ
-                                            </Link>{" "}
-                                            trước khi đặt hàng.
-                                        </Alert>
-                                    )}
-                                    <TextField
-                                        label="Ghi chú giao hàng (không bắt buộc)"
-                                        value={note}
-                                        onChange={(event) =>
-                                            setNote(event.target.value)
-                                        }
-                                        multiline
-                                        minRows={2}
-                                        placeholder="Ví dụ: Gọi trước khi giao hàng"
-                                        slotProps={{
-                                            inputLabel: { shrink: true },
-                                        }}
-                                    />
-                                    <Alert
-                                        severity="info"
-                                        icon={<LocalShippingOutlined />}
-                                    >
-                                        Phí giao hàng:{" "}
-                                        {config.data
-                                            ? money(config.data.shippingFee)
-                                            : "Đang tải…"}
-                                        . Thời gian giao sẽ được xác nhận khi xử
-                                        lý đơn.
-                                    </Alert>
-                                </>
+                            {submitted && (
+                                <Alert severity="info">
+                                    Đơn hàng đang chờ xác nhận. Thử lại để kiểm
+                                    tra kết quả với cùng thông tin đã gửi.
+                                </Alert>
                             )}
-                            {step === 0 && (
-                                <>
-                                    <Divider />
-                                    <Typography variant="h2">
-                                        Phương thức thanh toán
-                                    </Typography>
-                                    <FormControl>
-                                        <FormLabel id="payment-method-label">
-                                            Chọn cách thanh toán
-                                        </FormLabel>
-                                        <RadioGroup
-                                            aria-labelledby="payment-method-label"
-                                            value={method}
-                                            onChange={(event) =>
-                                                setMethod(event.target.value)
-                                            }
+                            <Stack
+                                component="fieldset"
+                                disabled={!!submitted}
+                                spacing={3}
+                                sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}
+                            >
+                                {
+                                    <>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
                                         >
-                                            {[
-                                                {
-                                                    value: "cod",
-                                                    title: "Thanh toán khi nhận hàng",
-                                                    description:
-                                                        "Thanh toán cho nhân viên giao hàng khi nhận sản phẩm.",
-                                                    icon: PaymentsOutlined,
-                                                },
-                                                {
-                                                    value: "qr",
-                                                    title: "Chuyển khoản bằng mã QR",
-                                                    description:
-                                                        "Quét mã QR bằng ứng dụng ngân hàng để thanh toán.",
-                                                    icon: QrCodeRounded,
-                                                },
-                                            ].map(
-                                                ({
-                                                    value,
-                                                    title,
-                                                    description,
-                                                    icon: Icon,
-                                                }) => (
+                                            <LocalShippingOutlined color="primary" />
+                                            <Typography variant="h2">
+                                                Thông tin giao hàng
+                                            </Typography>
+                                        </Stack>
+                                        <FormControl>
+                                            <FormLabel id="delivery-address-label">
+                                                Địa chỉ nhận hàng
+                                            </FormLabel>
+                                            <RadioGroup
+                                                aria-labelledby="delivery-address-label"
+                                                value={addressId}
+                                                onChange={(event) => {
+                                                    setSelection({
+                                                        ownerId:
+                                                            profile.data.user
+                                                                .id,
+                                                        id: event.target.value,
+                                                    });
+                                                }}
+                                            >
+                                                {savedAddresses.map((item) => (
                                                     <Paper
-                                                        key={value}
+                                                        key={item.id}
                                                         variant="outlined"
                                                         sx={{
-                                                            mt: 2,
-                                                            p: 2,
+                                                            mt: 1.5,
+                                                            p: 1.5,
                                                             borderColor:
-                                                                method === value
+                                                                addressId ===
+                                                                item.id
                                                                     ? "primary.main"
                                                                     : "divider",
                                                         }}
                                                     >
                                                         <FormControlLabel
-                                                            value={value}
-                                                            disabled={
-                                                                value ===
-                                                                    "qr" &&
-                                                                !config.data
-                                                                    ?.payosEnabled
-                                                            }
+                                                            value={item.id}
                                                             control={<Radio />}
                                                             sx={{
                                                                 m: 0,
@@ -492,138 +328,249 @@ export default function CheckoutPage() {
                                                                 width: "100%",
                                                             }}
                                                             label={
-                                                                <Stack
-                                                                    spacing={1}
+                                                                <Box
                                                                     sx={{
                                                                         pt: 1,
                                                                     }}
                                                                 >
                                                                     <Stack
                                                                         direction="row"
-                                                                        spacing={
-                                                                            1
-                                                                        }
+                                                                        gap={1}
                                                                         alignItems="center"
                                                                     >
-                                                                        <Icon color="primary" />
                                                                         <Typography
                                                                             fontWeight={
                                                                                 600
                                                                             }
                                                                         >
                                                                             {
-                                                                                title
-                                                                            }
+                                                                                item.recipient
+                                                                            }{" "}
+                                                                            ·{" "}
+                                                                            {item.phone}
                                                                         </Typography>
+                                                                        {item.isDefault && (
+                                                                            <Chip
+                                                                                size="small"
+                                                                                label="Mặc định"
+                                                                                variant="outlined"
+                                                                                color="primary"
+                                                                            />
+                                                                        )}
                                                                     </Stack>
                                                                     <Typography
-                                                                        color="text.secondary"
                                                                         variant="body2"
+                                                                        color="text.secondary"
                                                                     >
                                                                         {
-                                                                            description
+                                                                            item.line
                                                                         }
                                                                     </Typography>
-                                                                </Stack>
+                                                                </Box>
                                                             }
                                                         />
                                                     </Paper>
-                                                ),
-                                            )}
-                                        </RadioGroup>
-                                    </FormControl>
-                                    {!config.data?.payosEnabled && (
-                                        <Alert severity="info">
-                                            Thanh toán payOS hiện chưa khả dụng.
-                                            Bạn có thể chọn COD.
-                                        </Alert>
-                                    )}
-                                    <Paper
-                                        variant="outlined"
-                                        sx={{
-                                            p: 2,
-                                            bgcolor: "background.default",
-                                        }}
-                                    >
-                                        <VoucherPicker
-                                            ownerId={profile.data.user.id}
-                                            selected={voucherCode}
-                                            pending={quoteQuery.isFetching}
-                                            onApply={(code) => {
-                                                if (code === voucherCode)
-                                                    void quoteQuery.refetch();
-                                                else {
-                                                    setStep(0);
-                                                    setVoucherCode(code);
-                                                }
+                                                ))}
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <Button
+                                            component={Link}
+                                            to="/account/addresses"
+                                            sx={{ alignSelf: "flex-start" }}
+                                        >
+                                            {savedAddresses.length
+                                                ? "Quản lý sổ địa chỉ"
+                                                : "Thêm địa chỉ vào sổ địa chỉ"}
+                                        </Button>
+                                        <Divider />
+                                        {!profile.data.user
+                                            .profileCompleted && (
+                                            <Alert severity="warning">
+                                                Cập nhật họ tên và số điện thoại
+                                                trong{" "}
+                                                <Link to="/account/profile">
+                                                    hồ sơ
+                                                </Link>{" "}
+                                                trước khi đặt hàng.
+                                            </Alert>
+                                        )}
+                                        <TextField
+                                            label="Ghi chú giao hàng (không bắt buộc)"
+                                            value={note}
+                                            onChange={(event) =>
+                                                setNote(event.target.value)
+                                            }
+                                            multiline
+                                            minRows={2}
+                                            placeholder="Ví dụ: Gọi trước khi giao hàng"
+                                            slotProps={{
+                                                inputLabel: { shrink: true },
                                             }}
                                         />
-                                    </Paper>
-                                </>
-                            )}
-                            {step === 1 && (
-                                <>
-                                    <Typography variant="h2">
-                                        Kiểm tra đơn hàng
-                                    </Typography>
-                                    <Stack spacing={1}>
-                                        <Typography variant="h3" component="h3">
-                                            Người nhận
+                                        <Alert
+                                            severity="info"
+                                            icon={<LocalShippingOutlined />}
+                                        >
+                                            Phí giao hàng:{" "}
+                                            {config.data
+                                                ? money(config.data.shippingFee)
+                                                : "Đang tải…"}
+                                            . Thời gian giao sẽ được xác nhận
+                                            khi xử lý đơn.
+                                        </Alert>
+                                    </>
+                                }
+                                {
+                                    <>
+                                        <Divider />
+                                        <Typography variant="h2">
+                                            Phương thức thanh toán
                                         </Typography>
-                                        <Typography>
-                                            {address.recipient} ·{" "}
-                                            {address.phone}
-                                        </Typography>
-                                        <Typography color="text.secondary">
-                                            {address.line}
-                                        </Typography>
-                                        {note && (
-                                            <Typography variant="body2">
-                                                Ghi chú: {note}
-                                            </Typography>
+                                        <FormControl>
+                                            <FormLabel id="payment-method-label">
+                                                Chọn cách thanh toán
+                                            </FormLabel>
+                                            <RadioGroup
+                                                aria-labelledby="payment-method-label"
+                                                value={method}
+                                                onChange={(event) =>
+                                                    setMethod(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            >
+                                                {[
+                                                    {
+                                                        value: "cod",
+                                                        title: "Thanh toán khi nhận hàng",
+                                                        description:
+                                                            "Thanh toán cho nhân viên giao hàng khi nhận sản phẩm.",
+                                                        icon: PaymentsOutlined,
+                                                    },
+                                                    {
+                                                        value: "qr",
+                                                        title: "Chuyển khoản bằng mã QR",
+                                                        description:
+                                                            "Quét mã QR bằng ứng dụng ngân hàng để thanh toán.",
+                                                        icon: QrCodeRounded,
+                                                    },
+                                                ].map(
+                                                    ({
+                                                        value,
+                                                        title,
+                                                        description,
+                                                        icon: Icon,
+                                                    }) => (
+                                                        <Paper
+                                                            key={value}
+                                                            variant="outlined"
+                                                            sx={{
+                                                                mt: 2,
+                                                                p: 2,
+                                                                borderColor:
+                                                                    method ===
+                                                                    value
+                                                                        ? "primary.main"
+                                                                        : "divider",
+                                                            }}
+                                                        >
+                                                            <FormControlLabel
+                                                                value={value}
+                                                                disabled={
+                                                                    value ===
+                                                                        "qr" &&
+                                                                    !config.data
+                                                                        ?.payosEnabled
+                                                                }
+                                                                control={
+                                                                    <Radio />
+                                                                }
+                                                                sx={{
+                                                                    m: 0,
+                                                                    alignItems:
+                                                                        "flex-start",
+                                                                    width: "100%",
+                                                                }}
+                                                                label={
+                                                                    <Stack
+                                                                        spacing={
+                                                                            1
+                                                                        }
+                                                                        sx={{
+                                                                            pt: 1,
+                                                                        }}
+                                                                    >
+                                                                        <Stack
+                                                                            direction="row"
+                                                                            spacing={
+                                                                                1
+                                                                            }
+                                                                            alignItems="center"
+                                                                        >
+                                                                            <Icon color="primary" />
+                                                                            <Typography
+                                                                                fontWeight={
+                                                                                    600
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    title
+                                                                                }
+                                                                            </Typography>
+                                                                        </Stack>
+                                                                        <Typography
+                                                                            color="text.secondary"
+                                                                            variant="body2"
+                                                                        >
+                                                                            {
+                                                                                description
+                                                                            }
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                }
+                                                            />
+                                                        </Paper>
+                                                    ),
+                                                )}
+                                            </RadioGroup>
+                                        </FormControl>
+                                        {!config.data?.payosEnabled && (
+                                            <Alert severity="info">
+                                                Thanh toán payOS hiện chưa khả
+                                                dụng. Bạn có thể chọn COD.
+                                            </Alert>
                                         )}
-                                        <Button
-                                            onClick={() => setStep(0)}
-                                            disabled={!!submitted}
-                                            sx={{ alignSelf: "flex-start" }}
+                                        <Paper
+                                            variant="outlined"
+                                            sx={{
+                                                p: 2,
+                                                bgcolor: "background.default",
+                                            }}
                                         >
-                                            Sửa thông tin giao hàng
-                                        </Button>
-                                    </Stack>
-                                    <Divider />
-                                    <Stack spacing={1}>
-                                        <Typography variant="h3" component="h3">
-                                            Thanh toán
-                                        </Typography>
-                                        <Typography>
-                                            {method === "cod"
-                                                ? "Thanh toán khi nhận hàng (COD)"
-                                                : "Chuyển khoản bằng mã QR"}
-                                        </Typography>
-                                        <Button
-                                            onClick={() => setStep(0)}
-                                            disabled={!!submitted}
-                                            sx={{ alignSelf: "flex-start" }}
-                                        >
-                                            Đổi phương thức thanh toán
-                                        </Button>
-                                    </Stack>
-                                </>
-                            )}
+                                            <VoucherPicker
+                                                ownerId={profile.data.user.id}
+                                                selected={voucherCode}
+                                                pending={
+                                                    quoteQuery.isFetching ||
+                                                    !!submitted
+                                                }
+                                                onApply={(code) => {
+                                                    if (code === voucherCode)
+                                                        void quoteQuery.refetch();
+                                                    else {
+                                                        setVoucherCode(code);
+                                                    }
+                                                }}
+                                            />
+                                        </Paper>
+                                    </>
+                                }
+                            </Stack>
                             <Stack
                                 direction={{ xs: "column-reverse", sm: "row" }}
                                 gap={1.5}
                                 justifyContent="space-between"
                             >
-                                {step > 0 && (
-                                    <Button
-                                        variant="outlined"
-                                        onClick={() => setStep(step - 1)}
-                                        disabled={!!submitted}
-                                    >
-                                        Quay lại
-                                    </Button>
-                                )}
                                 <Button
                                     type="submit"
                                     disabled={
@@ -640,13 +587,11 @@ export default function CheckoutPage() {
                                     size="large"
                                     sx={{ ml: { sm: "auto" } }}
                                 >
-                                    {step === 0
-                                        ? "Kiểm tra đơn hàng"
-                                        : placeOrder.isPending
-                                          ? "Đang đặt hàng…"
-                                          : submitted
-                                            ? "Thử lại đặt hàng"
-                                            : "Đặt hàng"}
+                                    {placeOrder.isPending
+                                        ? "Đang đặt hàng…"
+                                        : submitted
+                                          ? "Thử lại đặt hàng"
+                                          : "Đặt hàng"}
                                 </Button>
                             </Stack>
                         </Stack>

@@ -12,7 +12,12 @@ import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRou
 import TimerOutlined from "@mui/icons-material/TimerOutlined";
 import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
 import { QRCodeSVG } from "qrcode.react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import {
+    Link,
+    useLocation,
+    useParams,
+    useSearchParams,
+} from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { services } from "@/app/services";
@@ -28,7 +33,11 @@ import {
 
 export default function PaymentPage() {
     const id = Number(useParams().id);
-    return <PaymentPanel id={id} />;
+    const location = useLocation();
+    const initialError = (
+        location.state as { paymentError?: string | null } | null
+    )?.paymentError;
+    return <PaymentPanel id={id} initialError={initialError} />;
 }
 
 export function PaymentPanel({

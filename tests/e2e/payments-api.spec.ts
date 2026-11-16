@@ -229,18 +229,15 @@ test("checkout retries the identical order and displays the server-provided QR i
     await page.goto("/checkout?items=11");
     await expect(page.getByText("125.000 ₫", { exact: true })).toBeVisible();
     await page.getByRole("radio", { name: /Chuyển khoản bằng mã QR/ }).check();
-    await page
-        .getByRole("button", { name: "Kiểm tra đơn hàng", exact: true })
-        .click();
     await page.getByRole("button", { name: "Đặt hàng", exact: true }).click();
     await expect(page.getByTestId("system-error-banner")).toBeVisible();
     await expect(
-        page.getByRole("button", { name: "Quay lại", exact: true }),
+        page.getByRole("radio", { name: /Chuyển khoản bằng mã QR/ }),
     ).toBeDisabled();
     await page
         .getByRole("button", { name: "Thử lại đặt hàng", exact: true })
         .click();
-    await expect(page).toHaveURL(/\/checkout\?order=42$/);
+    await expect(page).toHaveURL(/\/orders\/42\/payment$/);
     expect(state.requests).toHaveLength(2);
     expect(state.requests[1]).toEqual(state.requests[0]);
     expect(state.requests[0]).toMatchObject({
@@ -392,9 +389,6 @@ test("COD places an order with the configured fee while payOS is disabled", asyn
     await expect(
         page.getByRole("radio", { name: /Chuyển khoản bằng mã QR/ }),
     ).toBeDisabled();
-    await page
-        .getByRole("button", { name: "Kiểm tra đơn hàng", exact: true })
-        .click();
     await page.getByRole("button", { name: "Đặt hàng", exact: true }).click();
     await expect(page).toHaveURL(/\/orders\/42\/success$/);
     await expect(
@@ -444,9 +438,6 @@ test("payment provider error keeps the created order and retries only the QR", a
     state.failPayment = true;
     await page.goto("/checkout?items=11");
     await page.getByRole("radio", { name: /Chuyển khoản bằng mã QR/ }).check();
-    await page
-        .getByRole("button", { name: "Kiểm tra đơn hàng", exact: true })
-        .click();
     await page.getByRole("button", { name: "Đặt hàng", exact: true }).click();
     await expect(
         page.getByRole("alert").filter({ hasText: "Đơn hàng đã tạo" }),

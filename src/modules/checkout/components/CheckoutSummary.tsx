@@ -157,7 +157,14 @@ export function CheckoutSummary({
     quote?: SummaryQuote;
 }) {
     return (
-        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+        <Paper
+            variant="outlined"
+            sx={{
+                p: { xs: 2, sm: 3 },
+                borderRadius: 3,
+                boxShadow: "0 12px 40px rgba(20, 38, 70, 0.04)",
+            }}
+        >
             <Stack spacing={3}>
                 <Typography variant="h3" component="h2">
                     Đơn hàng của bạn
