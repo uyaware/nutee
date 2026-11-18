@@ -40,7 +40,7 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
                 "Phản hồi đăng nhập không hợp lệ.",
             );
         const user = mapApiUser(response.user);
-        if (!user.emailVerified) {
+        if (user.role === "customer" && !user.emailVerified) {
             requestEmailVerification();
             throw new ServiceError(
                 "EMAIL_NOT_VERIFIED",
@@ -125,7 +125,7 @@ export function createApiAuth(options: { api: ApiClient }): AuthService {
             try {
                 const user = mapApiUser(await me());
                 if (observed !== generation) return null;
-                if (!user.emailVerified) {
+                if (user.role === "customer" && !user.emailVerified) {
                     requestEmailVerification();
                     return null;
                 }

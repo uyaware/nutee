@@ -26,15 +26,15 @@ import { GoogleSignIn } from "@/modules/auth/components/GoogleSignIn";
 import type { User } from "@/modules/auth/model/types";
 import { clearPrivateSession } from "@/modules/auth/model/sessionCache";
 
-const schema = z.object({
+const schema = (management: boolean) => z.object({
     email: z
         .string()
         .trim()
         .toLowerCase()
-        .pipe(z.email("Nhập địa chỉ email hợp lệ.")),
+        .pipe(management ? z.string().min(1, "Nhập tên tài khoản hoặc email.") : z.email("Nhập địa chỉ email hợp lệ.")),
     password: z.string().min(1, "Nhập mật khẩu."),
 });
-type Fields = z.infer<typeof schema>;
+type Fields = z.infer<ReturnType<typeof schema>>;
 export function LoginPage({ portal }: { portal: Portal }) {
     const management = portal === "backoffice";
     const { mode } = useCustomerMode();
@@ -46,7 +46,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
         handleSubmit,
         formState: { errors },
     } = useForm<Fields>({
-        resolver: zodResolver(schema),
+        resolver: zodResolver(schema(management)),
         defaultValues: { email: "", password: "" },
     });
     const onSignedIn = async (user: User) => {
@@ -207,9 +207,9 @@ export function LoginPage({ portal }: { portal: Portal }) {
                                 </Alert>
                             )}
                             <TextField
-                                label="Email"
+                                label={management ? "Tên tài khoản hoặc email" : "Email"}
                                 autoComplete="username"
-                                type="email"
+                                type={management ? "text" : "email"}
                                 {...register("email")}
                                 error={!!errors.email}
                                 helperText={errors.email?.message}

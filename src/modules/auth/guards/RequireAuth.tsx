@@ -19,7 +19,7 @@ export function RequireAuth({
     return (
       <ErrorState error={session.error} retry={() => void session.refetch()} />
     );
-  if (!session.data || !session.data.emailVerified)
+  if (!session.data || (session.data.role === "customer" && !session.data.emailVerified))
     return (
       <Navigate
         replace

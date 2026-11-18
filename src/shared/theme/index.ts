@@ -147,6 +147,14 @@ const base: ThemeOptions = {
       styleOverrides: {
         root: ({ ownerState, theme }) => ({
           ...(theme.palette.mode === "dark" ? { backgroundColor: theme.palette.background.paper } : {}),
+          ...(theme.palette.mode === "dark" ? {
+            "& input:-webkit-autofill": {
+              WebkitBoxShadow: `0 0 0 1000px ${theme.palette.background.paper} inset`,
+              WebkitTextFillColor: theme.palette.text.primary,
+              caretColor: theme.palette.text.primary,
+              borderRadius: "inherit",
+            },
+          } : {}),
           ...(ownerState.type === "search" ? { borderRadius: "999px" } : {}),
           ...(ownerState.multiline
             ? { height: "auto", alignItems: "flex-start", padding: "12px 14px" }
@@ -250,7 +258,13 @@ export const customerDarkTheme = createTheme(
       success: { main: "#65dba8" },
       warning: { main: "#ffd08a" },
       error: { main: "#ff9a9a" },
-      action: { hover: "rgba(255,255,255,0.08)", selected: "rgba(168,195,255,0.16)" },
+      action: {
+        active: "#b8c5d8",
+        disabled: "rgba(216,222,232,0.6)",
+        disabledBackground: "rgba(255,255,255,0.12)",
+        hover: "rgba(255,255,255,0.08)",
+        selected: "rgba(168,195,255,0.16)",
+      },
     },
     components: {
       MuiPaper: { styleOverrides: { outlined: { borderColor: "#46556c" } } },
