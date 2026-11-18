@@ -124,9 +124,6 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                         Gửi lúc {dateTime(request.createdAt)}
                     </Typography>
                 </Stack>
-                <Box>
-                    <AfterSaleBadge status={status} />
-                </Box>
             </Stack>
             <Box
                 sx={{
@@ -142,9 +139,10 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                 <Stack spacing={3}>
                     <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
                         <Stack spacing={2}>
-                            <Typography variant="h2">
-                                Thông tin yêu cầu
-                            </Typography>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1.5} flexWrap="wrap">
+                                <Typography variant="h2">Thông tin yêu cầu</Typography>
+                                <AfterSaleBadge status={status} prominent />
+                            </Stack>
                             {item && (
                                 <OrderProducts
                                     items={[

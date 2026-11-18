@@ -10,7 +10,7 @@ const statusLabels: Record<Order["status"], string> = {
     delivered: "Đã giao",
     cancelled: "Đã hủy",
 };
-export function StatusBadge({ status, kind = "order", label }: { status: string | null; kind?: "order" | "payment" | "general"; label?: string }) {
+export function StatusBadge({ status, kind = "order", label, prominent = false }: { status: string | null; kind?: "order" | "payment" | "general"; label?: string; prominent?: boolean }) {
     const tone = kind === "payment"
         ? paymentStatusColor(status ?? "")
         : ["delivered", "completed", "approved", "active", "published"].includes(status ?? "") ? "success"
@@ -28,7 +28,8 @@ export function StatusBadge({ status, kind = "order", label }: { status: string 
             sx={(theme) => {
                 const color = tone === "default" ? theme.palette.text.secondary : theme.palette[tone].main;
                 return {
-                    height: 28,
+                    height: prominent ? 36 : 28,
+                    fontSize: prominent ? "0.875rem" : undefined,
                     borderRadius: 1,
                     fontWeight: 600,
                     backgroundColor: alpha(color, theme.palette.mode === "dark" ? 0.18 : 0.12),

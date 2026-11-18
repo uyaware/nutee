@@ -147,7 +147,6 @@ export function ManagementOrderDetail() {
             </Button>
             <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
                 <Typography variant="h1">Đơn hàng {order.code}</Typography>
-                <StatusBadge status={order.status} label={statuses[order.status] ?? order.status} />
             </Stack>
             <Typography color="text.secondary">
                 Đặt lúc {dateTime(order.createdAt)}
@@ -155,7 +154,10 @@ export function ManagementOrderDetail() {
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.1fr) minmax(0, 1fr)" }, gap: 3, alignItems: "start" }}>
             <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
                 <Stack spacing={3}>
-                    <Typography variant="h2">Thông tin nhận hàng</Typography>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1.5} flexWrap="wrap">
+                        <Typography variant="h2">Thông tin nhận hàng</Typography>
+                        <StatusBadge prominent status={order.status} label={statuses[order.status] ?? order.status} />
+                    </Stack>
                     <Typography>
                         {order.recipient || "Chưa cập nhật"} ·{" "}
                         {order.phone || "Chưa cập nhật"}

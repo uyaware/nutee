@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Alert,
+    Autocomplete,
     Button,
     Box,
     Chip,
@@ -9,7 +10,6 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    MenuItem,
     Stack,
     TableCell,
     TextField,
@@ -241,33 +241,22 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
                                     slotProps={{ htmlInput: { maxLength: 80 } }}
                                 />
                                 {kind === "categories" && (
-                                    <TextField
-                                        select
-                                        label="Danh mục cha"
-                                        value={draft.parentId}
-                                        onChange={(event) =>
-                                            setDraft({
-                                                ...draft,
-                                                parentId: event.target.value,
-                                            })
-                                        }
-                                    >
-                                        <MenuItem value="">
-                                            Danh mục gốc
-                                        </MenuItem>
-                                        {(allCategories.data ?? [])
-                                            .filter(
-                                                (item) => item.id !== draft.id,
-                                            )
-                                            .map((item) => (
-                                                <MenuItem
-                                                    key={item.id}
-                                                    value={String(item.id)}
-                                                >
-                                                    {item.name}
-                                                </MenuItem>
-                                            ))}
-                                    </TextField>
+                                    <Autocomplete
+                                        options={(allCategories.data ?? []).filter((item) => item.id !== draft.id)}
+                                        value={allCategories.data?.find((item) => String(item.id) === draft.parentId) ?? null}
+                                        getOptionLabel={(item) => item.name}
+                                        getOptionKey={(item) => item.id}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        onChange={(_, item) => setDraft({ ...draft, parentId: item ? String(item.id) : "" })}
+                                        loading={allCategories.isPending}
+                                        disabled={allCategories.isPending || allCategories.isError}
+                                        loadingText="Đang tải danh mục…"
+                                        noOptionsText="Không tìm thấy danh mục"
+                                        clearText="Chọn danh mục gốc"
+                                        openText="Mở danh sách"
+                                        closeText="Đóng danh sách"
+                                        renderInput={(params) => <TextField {...params} label="Danh mục cha" placeholder="Tìm và chọn danh mục" helperText={allCategories.isError ? "Không tải được danh mục. Vui lòng thử lại." : "Để trống nếu là danh mục gốc."} error={allCategories.isError} />}
+                                    />
                                 )}
                             </Stack>
                         </DialogContent>
