@@ -47,6 +47,7 @@ import type {
     TaxonomyOption,
 } from "@/modules/management/products/model/managementProduct";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
+import { reportSuccessToast } from "@/shared/lib/successToast";
 
 export default function ConnectedProductEditorPage() {
     const { id } = useParams();
@@ -150,6 +151,7 @@ function ProductEditor({
                 },
             ),
         onSuccess: async (saved) => {
+            reportSuccessToast(product ? "Đã lưu thay đổi sản phẩm." : "Đã tạo sản phẩm.");
             await refresh();
             if (!product)
                 navigate(`/management/products/${saved.id}/edit`, {
@@ -163,7 +165,8 @@ function ProductEditor({
                 `/management/products/${product!.id}/${item.kind}/${item.id}`,
                 { method: "DELETE" },
             ),
-        onSuccess: async () => {
+        onSuccess: async (_, item) => {
+            reportSuccessToast(item.kind === "images" ? "Đã xóa ảnh sản phẩm." : "Đã xóa biến thể.");
             setDeleting(null);
             await refresh();
         },
@@ -173,7 +176,10 @@ function ProductEditor({
         mutationFn: (image: ProductImage) => api.request(`/management/products/${product!.id}/images/${image.id}`, {
             method: "PUT", body: { url: image.url, primary: true },
         }),
-        onSuccess: refresh,
+        onSuccess: async () => {
+            reportSuccessToast("Đã cập nhật ảnh chính.");
+            await refresh();
+        },
     });
     const primaryVariant = useMutation({
         mutationFn: (variantId: number) => api.request<ManagementProduct>(
@@ -181,6 +187,7 @@ function ProductEditor({
             { method: "PUT" },
         ),
         onSuccess: async (saved) => {
+            reportSuccessToast("Đã cập nhật biến thể chính.");
             setDefaultVariantId(String(saved.defaultVariantId ?? ""));
             await refresh();
         },
@@ -293,7 +300,7 @@ function ProductEditor({
                         variant="contained"
                         startIcon={<SaveOutlined />}
                         disabled={save.isPending || primaryVariant.isPending || !name.trim()}
-                        sx={{ alignSelf: "flex-start" }}
+                        sx={{ alignSelf: "flex-end" }}
                     >
                         Lưu sản phẩm
                     </Button>
@@ -314,24 +321,26 @@ function ProductEditor({
                             >
                                 <Box sx={{ width: 90, textAlign: "center" }}><Radio checked={image.primary} onChange={() => primary.mutate(image)} disabled={primary.isPending} inputProps={{ "aria-label": `Chọn ảnh ${image.id} làm ảnh chính` }} /></Box>
                                 <Box component="img" src={image.url} alt="Ảnh sản phẩm" sx={{ width: 80, height: 80, objectFit: "contain", borderRadius: 1, bgcolor: "action.hover", mr: "auto" }} />
-                                <Button size="small" startIcon={<EditOutlined />} onClick={() => setImageDraft(image)}>
-                                    Sửa
-                                </Button>
-                                <Button
-                                    color="error"
-                                    size="small"
-                                    startIcon={<DeleteOutlineRounded />}
-                                    onClick={() => {
-                                        remove.reset();
-                                        setDeleting({
-                                            kind: "images",
-                                            id: image.id,
-                                            label: image.url,
-                                        });
-                                    }}
-                                >
-                                    Xóa
-                                </Button>
+                                <Stack direction="row" sx={{ ml: "auto" }}>
+                                    <Button size="small" startIcon={<EditOutlined />} onClick={() => setImageDraft(image)}>
+                                        Sửa
+                                    </Button>
+                                    <Button
+                                        color="error"
+                                        size="small"
+                                        startIcon={<DeleteOutlineRounded />}
+                                        onClick={() => {
+                                            remove.reset();
+                                            setDeleting({
+                                                kind: "images",
+                                                id: image.id,
+                                                label: image.url,
+                                            });
+                                        }}
+                                    >
+                                        Xóa
+                                    </Button>
+                                </Stack>
                             </Stack>
                         ))}
                         {product.images.length === 0 && <Stack alignItems="center" spacing={1} sx={{ py: 3, color: "text.secondary", border: "1px dashed", borderColor: "divider", borderRadius: 2 }}><ImageOutlined sx={{ fontSize: 36 }} /><Typography>Chưa có ảnh sản phẩm</Typography></Stack>}
@@ -369,28 +378,30 @@ function ProductEditor({
                                     <Typography variant="body2" color="text.secondary">{variant.specifications.map((spec) => `${spec.name}: ${spec.value}`).join(" · ") || "Chưa có cấu hình"}</Typography>
                                     <Typography variant="body2">{variant.price.toLocaleString("vi-VN")} ₫ · Tồn {variant.quantity}</Typography>
                                 </Box>
-                                <Button
-                                    onClick={() => setVariantDraft(variant)}
-                                    size="small"
-                                    startIcon={<EditOutlined />}
-                                >
-                                    Sửa
-                                </Button>
-                                <Button
-                                    color="error"
-                                    size="small"
-                                    startIcon={<DeleteOutlineRounded />}
-                                    onClick={() => {
-                                        remove.reset();
-                                        setDeleting({
-                                            kind: "variants",
-                                            id: variant.id,
-                                            label: variant.sku,
-                                        });
-                                    }}
-                                >
-                                    Xóa
-                                </Button>
+                                <Stack direction="row" sx={{ ml: "auto" }}>
+                                    <Button
+                                        onClick={() => setVariantDraft(variant)}
+                                        size="small"
+                                        startIcon={<EditOutlined />}
+                                    >
+                                        Sửa
+                                    </Button>
+                                    <Button
+                                        color="error"
+                                        size="small"
+                                        startIcon={<DeleteOutlineRounded />}
+                                        onClick={() => {
+                                            remove.reset();
+                                            setDeleting({
+                                                kind: "variants",
+                                                id: variant.id,
+                                                label: variant.sku,
+                                            });
+                                        }}
+                                    >
+                                        Xóa
+                                    </Button>
+                                </Stack>
                             </Stack>
                         ))}
                         {product.variants.length === 0 && <Stack alignItems="center" spacing={1} sx={{ py: 4, color: "text.secondary", border: "1px dashed", borderColor: "divider", borderRadius: 2 }}><Inventory2Outlined sx={{ fontSize: 36 }} /><Typography>Chưa có biến thể</Typography><Typography variant="body2">Thêm biến thể để quản lý giá và tồn kho.</Typography></Stack>}
@@ -483,6 +494,7 @@ function VariantDialog({
                 },
             ),
         onSuccess: async () => {
+            reportSuccessToast(variant ? "Đã lưu biến thể." : "Đã thêm biến thể.");
             await onSaved();
             onClose();
         },
@@ -649,6 +661,7 @@ function ImageDialog({
                 },
             ),
         onSuccess: async () => {
+            reportSuccessToast(image ? "Đã lưu ảnh sản phẩm." : "Đã thêm ảnh sản phẩm.");
             await onSaved();
             onClose();
         },

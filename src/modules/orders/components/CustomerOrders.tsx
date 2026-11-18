@@ -13,15 +13,14 @@ import {
     Pagination,
     Paper,
     Stack,
-    Step,
-    StepLabel,
-    Stepper,
     Tab,
     Tabs,
     TextField,
     Typography,
 } from "@mui/material";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
+import PaymentsOutlined from "@mui/icons-material/PaymentsOutlined";
+import { alpha } from "@mui/material/styles";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { services } from "@/app/services";
@@ -39,6 +38,8 @@ import {
 } from "@/shared/components/Feedback";
 import { dateTime, money } from "@/shared/lib/format";
 import { OrderHistoryPanel } from "@/modules/orders/components/OrderHistoryPanel";
+import { OrderDetailProducts } from "@/modules/orders/components/OrderDetailProducts";
+import { orderStatusColor, paymentStatusColor } from "@/modules/orders/model/managementStatus";
 
 const statuses = [
     ["all", "Tất cả"],
@@ -304,6 +305,8 @@ export function CustomerOrderDetail() {
         );
     const order = query.data;
     const steps = statuses.slice(1, -1);
+    const currentStep = steps.findIndex((row) => row[0] === order.status);
+    const paymentColor = paymentStatusColor(order.paymentStatus);
     return (
         <Stack spacing={3}>
             <Button
@@ -316,25 +319,12 @@ export function CustomerOrderDetail() {
             </Button>
             <Stack direction="row" gap={2} alignItems="center">
                 <Typography variant="h1">Đơn hàng {order.code}</Typography>
-                <Chip label={statusLabel(order.status)} variant="outlined" />
+                <Chip color={orderStatusColor(order.status)} label={statusLabel(order.status)} />
             </Stack>
             <Typography color="text.secondary">
                 Đặt lúc {dateTime(order.createdAt)}
             </Typography>
-            {order.status !== "cancelled" && (
-                <Stepper
-                    activeStep={steps.findIndex(
-                        (row) => row[0] === order.status,
-                    )}
-                    alternativeLabel
-                >
-                    {steps.map(([status, label]) => (
-                        <Step key={status}>
-                            <StepLabel>{label}</StepLabel>
-                        </Step>
-                    ))}
-                </Stepper>
-            )}
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.1fr) minmax(0, 1fr)" }, gap: 3, alignItems: "start" }}>
             <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
                 <Stack spacing={3}>
                     <Typography variant="h2">Thông tin nhận hàng</Typography>
@@ -348,7 +338,7 @@ export function CustomerOrderDetail() {
                         <Typography>Ghi chú: {order.note}</Typography>
                     )}
                     <Divider />
-                    <OrderProducts items={orderProducts(order)} />
+                    <OrderDetailProducts items={order.items} />
                     {order.status === "delivered" && (
                         <Stack spacing={1}>
                             {order.items.map((item) => (
@@ -379,14 +369,16 @@ export function CustomerOrderDetail() {
                     )}
                     <Divider />
                     <OrderTotals quote={order} />
-                    <Typography>
-                        {order.paymentMethod === "cod"
-                            ? "Thanh toán khi nhận hàng"
-                            : "Chuyển khoản qua payOS"}{" "}
-                        ·{" "}
-                        {paymentLabels[order.paymentStatus] ??
-                            order.paymentStatus}
-                    </Typography>
+                    <Box sx={(theme) => ({ p: 2, borderRadius: 2, border: "1px solid", borderColor: paymentColor === "default" ? theme.palette.divider : alpha(theme.palette[paymentColor].main, 0.35), bgcolor: paymentColor === "default" ? theme.palette.action.hover : alpha(theme.palette[paymentColor].main, 0.08) })}>
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} flexWrap="wrap">
+                            <Stack direction="row" spacing={1} alignItems="center"><PaymentsOutlined color="action" /><Typography fontWeight={700}>Thanh toán</Typography></Stack>
+                            <Chip size="small" color={paymentColor} label={paymentLabels[order.paymentStatus] ?? order.paymentStatus} />
+                        </Stack>
+                        <Stack direction="row" justifyContent="space-between" gap={2} flexWrap="wrap" sx={{ mt: 1.5 }}>
+                            <Typography variant="body2">{order.paymentMethod === "cod" ? "Thanh toán khi nhận hàng" : "Chuyển khoản qua payOS"}</Typography>
+                            <Typography variant="body2" fontWeight={700}>{money(order.total)}</Typography>
+                        </Stack>
+                    </Box>
                     {order.paymentStatus === "review" && (
                         <Alert severity="warning">
                             Thanh toán cần đối soát. Liên hệ cửa hàng và cung
@@ -419,7 +411,23 @@ export function CustomerOrderDetail() {
                     </Stack>
                 </Stack>
             </Paper>
+            <Stack spacing={3}>
+                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+                    <Typography variant="h2" sx={{ mb: 2 }}>Tiến trình đơn hàng</Typography>
+                    {order.status === "cancelled" ? <Alert severity="warning">Đơn hàng đã bị hủy.</Alert> : <Stack spacing={0}>
+                        {steps.map(([status, label], index) => {
+                            const completed = currentStep >= index;
+                            return <Stack key={status} direction="row" spacing={1.5} useFlexGap alignItems="flex-start" sx={{ position: "relative", pb: index < steps.length - 1 ? 3 : 0 }}>
+                                {index < steps.length - 1 && <Box aria-hidden="true" sx={{ position: "absolute", left: 16, top: 34, bottom: 0, width: 2, bgcolor: currentStep > index ? "primary.main" : "divider" }} />}
+                                <Box sx={{ width: 34, height: 34, flexShrink: 0, borderRadius: "50%", display: "grid", placeItems: "center", bgcolor: completed ? "primary.main" : "action.hover", color: completed ? "primary.contrastText" : "text.secondary", fontWeight: 700, position: "relative" }}>{index + 1}</Box>
+                                <Typography fontWeight={completed ? 700 : 400} sx={{ pt: 0.6 }}>{label}</Typography>
+                            </Stack>;
+                        })}
+                    </Stack>}
+                </Paper>
             <OrderHistoryPanel id={id} currentStatus={order.status} />
+            </Stack>
+            </Box>
             <Dialog
                 open={cancelOpen}
                 onClose={() => {

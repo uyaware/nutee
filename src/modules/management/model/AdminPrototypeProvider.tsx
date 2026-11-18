@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Alert, Snackbar } from "@mui/material";
 import { createAdminPrototype } from "@/modules/management/fixtures/admin";
 import { AdminPrototypeContext } from "@/modules/management/model/adminPrototypeContext";
+import { toastAppearance, toastPosition } from "@/shared/components/toastStyles";
 
 export function AdminPrototypeProvider({ children }: { children: ReactNode }) {
   const [data] = useState(createAdminPrototype);
@@ -19,13 +20,17 @@ export function AdminPrototypeProvider({ children }: { children: ReactNode }) {
       {children}
       <Snackbar
         open={!!message}
-        autoHideDuration={5000}
+        autoHideDuration={3000}
+        transitionDuration={250}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        sx={toastPosition}
         onClose={() => setMessage("")}
       >
         <Alert
           severity="warning"
+          icon={false}
           onClose={() => setMessage("")}
-          sx={{ width: "100%" }}
+          sx={toastAppearance("warning")}
         >
           {message}
         </Alert>

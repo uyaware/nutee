@@ -29,6 +29,7 @@ import type {
     ManagementUserPage,
 } from "@/modules/management/users/model/managementUser";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
+import { reportSuccessToast } from "@/shared/lib/successToast";
 
 export default function ConnectedUsersPage() {
     const session = useSession("backoffice");
@@ -71,6 +72,7 @@ export default function ConnectedUsersPage() {
             <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
                 <TextField
                     label="Tìm tên, email hoặc điện thoại"
+                    type="search"
                     value={q}
                     onChange={(event) => {
                         setQ(event.target.value);
@@ -181,6 +183,7 @@ export default function ConnectedUsersPage() {
                 <CreateUserDialog
                     onClose={() => setCreating(false)}
                     onSaved={async () => {
+                        reportSuccessToast("Đã tạo tài khoản.");
                         setCreating(false);
                         setPage(0);
                         await client.invalidateQueries({

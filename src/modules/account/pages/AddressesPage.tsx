@@ -32,6 +32,7 @@ import {
 } from "@/shared/components/Feedback";
 import { ServiceError } from "@/shared/lib/errors";
 import { FormErrorSummary } from "@/shared/components/FormErrorSummary";
+import { reportSuccessToast } from "@/shared/lib/successToast";
 
 function AddressEditor({
     address,
@@ -63,6 +64,7 @@ function AddressEditor({
         mutationFn: (fields: AddressInput) =>
             services.profile.saveAddress(address?.id ?? null, fields),
         onSuccess: async (updated) => {
+            reportSuccessToast(address ? "Đã lưu địa chỉ." : "Đã thêm địa chỉ.");
             client.setQueryData(
                 ["customer", updated.user.id, "profile"],
                 updated,

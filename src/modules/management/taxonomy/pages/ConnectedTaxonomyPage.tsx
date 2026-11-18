@@ -22,6 +22,7 @@ import {
     AdminTable,
 } from "@/modules/management/components/AdminUI";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
+import { reportSuccessToast } from "@/shared/lib/successToast";
 
 type Item = {
     id: number;
@@ -88,6 +89,7 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
                 },
             ),
         onSuccess: async () => {
+            reportSuccessToast(`Đã lưu ${label}.`);
             setDraft(null);
             await refresh();
         },
@@ -125,6 +127,7 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
             />
             <TextField
                 label={`Tìm ${label}`}
+                type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
             />

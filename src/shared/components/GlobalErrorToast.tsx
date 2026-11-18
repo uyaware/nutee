@@ -1,8 +1,10 @@
 import { useSyncExternalStore } from "react";
 import { Alert, Portal, Snackbar } from "@mui/material";
+import { toastAppearance, toastPosition } from "@/shared/components/toastStyles";
 import {
     currentErrorToast,
     dismissErrorToast,
+    lastErrorToast,
     subscribeErrorToasts,
 } from "@/shared/lib/errorToast";
 
@@ -12,14 +14,14 @@ export function GlobalErrorToast() {
         currentErrorToast,
         () => undefined,
     );
-    if (!notice) return null;
     return (
-        <Portal key={notice.id}>
+        <Portal>
             <Snackbar
-                key={notice?.id}
                 open={!!notice}
-                autoHideDuration={2000}
+                autoHideDuration={3000}
+                transitionDuration={250}
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                sx={toastPosition}
                 data-testid="error-toast"
                 onClose={(_, reason) => {
                     if (notice && reason !== "clickaway")
@@ -27,23 +29,11 @@ export function GlobalErrorToast() {
                 }}
             >
                 <Alert
-                    variant="filled"
                     icon={false}
-                    sx={{
-                        width: { xs: "calc(100vw - 32px)", sm: 360 },
-                        maxWidth: "100%",
-                        bgcolor: "#1976d2",
-                        color: "#fff",
-                        alignItems: "center",
-                        "& .MuiAlert-message": {
-                            minWidth: 0,
-                            width: "100%",
-                            py: 0.5,
-                            overflowWrap: "anywhere",
-                        },
-                    }}
+                    onClose={() => { if (notice) dismissErrorToast(notice.id); }}
+                    sx={toastAppearance("error")}
                 >
-                    {notice?.message}
+                    {(notice ?? lastErrorToast())?.message}
                 </Alert>
             </Snackbar>
         </Portal>

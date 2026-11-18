@@ -7,6 +7,7 @@ interface ErrorToast {
 }
 
 let current: ErrorToast | undefined;
+let last: ErrorToast | undefined;
 let nextId = 0;
 let lastSystemToastAt = -Infinity;
 const seen = new WeakSet<object>();
@@ -29,6 +30,7 @@ export function reportErrorToast(error: unknown) {
         lastSystemToastAt = Date.now();
     }
     current = { id: ++nextId, source: error, message };
+    last = current;
     publish();
 }
 
@@ -40,6 +42,9 @@ export function subscribeErrorToasts(listener: () => void) {
 }
 export function currentErrorToast() {
     return current;
+}
+export function lastErrorToast() {
+    return last;
 }
 export function dismissErrorToast(id: number) {
     if (current?.id === id) current = undefined;

@@ -30,8 +30,9 @@ function Stars() {
     return <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />;
 }
 
-export function LandingBackground() {
-    const { mode } = useCustomerMode();
+export function LandingBackground({ mode: suppliedMode }: { mode?: "light" | "dark" } = {}) {
+    const { mode: customerMode } = useCustomerMode();
+    const mode = suppliedMode ?? customerMode;
     const dark = mode === "dark";
     return (
         <Box aria-hidden="true" sx={{

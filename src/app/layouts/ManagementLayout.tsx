@@ -27,13 +27,14 @@ import SupportAgentRounded from "@mui/icons-material/SupportAgentRounded";
 import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
 import SellOutlined from "@mui/icons-material/SellOutlined";
 import LocalOfferOutlined from "@mui/icons-material/LocalOfferOutlined";
-import { alpha, useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { tokens } from "@/shared/theme/tokens";
 import { ErrorState } from "@/shared/components/Feedback";
 import { useLogout, useSession } from "@/modules/auth/hooks/useSession";
 import { hasPermission, roleLabels } from "@/modules/auth/model/permissions";
 import { AdminPrototypeProvider } from "@/modules/management/model/AdminPrototypeProvider";
+import { LandingBackground } from "@/shared/components/LandingBackground";
 
 export function ManagementLayout() {
     const session = useSession("backoffice");
@@ -43,7 +44,6 @@ export function ManagementLayout() {
     const [open, setOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
     const user = session.data!;
-    // Enough room for the logo and its control to remain on the same row.
     const width = collapsed ? 112 : 264;
     const duration = reduceMotion
         ? 0
@@ -117,10 +117,10 @@ export function ManagementLayout() {
     const sidebar = (compact: boolean, mobile = false) => (
         <Stack sx={{ minHeight: "100%", width: "100%" }}>
             <Stack
-                direction="row"
+                direction={compact ? "column" : "row"}
                 alignItems="center"
                 spacing={0.5}
-                sx={{ height: 88, px: 1, flexShrink: 0 }}
+                sx={{ height: compact ? 124 : 88, px: 1, py: compact ? 1 : 0, justifyContent: "center", flexShrink: 0 }}
             >
                 <Stack
                     component={Link}
@@ -129,7 +129,7 @@ export function ManagementLayout() {
                     direction="row"
                     alignItems="center"
                     sx={{
-                        flex: 1,
+                        flex: compact ? "0 0 auto" : 1,
                         minWidth: 0,
                         overflow: "hidden",
                         textDecoration: "none",
@@ -233,7 +233,7 @@ export function ManagementLayout() {
                 sx={{
                     height: 40,
                     px: 2,
-                    display: "flex",
+                    display: compact ? "none" : "flex",
                     alignItems: "center",
                     opacity: compact ? 0 : 1,
                     whiteSpace: "nowrap",
@@ -395,10 +395,11 @@ export function ManagementLayout() {
                 sx={{
                     display: "flex",
                     minHeight: "100dvh",
-                    bgcolor: "background.default",
-                    backgroundImage: `radial-gradient(ellipse at top right, ${alpha(tokens.color.cyan, 0.035)}, transparent 55%)`,
+                    backgroundColor: "#fafafa",
+                    position: "relative",
                 }}
             >
+                <LandingBackground mode="light" />
                 <Drawer
                     variant="permanent"
                     open={!collapsed}
@@ -452,6 +453,10 @@ export function ManagementLayout() {
                         p: { xs: 2.5, md: 4 },
                         maxWidth: 1600,
                         mx: "auto",
+                        position: "relative",
+                        "& .MuiOutlinedInput-root:has(input[type='search'])": {
+                            backgroundColor: "common.white",
+                        },
                     }}
                 >
                     <Button

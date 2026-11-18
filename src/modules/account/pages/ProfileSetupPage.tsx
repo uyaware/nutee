@@ -18,6 +18,7 @@ import type { ProfileSetupInput } from "@/modules/account/model/schemas";
 import { ServiceError } from "@/shared/lib/errors";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
 import { FormErrorSummary } from "@/shared/components/FormErrorSummary";
+import { reportSuccessToast } from "@/shared/lib/successToast";
 import { RegistrationFrame } from "@/modules/auth/components/RegistrationFrame";
 
 export default function ProfileSetupPage() {
@@ -48,6 +49,7 @@ export default function ProfileSetupPage() {
         mutationFn: (fields: ProfileSetupInput) =>
             services.profile.completeProfile(fields),
         onSuccess: async (updated) => {
+            reportSuccessToast("Đã lưu thông tin tài khoản.");
             await client.cancelQueries({ queryKey: ["session"] });
             client.setQueryData(["session", "customer"], updated.user);
             client.setQueryData(

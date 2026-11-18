@@ -13,6 +13,7 @@ import { api } from "@/app/services";
 import type { Mutation } from "@tanstack/react-query";
 import { isSystemError, ServiceError } from "@/shared/lib/errors";
 import { GlobalErrorToast } from "@/shared/components/GlobalErrorToast";
+import { GlobalSuccessToast } from "@/shared/components/GlobalSuccessToast";
 import {
     hasReportedSystemError,
     subscribeSystemErrors,
@@ -243,6 +244,7 @@ export default function App() {
                 </EmailVerificationBoundary>
             </Box>
             <GlobalErrorToast />
+            <GlobalSuccessToast />
         </>
     );
 }

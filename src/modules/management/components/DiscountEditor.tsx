@@ -33,6 +33,7 @@ import {
 } from "@/modules/management/model/discounts";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
 import { reportErrorToast } from "@/shared/lib/errorToast";
+import { reportSuccessToast } from "@/shared/lib/successToast";
 import { money } from "@/shared/lib/format";
 
 const localDateTime = (iso: string) =>
@@ -125,7 +126,10 @@ function Editor({
     const save = useMutation({
         mutationFn: (input: DiscountDraft) =>
             services.discounts.save(kind, initial?.id, input),
-        onSuccess: complete,
+        onSuccess: async () => {
+            reportSuccessToast(`Đã lưu ${label.toLowerCase()}.`);
+            await complete();
+        },
     });
     const deletion = useMutation({
         mutationFn: () => services.discounts.remove(kind, initial!.id),

@@ -27,6 +27,7 @@ import {
     type ProfileInput,
 } from "@/modules/account/model/schemas";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
+import { reportSuccessToast } from "@/shared/lib/successToast";
 
 const InsetTextField = styled(TextField)(({ theme }) => ({
     "& .MuiOutlinedInput-root": {
@@ -49,6 +50,7 @@ export default function ProfilePage() {
     const save = useMutation({
         mutationFn: (input: ProfileInput) => services.profile.update(input),
         onSuccess: async (updated) => {
+            reportSuccessToast("Đã lưu hồ sơ.");
             setEdit(null);
             await client.cancelQueries({ queryKey: ["session"] });
             client.setQueryData(["session", "customer"], updated.user);

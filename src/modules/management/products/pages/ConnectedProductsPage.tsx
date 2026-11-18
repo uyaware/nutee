@@ -15,6 +15,7 @@ import {
     TablePagination,
     TableRow,
     TextField,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
@@ -36,6 +37,7 @@ import type {
     ProductSummary,
 } from "@/modules/management/products/model/managementProduct";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
+import { reportSuccessToast } from "@/shared/lib/successToast";
 
 export default function ConnectedProductsPage() {
     const session = useSession("backoffice");
@@ -57,7 +59,8 @@ export default function ConnectedProductsPage() {
                 method: "PATCH",
                 body: { published: !product.published },
             }),
-        onSuccess: async () => {
+        onSuccess: async (_, product) => {
+            reportSuccessToast(product.published ? "Đã ngừng công khai sản phẩm." : "Đã công khai sản phẩm.");
             setSelected(null);
             setPage(0);
             await Promise.all([
@@ -85,6 +88,7 @@ export default function ConnectedProductsPage() {
             />
             <TextField
                 label="Tìm sản phẩm"
+                type="search"
                 placeholder="Nhập tên sản phẩm"
                 slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchRounded color="action" /></InputAdornment> } }}
                 sx={{ maxWidth: 420 }}
@@ -101,11 +105,6 @@ export default function ConnectedProductsPage() {
                 <ErrorState error={query.error} />
             ) : (
                 <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 2 }}>
-                    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ px: 3, py: 2 }}>
-                        <Inventory2Outlined color="primary" />
-                        <Typography variant="h3" component="h2">Danh sách sản phẩm</Typography>
-                        <Chip size="small" label={query.data.totalElements} />
-                    </Stack>
                     <TableContainer tabIndex={0} role="region" aria-label="Danh sách sản phẩm">
                         <Table aria-label="Danh sách sản phẩm" sx={{ minWidth: 1050, "& .MuiTableCell-root": { py: 1.5 } }}>
                             <TableHead>
@@ -128,7 +127,7 @@ export default function ConnectedProductsPage() {
                                                 <Button component={Link} to={`/management/products/${product.id}/edit`} sx={{ textAlign: "left", justifyContent: "flex-start", fontWeight: 700 }}>{product.name}</Button>
                                             </Stack>
                                         </TableCell>
-                                        <TableCell>{product.categories.join(", ") || "—"}</TableCell>
+                                        <TableCell>{product.categories.length ? <Stack direction="row" flexWrap="wrap" gap={0.5}>{product.categories.slice(0, 2).map((category, index) => <Chip key={`${category}-${index}`} size="small" label={category} sx={{ bgcolor: "action.selected", color: "primary.dark", fontWeight: 600 }} />)}{product.categories.length > 2 && <Tooltip title={product.categories.slice(2).join(", ")}><Chip size="small" label={`+${product.categories.length - 2}`} tabIndex={0} aria-label={`Các danh mục khác: ${product.categories.slice(2).join(", ")}`} /></Tooltip>}</Stack> : "—"}</TableCell>
                                         <TableCell>{product.brand || "—"}</TableCell>
                                         <TableCell>
                                             <Chip

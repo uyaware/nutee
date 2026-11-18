@@ -20,6 +20,7 @@ import {
 } from "@/modules/management/components/AdminUI";
 import type { ManagementUser } from "@/modules/management/users/model/managementUser";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
+import { reportSuccessToast } from "@/shared/lib/successToast";
 
 export default function ConnectedUserDetailPage() {
     const { id } = useParams();
@@ -53,6 +54,7 @@ function Editor({ user, self }: { user: ManagementUser; self: boolean }) {
                 body: { role, isActive },
             }),
         onSuccess: async () => {
+            reportSuccessToast("Đã lưu quyền tài khoản.");
             setConfirm(false);
             await client.invalidateQueries({ queryKey: ["management"] });
         },
