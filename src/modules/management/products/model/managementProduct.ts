@@ -13,6 +13,12 @@ export type ManagementProduct = {
     images: ProductImage[];
     variants: ProductVariant[];
 };
-export type ProductSummary = Pick<ManagementProduct, "id" | "name" | "published" | "updatedAt">;
+export type ProductSummary = Pick<ManagementProduct, "id" | "name" | "published" | "updatedAt"> & {
+    imageUrl: string | null;
+    brand: string | null;
+    categories: string[];
+    avgRating: number | null;
+    soldCount: number | null;
+};
 export type ProductPage = { content: ProductSummary[]; totalElements: number; page: number; size: number };
 export type TaxonomyOption = { id: number; name: string; parentId: number | null };

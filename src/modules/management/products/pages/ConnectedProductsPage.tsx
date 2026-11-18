@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Button,
+    Box,
     Chip,
+    InputAdornment,
     Paper,
     Stack,
     Table,
@@ -13,8 +15,15 @@ import {
     TablePagination,
     TableRow,
     TextField,
+    Typography,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlined from "@mui/icons-material/VisibilityOffOutlined";
+import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
+import StarRounded from "@mui/icons-material/StarRounded";
 import { Link } from "react-router-dom";
 import { api } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
@@ -42,10 +51,11 @@ export default function ConnectedProductsPage() {
             ),
         retry: false,
     });
-    const remove = useMutation({
-        mutationFn: (id: number) =>
-            api.request<void>(`/management/products/${id}`, {
-                method: "DELETE",
+    const publication = useMutation({
+        mutationFn: (product: ProductSummary) =>
+            api.request(`/management/products/${product.id}/publication`, {
+                method: "PATCH",
+                body: { published: !product.published },
             }),
         onSuccess: async () => {
             setSelected(null);
@@ -75,35 +85,56 @@ export default function ConnectedProductsPage() {
             />
             <TextField
                 label="Tìm sản phẩm"
+                placeholder="Nhập tên sản phẩm"
+                slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchRounded color="action" /></InputAdornment> } }}
+                sx={{ maxWidth: 420 }}
                 value={q}
                 onChange={(event) => {
                     setQ(event.target.value);
                     setPage(0);
                 }}
             />
-            {remove.isError && <ErrorState error={remove.error} />}
+            {publication.isError && <ErrorState error={publication.error} />}
             {query.isPending ? (
                 <LoadingState />
             ) : query.isError ? (
                 <ErrorState error={query.error} />
             ) : (
-                <Paper variant="outlined">
-                    <TableContainer>
-                        <Table aria-label="Danh sách sản phẩm">
+                <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 2 }}>
+                    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ px: 3, py: 2 }}>
+                        <Inventory2Outlined color="primary" />
+                        <Typography variant="h3" component="h2">Danh sách sản phẩm</Typography>
+                        <Chip size="small" label={query.data.totalElements} />
+                    </Stack>
+                    <TableContainer tabIndex={0} role="region" aria-label="Danh sách sản phẩm">
+                        <Table aria-label="Danh sách sản phẩm" sx={{ minWidth: 1050, "& .MuiTableCell-root": { py: 1.5 } }}>
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Sản phẩm</TableCell>
+                                    <TableCell>Danh mục</TableCell>
+                                    <TableCell>Thương hiệu</TableCell>
                                     <TableCell>Hiển thị</TableCell>
+                                    <TableCell>Đánh giá</TableCell>
+                                    <TableCell>Đã bán</TableCell>
                                     <TableCell>Thao tác</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {query.data.content.map((product) => (
-                                    <TableRow key={product.id}>
-                                        <TableCell>{product.name}</TableCell>
+                                    <TableRow key={product.id} hover>
+                                        <TableCell>
+                                            <Stack direction="row" spacing={1.5} alignItems="center">
+                                                {product.imageUrl ? <Box component="img" src={product.imageUrl} alt="" sx={{ width: 56, height: 56, objectFit: "contain", borderRadius: 1 }} /> : <Box sx={{ width: 56, height: 56, bgcolor: "action.hover", borderRadius: 1 }} />}
+                                                <Button component={Link} to={`/management/products/${product.id}/edit`} sx={{ textAlign: "left", justifyContent: "flex-start", fontWeight: 700 }}>{product.name}</Button>
+                                            </Stack>
+                                        </TableCell>
+                                        <TableCell>{product.categories.join(", ") || "—"}</TableCell>
+                                        <TableCell>{product.brand || "—"}</TableCell>
                                         <TableCell>
                                             <Chip
                                                 size="small"
+                                                color={product.published ? "success" : "default"}
+                                                variant={product.published ? "outlined" : "filled"}
                                                 label={
                                                     product.published
                                                         ? "Công khai"
@@ -111,25 +142,30 @@ export default function ConnectedProductsPage() {
                                                 }
                                             />
                                         </TableCell>
+                                        <TableCell><Stack direction="row" alignItems="center" spacing={0.5}><StarRounded sx={{ color: "warning.main", fontSize: 18 }} /><span>{product.avgRating == null || product.avgRating <= 0 ? "_" : Number(product.avgRating.toFixed(1))}</span></Stack></TableCell>
+                                        <TableCell>{(product.soldCount ?? 0).toLocaleString("vi-VN")}</TableCell>
                                         <TableCell>
                                             <Button
                                                 component={Link}
                                                 to={`/management/products/${product.id}/edit`}
+                                                startIcon={<EditOutlined />}
                                             >
                                                 Sửa
                                             </Button>
                                             <Button
-                                                color="error"
+                                                disabled={publication.isPending}
+                                                startIcon={product.published ? <VisibilityOffOutlined /> : <VisibilityOutlined />}
                                                 onClick={() => {
-                                                    remove.reset();
+                                                    publication.reset();
                                                     setSelected(product);
                                                 }}
                                             >
-                                                Xóa
+                                                {product.published ? "Ngừng công khai" : "Công khai"}
                                             </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
+                                {query.data.content.length === 0 && <TableRow><TableCell colSpan={7} align="center" sx={{ py: 6 }}><Inventory2Outlined color="disabled" sx={{ fontSize: 36, mb: 1 }} /><Typography color="text.secondary">Không tìm thấy sản phẩm phù hợp.</Typography></TableCell></TableRow>}
                             </TableBody>
                         </Table>
                     </TableContainer>
@@ -145,13 +181,12 @@ export default function ConnectedProductsPage() {
             )}
             <AdminConfirm
                 open={!!selected}
-                title="Xóa sản phẩm?"
+                title={selected?.published ? "Ngừng công khai sản phẩm?" : "Công khai sản phẩm?"}
                 description={selected?.name ?? ""}
-                label="Xóa"
-                danger
+                label={selected?.published ? "Ngừng công khai" : "Công khai"}
                 onClose={() => setSelected(null)}
                 onConfirm={() => {
-                    if (selected) remove.mutate(selected.id);
+                    if (selected) publication.mutate(selected);
                 }}
             />
         </Stack>
