@@ -1,8 +1,8 @@
 import { useState } from "react";
+import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Button,
-    Chip,
     Dialog,
     DialogActions,
     DialogContent,
@@ -30,6 +30,7 @@ import type {
 } from "@/modules/management/users/model/managementUser";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
 import { reportSuccessToast } from "@/shared/lib/successToast";
+import { StatusBadge } from "@/shared/components/StatusBadge";
 
 export default function ConnectedUsersPage() {
     const session = useSession("backoffice");
@@ -147,8 +148,9 @@ export default function ConnectedUsersPage() {
                                             {roleLabels[user.role]}
                                         </TableCell>
                                         <TableCell>
-                                            <Chip
-                                                size="small"
+                                            <StatusBadge
+                                                kind="general"
+                                                status={user.isActive ? "active" : "locked"}
                                                 label={
                                                     user.isActive
                                                         ? "Hoạt động"
@@ -160,8 +162,9 @@ export default function ConnectedUsersPage() {
                                             <Button
                                                 component={Link}
                                                 to={`/management/users/${user.id}`}
+                                                startIcon={<VisibilityOutlined />}
                                             >
-                                                Chi tiết / quyền
+                                                Xem chi tiết
                                             </Button>
                                         </TableCell>
                                     </TableRow>

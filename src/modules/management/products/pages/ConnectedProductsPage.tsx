@@ -38,6 +38,7 @@ import type {
 } from "@/modules/management/products/model/managementProduct";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
 import { reportSuccessToast } from "@/shared/lib/successToast";
+import { StatusBadge } from "@/shared/components/StatusBadge";
 
 export default function ConnectedProductsPage() {
     const session = useSession("backoffice");
@@ -130,10 +131,9 @@ export default function ConnectedProductsPage() {
                                         <TableCell>{product.categories.length ? <Stack direction="row" flexWrap="wrap" gap={0.5}>{product.categories.slice(0, 2).map((category, index) => <Chip key={`${category}-${index}`} size="small" label={category} sx={{ bgcolor: "action.selected", color: "primary.dark", fontWeight: 600 }} />)}{product.categories.length > 2 && <Tooltip title={product.categories.slice(2).join(", ")}><Chip size="small" label={`+${product.categories.length - 2}`} tabIndex={0} aria-label={`Các danh mục khác: ${product.categories.slice(2).join(", ")}`} /></Tooltip>}</Stack> : "—"}</TableCell>
                                         <TableCell>{product.brand || "—"}</TableCell>
                                         <TableCell>
-                                            <Chip
-                                                size="small"
-                                                color={product.published ? "success" : "default"}
-                                                variant={product.published ? "outlined" : "filled"}
+                                            <StatusBadge
+                                                kind="general"
+                                                status={product.published ? "published" : "hidden"}
                                                 label={
                                                     product.published
                                                         ? "Công khai"

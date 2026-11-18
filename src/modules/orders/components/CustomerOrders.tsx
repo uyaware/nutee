@@ -3,7 +3,6 @@ import {
     Alert,
     Box,
     Button,
-    Chip,
     Dialog,
     DialogActions,
     DialogContent,
@@ -39,7 +38,8 @@ import {
 import { dateTime, money } from "@/shared/lib/format";
 import { OrderHistoryPanel } from "@/modules/orders/components/OrderHistoryPanel";
 import { OrderDetailProducts } from "@/modules/orders/components/OrderDetailProducts";
-import { orderStatusColor, paymentStatusColor } from "@/modules/orders/model/managementStatus";
+import { StatusBadge } from "@/shared/components/StatusBadge";
+import { paymentStatusColor } from "@/shared/lib/paymentStatusColor";
 
 const statuses = [
     ["all", "Tất cả"],
@@ -182,11 +182,7 @@ export function CustomerOrderHistory({
                                         {dateTime(order.createdAt)}
                                     </Typography>
                                 </Box>
-                                <Chip
-                                    label={statusLabel(order.status)}
-                                    variant="outlined"
-                                    size="small"
-                                />
+                                <StatusBadge status={order.status} label={statusLabel(order.status)} />
                             </Stack>
                             <Stack spacing={2.5} sx={{ p: { xs: 2, sm: 3 } }}>
                                 {!compact && (
@@ -208,11 +204,8 @@ export function CustomerOrderHistory({
                                             {order.paymentMethod === "cod"
                                                 ? "Thanh toán khi nhận hàng"
                                                 : "Thanh toán bằng QR"}{" "}
-                                            ·{" "}
-                                            {paymentLabels[
-                                                order.paymentStatus
-                                            ] ?? order.paymentStatus}
                                         </Typography>
+                                        <StatusBadge kind="payment" status={order.paymentStatus} label={paymentLabels[order.paymentStatus] ?? order.paymentStatus} />
                                         <Typography fontWeight={600}>
                                             Tổng tiền: {money(order.total)}
                                         </Typography>
@@ -319,7 +312,7 @@ export function CustomerOrderDetail() {
             </Button>
             <Stack direction="row" gap={2} alignItems="center">
                 <Typography variant="h1">Đơn hàng {order.code}</Typography>
-                <Chip color={orderStatusColor(order.status)} label={statusLabel(order.status)} />
+                <StatusBadge status={order.status} label={statusLabel(order.status)} />
             </Stack>
             <Typography color="text.secondary">
                 Đặt lúc {dateTime(order.createdAt)}
@@ -372,7 +365,7 @@ export function CustomerOrderDetail() {
                     <Box sx={(theme) => ({ p: 2, borderRadius: 2, border: "1px solid", borderColor: paymentColor === "default" ? theme.palette.divider : alpha(theme.palette[paymentColor].main, 0.35), bgcolor: paymentColor === "default" ? theme.palette.action.hover : alpha(theme.palette[paymentColor].main, 0.08) })}>
                         <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} flexWrap="wrap">
                             <Stack direction="row" spacing={1} alignItems="center"><PaymentsOutlined color="action" /><Typography fontWeight={700}>Thanh toán</Typography></Stack>
-                            <Chip size="small" color={paymentColor} label={paymentLabels[order.paymentStatus] ?? order.paymentStatus} />
+                            <StatusBadge kind="payment" status={order.paymentStatus} label={paymentLabels[order.paymentStatus] ?? order.paymentStatus} />
                         </Stack>
                         <Stack direction="row" justifyContent="space-between" gap={2} flexWrap="wrap" sx={{ mt: 1.5 }}>
                             <Typography variant="body2">{order.paymentMethod === "cod" ? "Thanh toán khi nhận hàng" : "Chuyển khoản qua payOS"}</Typography>

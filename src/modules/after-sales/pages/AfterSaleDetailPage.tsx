@@ -1,5 +1,6 @@
 import {
     Box,
+    Alert,
     Button,
     Dialog,
     DialogActions,
@@ -11,12 +12,16 @@ import {
     Typography,
 } from "@mui/material";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
+import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
+import HighlightOffRounded from "@mui/icons-material/HighlightOffRounded";
+import ReceiptLongOutlined from "@mui/icons-material/ReceiptLongOutlined";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
     afterSaleActions,
     afterSaleLabels,
     afterSaleTypes,
     type AfterSaleStatus,
+    type AfterSaleRequest,
 } from "@/modules/after-sales/model/types";
 import type { Portal } from "@/shared/types/database";
 import { dateTime } from "@/shared/lib/format";
@@ -32,6 +37,15 @@ import { services } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
 import { StatusHistoryStepper } from "@/shared/components/StatusHistoryStepper";
 import { OrderProducts } from "@/modules/checkout/components/CheckoutSummary";
+import { reportSuccessToast } from "@/shared/lib/successToast";
+
+const workflow: { status: AfterSaleStatus; title: string; description: string }[] = [
+    { status: "pending", title: "Yêu cầu được tạo", description: "Yêu cầu đã được ghi nhận." },
+    { status: "reviewing", title: "Tiếp nhận và kiểm tra", description: "Kiểm tra thông tin yêu cầu." },
+    { status: "approved", title: "Chấp thuận yêu cầu", description: "Xác nhận yêu cầu đủ điều kiện xử lý." },
+    { status: "processing", title: "Đang xử lý", description: "Thực hiện bảo hành hoặc đổi trả." },
+    { status: "completed", title: "Hoàn tất", description: "Xác nhận đã hoàn tất xử lý." },
+];
 
 export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
     const customer = portal === "customer";
@@ -54,6 +68,7 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
         mutationFn: (status: AfterSaleStatus) =>
             services.afterSales.transition(Number(id), request!.status, status),
         onSuccess: async (updated) => {
+            reportSuccessToast("Đã cập nhật trạng thái yêu cầu.");
             client.setQueryData(key, updated);
             setNext(null);
             await client.invalidateQueries({
@@ -118,7 +133,7 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                     display: "grid",
                     gridTemplateColumns: {
                         xs: "minmax(0, 1fr)",
-                        lg: "minmax(0, 1fr) 320px",
+                        lg: customer ? "minmax(0, 1fr) 320px" : "minmax(0, 1.1fr) minmax(0, 1fr)",
                     },
                     gap: 3,
                     alignItems: "start",
@@ -176,6 +191,7 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                                     component={Link}
                                     to={`${customer ? "/account" : "/management"}/orders/${request.orderId}`}
                                     variant="outlined"
+                                    startIcon={<ReceiptLongOutlined />}
                                     sx={{ alignSelf: "flex-start" }}
                                 >
                                     Xem đơn {request.orderCode}
@@ -183,6 +199,15 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                             )}
                         </Stack>
                     </Paper>
+                    {!customer && <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+                        <Stack spacing={1}>
+                            <Typography variant="h2">Liên hệ khách hàng</Typography>
+                            <Typography fontWeight={600}>{request.customer.name || "Chưa cập nhật"}</Typography>
+                            <Typography>{request.customer.phone || "Chưa cập nhật"}</Typography>
+                            <Typography color="text.secondary">{request.customer.addressLine || "Chưa có địa chỉ"}</Typography>
+                        </Stack>
+                    </Paper>}
+                    {customer && (
                     <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
                         <Stack spacing={2}>
                             <Typography variant="h2">
@@ -204,8 +229,10 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                             />
                         </Stack>
                     </Paper>
+                    )}
                 </Stack>
                 <Stack spacing={3}>
+                    {customer && (
                     <Paper variant="outlined" sx={{ p: 3 }}>
                         <Stack spacing={1.5}>
                             <Typography variant="h3" component="h2">
@@ -220,39 +247,9 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                             </Typography>
                         </Stack>
                     </Paper>
+                    )}
                     {!customer && (
-                        <Paper variant="outlined" sx={{ p: 3 }}>
-                            <Stack spacing={2}>
-                                {transition.isError && (
-                                    <ErrorState error={transition.error} />
-                                )}
-                                {(afterSaleActions[status] ?? []).map(
-                                    (action) => (
-                                        <Button
-                                            key={action.status}
-                                            variant="contained"
-                                            color={
-                                                action.status === "rejected"
-                                                    ? "error"
-                                                    : "primary"
-                                            }
-                                            disabled={transition.isPending}
-                                            onClick={() => {
-                                                transition.reset();
-                                                setNext(action.status);
-                                            }}
-                                        >
-                                            {action.label}
-                                        </Button>
-                                    ),
-                                )}
-                                {!afterSaleActions[status]?.length && (
-                                    <Typography color="text.secondary">
-                                        Yêu cầu đã kết thúc xử lý.
-                                    </Typography>
-                                )}
-                            </Stack>
-                        </Paper>
+                        <AfterSaleWorkflow request={request} pending={transition.isPending} onSelect={(target) => { transition.reset(); setNext(target); }} />
                     )}
                     {customer && (
                         <Button
@@ -303,4 +300,49 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
             </Dialog>
         </Stack>
     );
+}
+
+function AfterSaleWorkflow({ request, pending, onSelect }: {
+    request: AfterSaleRequest;
+    pending: boolean;
+    onSelect: (status: AfterSaleStatus) => void;
+}) {
+    const actions = afterSaleActions[request.status] ?? [];
+    const lastReached = request.status === "rejected"
+        ? [...request.history].reverse().find((entry) => entry.status !== "rejected")?.status
+        : request.status;
+    const currentStep = workflow.findIndex((step) => step.status === lastReached);
+    return <>
+        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+            <Stack spacing={2.5}>
+                <Box><Typography variant="h2">Xử lý yêu cầu</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Xác nhận từng bước theo tiến trình yêu cầu.</Typography></Box>
+                {request.status === "rejected" && <Alert severity="warning">Yêu cầu đã bị từ chối.</Alert>}
+                <Stack spacing={0}>
+                    {workflow.map((step, index) => {
+                        const completed = index <= currentStep;
+                        const action = actions.find((item) => item.status === step.status);
+                        const previousAction = index > 0 ? afterSaleActions[workflow[index - 1].status]?.find((item) => item.status === step.status) : undefined;
+                        return <Stack key={step.status} direction="row" spacing={1.5} useFlexGap alignItems="flex-start" sx={{ position: "relative", pb: index < workflow.length - 1 ? 3 : 0, flexWrap: "wrap", rowGap: 1 }}>
+                            {index < workflow.length - 1 && <Box aria-hidden="true" sx={{ position: "absolute", left: 16, top: 34, bottom: 0, width: 2, bgcolor: currentStep > index ? "primary.main" : "divider" }} />}
+                            <Box sx={{ width: 34, height: 34, flexShrink: 0, borderRadius: "50%", display: "grid", placeItems: "center", bgcolor: completed ? "primary.main" : "action.hover", color: completed ? "primary.contrastText" : "text.secondary", fontWeight: 700, position: "relative" }}>{index + 1}</Box>
+                            <Box sx={{ flex: 1, minWidth: 120 }}><Typography fontWeight={700}>{step.title}</Typography><Typography variant="body2" color="text.secondary">{step.description}</Typography></Box>
+                            {previousAction && <Button size="small" variant={action ? "contained" : "outlined"} disabled={!action || pending} startIcon={<CheckCircleOutlineRounded />} onClick={() => onSelect(step.status)}>{completed ? "Đã hoàn thành" : previousAction.label}</Button>}
+                        </Stack>;
+                    })}
+                </Stack>
+                {actions.some((action) => action.status === "rejected") && <Button color="error" variant="outlined" startIcon={<HighlightOffRounded />} disabled={pending} sx={{ alignSelf: "flex-end" }} onClick={() => onSelect("rejected")}>Từ chối</Button>}
+            </Stack>
+        </Paper>
+        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+            <Stack spacing={2}>
+                <Typography variant="h2">Lịch sử trạng thái</Typography>
+                {request.history.length ? <Stack component="ol" aria-label="Lịch sử trạng thái yêu cầu" divider={<Divider />} sx={{ p: 0, m: 0, listStyle: "none" }}>
+                    {request.history.map((entry, index) => <Stack component="li" key={`${entry.at}-${index}`} direction="row" gap={2} sx={{ py: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ width: 135, flexShrink: 0 }}>{dateTime(entry.at)}</Typography>
+                        <Box sx={{ minWidth: 0 }}><Typography fontWeight={600}>{afterSaleLabels[entry.status] ?? entry.status}</Typography><Typography variant="body2" color="text.secondary">{entry.actorName ?? "Hệ thống"}</Typography></Box>
+                    </Stack>)}
+                </Stack> : <Alert severity="info">Chưa có lịch sử trạng thái được ghi nhận cho yêu cầu này.</Alert>}
+            </Stack>
+        </Paper>
+    </>;
 }

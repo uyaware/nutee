@@ -3,7 +3,6 @@ import {
     Autocomplete,
     Box,
     Button,
-    Chip,
     Dialog,
     DialogActions,
     DialogContent,
@@ -34,6 +33,7 @@ import {
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
 import { reportErrorToast } from "@/shared/lib/errorToast";
 import { reportSuccessToast } from "@/shared/lib/successToast";
+import { StatusBadge } from "@/shared/components/StatusBadge";
 import { money } from "@/shared/lib/format";
 
 const localDateTime = (iso: string) =>
@@ -491,12 +491,10 @@ function Editor({
                     </AdminSection>
                 </Stack>
                 <AdminSection title="Xem trước ưu đãi">
-                    <Chip
+                    <StatusBadge
+                        kind="general"
+                        status={previewStatus}
                         label={discountStatusLabels[previewStatus]}
-                        color={
-                            previewStatus === "active" ? "success" : "default"
-                        }
-                        sx={{ alignSelf: "flex-start" }}
                     />
                     <Typography
                         variant="h3"

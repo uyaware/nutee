@@ -1,4 +1,4 @@
-import { Chip } from "@mui/material";
+import { StatusBadge } from "@/shared/components/StatusBadge";
 import {
     afterSaleLabels,
     type AfterSaleStatus,
@@ -6,19 +6,10 @@ import {
 
 export function AfterSaleBadge({ status }: { status: AfterSaleStatus }) {
     return (
-        <Chip
-            size="small"
-            variant="outlined"
+        <StatusBadge
+            kind="general"
+            status={status}
             label={afterSaleLabels[status] ?? status}
-            color={
-                status === "completed" || status === "approved"
-                    ? "success"
-                    : status === "rejected"
-                      ? "error"
-                      : status === "pending"
-                        ? "warning"
-                        : "primary"
-            }
         />
     );
 }

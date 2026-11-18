@@ -14,10 +14,18 @@ import {
     DialogContent,
     DialogTitle,
     FormControlLabel,
+    IconButton,
     MenuItem,
     Radio,
     Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
     TextField,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
@@ -213,7 +221,7 @@ function ProductEditor({
                     </Button>
                 }
             />
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1fr) minmax(0, 1fr)" }, gap: 3, alignItems: "start" }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 3fr) minmax(0, 7fr)" }, gap: 3, alignItems: "start" }}>
             <Stack spacing={3}>
             <Stack
                 component="form"
@@ -322,13 +330,13 @@ function ProductEditor({
                                 <Box sx={{ width: 90, textAlign: "center" }}><Radio checked={image.primary} onChange={() => primary.mutate(image)} disabled={primary.isPending} inputProps={{ "aria-label": `Chọn ảnh ${image.id} làm ảnh chính` }} /></Box>
                                 <Box component="img" src={image.url} alt="Ảnh sản phẩm" sx={{ width: 80, height: 80, objectFit: "contain", borderRadius: 1, bgcolor: "action.hover", mr: "auto" }} />
                                 <Stack direction="row" sx={{ ml: "auto" }}>
-                                    <Button size="small" startIcon={<EditOutlined />} onClick={() => setImageDraft(image)}>
-                                        Sửa
-                                    </Button>
-                                    <Button
+                                    <Tooltip title="Sửa ảnh"><IconButton size="small" aria-label={`Sửa ảnh ${image.id}`} onClick={() => setImageDraft(image)}>
+                                        <EditOutlined fontSize="small" />
+                                    </IconButton></Tooltip>
+                                    <Tooltip title="Xóa ảnh"><IconButton
                                         color="error"
                                         size="small"
-                                        startIcon={<DeleteOutlineRounded />}
+                                        aria-label={`Xóa ảnh ${image.id}`}
                                         onClick={() => {
                                             remove.reset();
                                             setDeleting({
@@ -338,8 +346,8 @@ function ProductEditor({
                                             });
                                         }}
                                     >
-                                        Xóa
-                                    </Button>
+                                        <DeleteOutlineRounded fontSize="small" />
+                                    </IconButton></Tooltip>
                                 </Stack>
                             </Stack>
                         ))}
@@ -361,35 +369,37 @@ function ProductEditor({
                     {remove.isError && <ErrorState error={remove.error} />}
                     {primaryVariant.isError && <ErrorState error={primaryVariant.error} />}
                     <AdminSection title="Biến thể" description="Quản lý cấu hình, giá bán và số lượng tồn kho.">
-                        {product.variants.length > 0 && <Typography variant="body2" color="text.secondary" sx={{ width: 100, textAlign: "center" }}>Biến thể chính</Typography>}
-                        {product.variants.map((variant) => (
-                            <Stack
-                                key={variant.id}
-                                direction="row"
-                                gap={1}
-                                alignItems="center"
-                                flexWrap="wrap"
-                                sx={{ p: 1.5, border: "1px solid", borderColor: defaultVariantId === String(variant.id) ? "primary.light" : "divider", bgcolor: defaultVariantId === String(variant.id) ? "action.selected" : "background.paper", borderRadius: 2 }}
-                            >
-                                <Box sx={{ width: 100, textAlign: "center" }}><Radio checked={defaultVariantId === String(variant.id)} onChange={() => primaryVariant.mutate(variant.id)} disabled={primaryVariant.isPending || save.isPending} inputProps={{ "aria-label": `Chọn ${variant.sku} làm biến thể chính` }} /></Box>
-                                {product.images.find((image) => image.id === variant.imageId) && <Box component="img" src={product.images.find((image) => image.id === variant.imageId)!.url} alt="" sx={{ width: 64, height: 64, objectFit: "contain", borderRadius: 1, bgcolor: "action.hover" }} />}
-                                <Box sx={{ flex: 1, minWidth: 160 }}>
-                                    <Button onClick={() => setVariantDraft(variant)} sx={{ p: 0 }}>{variant.sku}</Button>
-                                    <Typography variant="body2" color="text.secondary">{variant.specifications.map((spec) => `${spec.name}: ${spec.value}`).join(" · ") || "Chưa có cấu hình"}</Typography>
-                                    <Typography variant="body2">{variant.price.toLocaleString("vi-VN")} ₫ · Tồn {variant.quantity}</Typography>
-                                </Box>
-                                <Stack direction="row" sx={{ ml: "auto" }}>
-                                    <Button
+                        {product.variants.length > 0 && <TableContainer tabIndex={0} role="region" aria-label="Danh sách biến thể">
+                            <Table size="small" sx={{ minWidth: 680 }} aria-label="Danh sách biến thể">
+                                <TableHead><TableRow>
+                                    <TableCell align="center">Biến thể chính</TableCell>
+                                    <TableCell>Biến thể</TableCell>
+                                    <TableCell>Giá bán</TableCell>
+                                    <TableCell>Tồn kho</TableCell>
+                                    <TableCell align="right">Thao tác</TableCell>
+                                </TableRow></TableHead>
+                                <TableBody>{product.variants.map((variant) => (
+                            <TableRow key={variant.id} hover sx={defaultVariantId === String(variant.id) ? { bgcolor: "action.hover" } : undefined}>
+                                <TableCell align="center"><Radio checked={defaultVariantId === String(variant.id)} onChange={() => primaryVariant.mutate(variant.id)} disabled={primaryVariant.isPending || save.isPending} inputProps={{ "aria-label": `Chọn ${variant.sku} làm biến thể chính` }} /></TableCell>
+                                <TableCell><Stack direction="row" spacing={1.5} alignItems="center">
+                                    {product.images.find((image) => image.id === variant.imageId) ? <Box component="img" src={product.images.find((image) => image.id === variant.imageId)!.url} alt="" sx={{ width: 56, height: 56, objectFit: "contain", borderRadius: 1, bgcolor: "action.hover", flexShrink: 0 }} /> : <Box sx={{ width: 56, height: 56, display: "grid", placeItems: "center", bgcolor: "action.hover", color: "text.secondary", borderRadius: 1, flexShrink: 0 }}><ImageOutlined /></Box>}
+                                    <Box sx={{ minWidth: 150 }}><Button onClick={() => setVariantDraft(variant)} sx={{ p: 0, fontWeight: 700 }}>{variant.sku}</Button>
+                                    <Typography variant="body2" color="text.secondary">{variant.specifications.map((spec) => `${spec.name}: ${spec.value}`).join(" · ") || "Chưa có cấu hình"}</Typography></Box>
+                                </Stack></TableCell>
+                                <TableCell sx={{ whiteSpace: "nowrap" }}>{variant.price.toLocaleString("vi-VN")} ₫</TableCell>
+                                <TableCell>{variant.quantity.toLocaleString("vi-VN")}</TableCell>
+                                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                                    <Tooltip title="Sửa biến thể"><IconButton
                                         onClick={() => setVariantDraft(variant)}
                                         size="small"
-                                        startIcon={<EditOutlined />}
+                                        aria-label={`Sửa biến thể ${variant.sku}`}
                                     >
-                                        Sửa
-                                    </Button>
-                                    <Button
+                                        <EditOutlined fontSize="small" />
+                                    </IconButton></Tooltip>
+                                    <Tooltip title="Xóa biến thể"><IconButton
                                         color="error"
                                         size="small"
-                                        startIcon={<DeleteOutlineRounded />}
+                                        aria-label={`Xóa biến thể ${variant.sku}`}
                                         onClick={() => {
                                             remove.reset();
                                             setDeleting({
@@ -399,11 +409,13 @@ function ProductEditor({
                                             });
                                         }}
                                     >
-                                        Xóa
-                                    </Button>
-                                </Stack>
-                            </Stack>
-                        ))}
+                                        <DeleteOutlineRounded fontSize="small" />
+                                    </IconButton></Tooltip>
+                                </TableCell>
+                            </TableRow>
+                        ))}</TableBody>
+                            </Table>
+                        </TableContainer>}
                         {product.variants.length === 0 && <Stack alignItems="center" spacing={1} sx={{ py: 4, color: "text.secondary", border: "1px dashed", borderColor: "divider", borderRadius: 2 }}><Inventory2Outlined sx={{ fontSize: 36 }} /><Typography>Chưa có biến thể</Typography><Typography variant="body2">Thêm biến thể để quản lý giá và tồn kho.</Typography></Stack>}
                         <Button
                             onClick={() => setVariantDraft("new")}

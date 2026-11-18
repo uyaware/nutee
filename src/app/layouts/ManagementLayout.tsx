@@ -457,6 +457,9 @@ export function ManagementLayout() {
                         "& .MuiOutlinedInput-root:has(input[type='search'])": {
                             backgroundColor: "common.white",
                         },
+                        "& .MuiTableRow-root :is(.MuiButton-text, .MuiButton-outlined, .MuiIconButton-root):hover": {
+                            backgroundColor: "transparent",
+                        },
                     }}
                 >
                     <Button

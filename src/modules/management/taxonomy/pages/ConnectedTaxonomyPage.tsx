@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Alert,
     Button,
+    Box,
+    Chip,
     Dialog,
     DialogActions,
     DialogContent,
@@ -14,6 +16,10 @@ import {
     Typography,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
+import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
+import SellOutlined from "@mui/icons-material/SellOutlined";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import { api } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
 import {
@@ -128,11 +134,14 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
             <TextField
                 label={`Tìm ${label}`}
                 type="search"
+                sx={{ maxWidth: 420 }}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
             />
             <AdminTable
                 label={`Danh sách ${label}`}
+                pageSize={20}
+                compact
                 rows={rows}
                 columns={[
                     "Tên",
@@ -142,19 +151,28 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
                 ]}
                 renderRow={(row) => (
                     <>
-                        <TableCell>{row.name}</TableCell>
+                        <TableCell>
+                            <Stack direction="row" spacing={1.25} alignItems="center">
+                                <Box sx={{ width: 34, height: 34, borderRadius: 1.5, bgcolor: "action.selected", color: "primary.main", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                                    {kind === "categories" ? <CategoryOutlined fontSize="small" /> : <SellOutlined fontSize="small" />}
+                                </Box>
+                                <Typography variant="body2" fontWeight={600}>{row.name}</Typography>
+                            </Stack>
+                        </TableCell>
                         {kind === "categories" && (
                             <TableCell>
-                                {row.parentId
+                                <Chip size="small" variant={row.parentId ? "outlined" : "filled"} label={row.parentId
                                     ? (allCategories.data?.find(
                                           (item) => item.id === row.parentId,
                                       )?.name ?? "…")
-                                    : "Danh mục gốc"}
+                                    : "Danh mục gốc"} />
                             </TableCell>
                         )}
-                        <TableCell>{row.productCount}</TableCell>
-                        <TableCell>
+                        <TableCell><Typography variant="body2" color="text.secondary">{row.productCount.toLocaleString("vi-VN")}</Typography></TableCell>
+                        <TableCell sx={{ whiteSpace: "nowrap" }}>
                             <Button
+                                size="small"
+                                startIcon={<EditOutlined />}
                                 onClick={() => {
                                     save.reset();
                                     setDraft({
@@ -169,6 +187,8 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
                             </Button>
                             <Button
                                 color="error"
+                                size="small"
+                                startIcon={<DeleteOutlineRounded />}
                                 onClick={() => {
                                     remove.reset();
                                     setSelected(

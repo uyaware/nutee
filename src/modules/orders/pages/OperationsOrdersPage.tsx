@@ -211,7 +211,7 @@ export default function OperationsOrdersPage() {
                       to={`/management/orders/${order.id}`}
                       state={{ backTo: `/management/orders?${params}` }}
                     >
-                      Xem / xử lý
+                      Xem chi tiết
                     </Button>
                   </TableCell>
                 </TableRow>

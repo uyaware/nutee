@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
     Button,
-    Chip,
     Dialog,
     DialogActions,
     DialogContent,
@@ -20,6 +19,7 @@ import {
     Typography,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
+import { StatusBadge } from "@/shared/components/StatusBadge";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { services } from "@/app/services";
@@ -192,14 +192,9 @@ export function DiscountList({ kind }: { kind: DiscountKind }) {
                                                   : `${item.userIds.length} khách hàng`}
                                         </TableCell>
                                         <TableCell>
-                                            <Chip
-                                                size="small"
-                                                variant="outlined"
-                                                color={
-                                                    item.status === "active"
-                                                        ? "success"
-                                                        : "default"
-                                                }
+                                            <StatusBadge
+                                                kind="general"
+                                                status={item.status}
                                                 label={
                                                     discountStatusLabels[
                                                         item.status

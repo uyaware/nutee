@@ -91,10 +91,10 @@ function UserEditor({ user }: { user: User }) {
           <Typography>Điện thoại: {user.phone || "Chưa cập nhật"}</Typography>
           <Stack direction="row" gap={1} flexWrap="wrap">
             <Chip label={roleLabels[user.role]} variant="outlined" />
-            <Chip
+            <StatusBadge
+              kind="general"
+              status={user.isActive ? "active" : "locked"}
               label={user.isActive ? "Hoạt động" : "Đã khóa"}
-              variant="outlined"
-              color={user.isActive ? "success" : "error"}
             />
           </Stack>
           <Typography variant="body2" color="text.secondary">

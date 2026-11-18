@@ -1,4 +1,4 @@
-import { Button, Chip, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField } from "@mui/material";
+import { Button, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField } from "@mui/material";
 import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -6,7 +6,7 @@ import { services } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
 import { useAdminFilters } from "@/modules/management/hooks/useAdminFilters";
 import { paymentLabels } from "@/modules/orders/model/api";
-import { orderStatusColor, paymentStatusColor } from "@/modules/orders/model/managementStatus";
+import { StatusBadge } from "@/shared/components/StatusBadge";
 import { PageHeading } from "@/shared/components/PageHeading";
 import { ErrorState, LoadingState } from "@/shared/components/Feedback";
 import { dateTime, money } from "@/shared/lib/format";
@@ -37,9 +37,9 @@ export default function ConnectedOperationsOrdersPage({ compact = false }: { com
             <TableContainer><Table sx={{ minWidth: 960 }} aria-label="Bảng đơn hàng vận hành"><TableHead><TableRow>{["Mã đơn / thời gian", "Người nhận", "Trạng thái", "Phương thức thanh toán", "Trạng thái thanh toán", "Tổng tiền", "Thao tác"].map((label) => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead>
                 <TableBody>{query.data.content.map((order) => <TableRow key={order.id} hover>
                     <TableCell>{order.code}<br />{dateTime(order.createdAt)}</TableCell><TableCell>{order.recipient || "Chưa cập nhật"}<br />{order.phone || "—"}</TableCell>
-                    <TableCell><Chip size="small" color={orderStatusColor(order.status)} label={statuses[order.status] ?? order.status} /></TableCell>
+                    <TableCell><StatusBadge status={order.status} label={statuses[order.status] ?? order.status} /></TableCell>
                     <TableCell>{order.paymentMethod === "cod" ? "COD" : order.paymentMethod === "qr" ? "payOS" : "—"}</TableCell>
-                    <TableCell><Chip size="small" color={paymentStatusColor(order.paymentStatus)} label={paymentLabels[order.paymentStatus] ?? order.paymentStatus} /></TableCell><TableCell>{money(order.total)}</TableCell>
+                    <TableCell><StatusBadge kind="payment" status={order.paymentStatus} label={paymentLabels[order.paymentStatus] ?? order.paymentStatus} /></TableCell><TableCell>{money(order.total)}</TableCell>
                     <TableCell><Button component={Link} to={`/management/orders/${order.id}`} startIcon={<VisibilityOutlined />}>Xem chi tiết</Button></TableCell>
                 </TableRow>)}{!query.data.content.length && <TableRow><TableCell colSpan={7} align="center">Không có đơn phù hợp. {!compact && <Button onClick={reset}>Xóa bộ lọc</Button>}</TableCell></TableRow>}</TableBody>
             </Table></TableContainer>

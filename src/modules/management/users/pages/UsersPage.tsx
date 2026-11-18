@@ -1,4 +1,5 @@
 import { useAdminFilters } from "@/modules/management/hooks/useAdminFilters";
+import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
 import {
   Avatar,
   Button,
@@ -16,6 +17,7 @@ import {
   AdminTable,
 } from "@/modules/management/components/AdminUI";
 import { useAdminPrototype } from "@/modules/management/model/adminPrototypeContext";
+import { StatusBadge } from "@/shared/components/StatusBadge";
 
 export default function UsersPage() {
   const { data } = useAdminPrototype();
@@ -113,10 +115,9 @@ export default function UsersPage() {
             </TableCell>
             <TableCell>{roleLabels[u.role]}</TableCell>
             <TableCell>
-              <Chip
-                variant="outlined"
-                size="small"
-                color={u.isActive ? "success" : "error"}
+              <StatusBadge
+                kind="general"
+                status={u.isActive ? "active" : "locked"}
                 label={u.isActive ? "Hoạt động" : "Đã khóa"}
               />
             </TableCell>
@@ -124,9 +125,10 @@ export default function UsersPage() {
               <Button
                 component={Link}
                 to={`/management/users/${u.id}`}
+                startIcon={<VisibilityOutlined />}
                 state={{ backTo: `/management/users?${params}` }}
               >
-                Chi tiết / quyền
+                Xem chi tiết
               </Button>
             </TableCell>
           </>

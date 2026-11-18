@@ -1,5 +1,6 @@
 import {
     Button,
+    Chip,
     MenuItem,
     Paper,
     Stack,
@@ -15,6 +16,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
 import { Link, useSearchParams } from "react-router-dom";
 import {
     afterSaleLabels,
@@ -92,7 +94,7 @@ export default function AfterSalesPage({ portal }: { portal: Portal }) {
                     </Button>
                 )}
             </Stack>
-            <Paper variant="outlined" sx={{ minWidth: 0 }}>
+            {customer && <Paper variant="outlined" sx={{ minWidth: 0 }}>
                 <Tabs
                     value={status}
                     onChange={(_, value: string) => update("status", value)}
@@ -105,7 +107,7 @@ export default function AfterSalesPage({ portal }: { portal: Portal }) {
                         <Tab key={value} value={value} label={label} />
                     ))}
                 </Tabs>
-            </Paper>
+            </Paper>}
             <Stack
                 direction={{ xs: "column", sm: "row" }}
                 gap={2}
@@ -119,6 +121,10 @@ export default function AfterSalesPage({ portal }: { portal: Portal }) {
                     onChange={(event) => update("q", event.target.value)}
                     sx={{ flex: "1 1 0", minWidth: 0 }}
                 />
+                {!customer && <TextField select label="Trạng thái yêu cầu" value={status} onChange={(event) => update("status", event.target.value)} sx={{ width: { xs: "100%", sm: 220 }, flexShrink: 0 }}>
+                    <MenuItem value="all">Tất cả trạng thái</MenuItem>
+                    {Object.entries(afterSaleLabels).map(([value, text]) => <MenuItem key={value} value={value}>{text}</MenuItem>)}
+                </TextField>}
                 <TextField
                     select
                     label="Loại yêu cầu"
@@ -150,10 +156,10 @@ export default function AfterSalesPage({ portal }: { portal: Portal }) {
                         <TableHead>
                             <TableRow>
                                 {[
-                                    "Yêu cầu",
+                                    "Loại yêu cầu",
                                     "Sản phẩm / đơn hàng",
-                                    "Loại",
                                     "Trạng thái",
+                                    "Thời gian tạo",
                                     "Thao tác",
                                 ].map((label) => (
                                     <TableCell key={label}>{label}</TableCell>
@@ -165,10 +171,8 @@ export default function AfterSalesPage({ portal }: { portal: Portal }) {
                                 const item = request.item;
                                 return (
                                     <TableRow key={request.id} hover>
-                                        <TableCell component="th" scope="row">
-                                            {String(request.id)}
-                                            <br />
-                                            {dateTime(request.createdAt)}
+                                        <TableCell>
+                                            <Chip size="small" label={afterSaleTypes[request.type] ?? request.type} sx={{ bgcolor: "action.selected", color: "primary.main", fontWeight: 700 }} />
                                         </TableCell>
                                         <TableCell>
                                             {item?.name}
@@ -178,25 +182,21 @@ export default function AfterSalesPage({ portal }: { portal: Portal }) {
                                                 ` · ${request.customer.name}`}
                                         </TableCell>
                                         <TableCell>
-                                            {afterSaleTypes[request.type] ??
-                                                request.type}
-                                        </TableCell>
-                                        <TableCell>
                                             <AfterSaleBadge
                                                 status={request.status}
                                             />
                                         </TableCell>
+                                        <TableCell>{dateTime(request.createdAt)}</TableCell>
                                         <TableCell>
                                             <Button
                                                 component={Link}
+                                                startIcon={<VisibilityOutlined />}
                                                 to={`${base}/${request.id}`}
                                                 state={{
                                                     backTo: `${base}?${params}`,
                                                 }}
                                             >
-                                                {customer
-                                                    ? "Xem chi tiết"
-                                                    : "Xem / xử lý"}
+                                                Xem chi tiết
                                             </Button>
                                         </TableCell>
                                     </TableRow>

@@ -3,7 +3,6 @@ import {
     Alert,
     Box,
     Button,
-    Chip,
     Dialog,
     DialogActions,
     DialogContent,
@@ -25,7 +24,8 @@ import { OrderTotals } from "@/modules/checkout/components/CheckoutSummary";
 import { OrderDetailProducts } from "@/modules/orders/components/OrderDetailProducts";
 import { OrderHistoryPanel } from "@/modules/orders/components/OrderHistoryPanel";
 import { paymentLabels } from "@/modules/orders/model/api";
-import { orderStatusColor, paymentStatusColor } from "@/modules/orders/model/managementStatus";
+import { StatusBadge } from "@/shared/components/StatusBadge";
+import { paymentStatusColor } from "@/shared/lib/paymentStatusColor";
 import {
     EmptyState,
     ErrorState,
@@ -147,7 +147,7 @@ export function ManagementOrderDetail() {
             </Button>
             <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
                 <Typography variant="h1">Đơn hàng {order.code}</Typography>
-                <Chip color={orderStatusColor(order.status)} label={statuses[order.status] ?? order.status} />
+                <StatusBadge status={order.status} label={statuses[order.status] ?? order.status} />
             </Stack>
             <Typography color="text.secondary">
                 Đặt lúc {dateTime(order.createdAt)}
@@ -173,7 +173,7 @@ export function ManagementOrderDetail() {
                     <Box sx={(theme) => ({ p: 2, borderRadius: 2, border: "1px solid", borderColor: paymentColor === "default" ? theme.palette.divider : alpha(theme.palette[paymentColor].main, 0.35), bgcolor: paymentColor === "default" ? theme.palette.action.hover : alpha(theme.palette[paymentColor].main, 0.08) })}>
                         <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} flexWrap="wrap">
                             <Stack direction="row" spacing={1} alignItems="center"><PaymentsOutlined color="action" /><Typography fontWeight={700}>Thanh toán</Typography></Stack>
-                            <Chip size="small" color={paymentColor} label={paymentLabels[order.paymentStatus] ?? order.paymentStatus} />
+                            <StatusBadge kind="payment" status={order.paymentStatus} label={paymentLabels[order.paymentStatus] ?? order.paymentStatus} />
                         </Stack>
                         <Stack direction="row" justifyContent="space-between" gap={2} flexWrap="wrap" sx={{ mt: 1.5 }}>
                             <Typography variant="body2">{order.paymentMethod === "cod" ? "Thanh toán khi nhận hàng" : "Chuyển khoản qua payOS"}</Typography>

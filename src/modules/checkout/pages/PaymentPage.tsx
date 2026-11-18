@@ -2,7 +2,6 @@ import {
     Alert,
     Box,
     Button,
-    Chip,
     Divider,
     Paper,
     Stack,
@@ -24,6 +23,7 @@ import { services } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
 import { useOrder } from "@/modules/orders/hooks/useOrder";
 import { paymentLabels } from "@/modules/orders/model/api";
+import { StatusBadge } from "@/shared/components/StatusBadge";
 import { money } from "@/shared/lib/format";
 import {
     EmptyState,
@@ -175,12 +175,7 @@ export function PaymentPanel({
                                       ? "Phiên thanh toán đã kết thúc"
                                       : "Thanh toán qua VietQR"}
                         </Typography>
-                        <Chip
-                            label={paymentLabels[status] ?? status}
-                            color={status === "paid" ? "success" : "warning"}
-                            variant="outlined"
-                            sx={{ flexShrink: 0 }}
-                        />
+                        <StatusBadge kind="payment" status={status} label={paymentLabels[status] ?? status} />
                     </Stack>
                     {status === "paid" && (
                         <CheckCircleOutlineRounded

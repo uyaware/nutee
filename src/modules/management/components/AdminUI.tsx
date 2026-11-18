@@ -79,15 +79,19 @@ export function AdminTable<T extends { id: string }>({
   renderRow,
   minWidth = 720,
   label,
+  pageSize = 8,
+  compact = false,
 }: {
   rows: T[];
   columns: string[];
   renderRow: (row: T) => ReactNode;
   minWidth?: number;
   label: string;
+  pageSize?: number;
+  compact?: boolean;
 }) {
   const { params, update, reset } = useAdminFilters();
-  const size = 8;
+  const size = pageSize;
   const requested = Number(params.get("page"));
   const page = Math.min(
     Number.isFinite(requested) ? Math.max(0, Math.floor(requested)) : 0,
@@ -96,7 +100,7 @@ export function AdminTable<T extends { id: string }>({
   return (
     <Paper variant="outlined" sx={{ minWidth: 0 }}>
       <TableContainer tabIndex={0} role="region" aria-label={label}>
-        <Table sx={{ minWidth }} aria-label={label}>
+        <Table sx={{ minWidth, ...(compact && { "& .MuiTableCell-root": { py: 0.75, px: 2 }, "& .MuiTableCell-head": { py: 1.25 } }) }} aria-label={label}>
           <TableHead>
             <TableRow>
               {columns.map((column) => (
