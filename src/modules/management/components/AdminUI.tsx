@@ -20,6 +20,8 @@ import {
 import { Link } from "react-router-dom";
 import { PageHeading } from "@/shared/components/PageHeading";
 import { useAdminFilters } from "@/modules/management/hooks/useAdminFilters";
+import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
+import CheckRounded from "@mui/icons-material/CheckRounded";
 
 export function AdminPageHeader({
   title,
@@ -178,11 +180,12 @@ export function AdminConfirm({
         <Typography sx={{ overflowWrap: "anywhere" }}>{description}</Typography>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose}>Quay lại</Button>
+        <Button onClick={onClose} startIcon={<ArrowBackRounded />}>Quay lại</Button>
         <Button
           onClick={onConfirm}
           variant="contained"
           color={danger ? "error" : "primary"}
+          startIcon={<CheckRounded />}
         >
           {label}
         </Button>

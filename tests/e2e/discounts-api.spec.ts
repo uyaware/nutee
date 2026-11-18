@@ -15,6 +15,8 @@ async function management(page: Page) {
         rules: [] as Record<string, unknown>[],
         reject: false,
         rejectDelete: false,
+        productOptions: [{ id: 7, name: "Laptop ưu đãi", published: true, imageUrl: "/images/laptop.svg", minPrice: 10000000, maxPrice: 12000000, promotionId: null as string | null, promotionCode: null as string | null }],
+        customerOptions: [{ id: customer.id, name: customer.fullName, email: customer.email, username: customer.username, imageUrl: null }],
         writes: [] as {
             method: string;
             path: string;
@@ -33,7 +35,7 @@ async function management(page: Page) {
         if (path.endsWith("/products"))
             return route.fulfill({
                 json: {
-                    content: [{ id: 7, name: "Laptop ưu đãi" }],
+                    content: state.productOptions,
                     page: 0,
                     size: 50,
                     totalElements: 1,
@@ -42,13 +44,7 @@ async function management(page: Page) {
         if (path.endsWith("/customers"))
             return route.fulfill({
                 json: {
-                    content: [
-                        {
-                            id: customer.id,
-                            name: customer.fullName,
-                            email: customer.email,
-                        },
-                    ],
+                    content: state.customerOptions,
                     page: 0,
                     size: 50,
                     totalElements: 1,
@@ -131,7 +127,7 @@ test("admin creates, pauses, edits and deletes a product promotion through the A
         .fill("SALE10");
     await page.getByLabel("Chọn sản phẩm").fill("Laptop");
     await page
-        .getByRole("option", { name: "Laptop ưu đãi", exact: true })
+        .getByRole("option", { name: /Laptop ưu đãi/ })
         .click();
     await page
         .getByRole("button", { name: "Lưu thay đổi", exact: true })
@@ -164,6 +160,49 @@ test("admin creates, pauses, edits and deletes a product promotion through the A
         .click();
     await expect(page).toHaveURL(/\/management\/promotions$/);
     await expect(page.getByText("Chưa có promotion phù hợp.")).toBeVisible();
+});
+
+test("promotion product selector shows product details and blocks conflicts", async ({ page }) => {
+    const state = await management(page);
+    state.productOptions.push({ id: 8, name: "Sản phẩm đã gắn", published: true, imageUrl: "/images/mouse.svg", minPrice: 500000, maxPrice: 500000, promotionId: "other-rule", promotionCode: "OTHER" });
+    state.productOptions.push({ id: 9, name: "Sản phẩm ẩn", published: false, imageUrl: "/images/mouse.svg", minPrice: 500000, maxPrice: 500000, promotionId: null, promotionCode: null });
+    await page.goto("/management/promotions/new");
+    await page.getByLabel("Chọn sản phẩm").click();
+    const available = page.getByRole("option", { name: /Laptop ưu đãi/ });
+    await expect(available).toContainText("ID: 7");
+    await expect(available).toContainText("10.000.000");
+    await expect(page.getByRole("option", { name: /Sản phẩm đã gắn/ })).toHaveAttribute("aria-disabled", "true");
+    await available.click();
+    await expect(page.getByText("Đã chọn 1 sản phẩm")).toBeVisible();
+    await expect(page.getByRole("link", { name: /Quản lý sản phẩm Laptop ưu đãi/ })).toHaveAttribute("href", "/management/products/7/edit");
+    await expect(page.getByRole("link", { name: /Quản lý sản phẩm Laptop ưu đãi/ })).toHaveAttribute("target", "_blank");
+    await page.getByLabel("Chọn sản phẩm").click();
+    await page.getByRole("option", { name: /Sản phẩm ẩn/ }).click();
+    await expect(page.getByRole("link", { name: /Quản lý sản phẩm Sản phẩm ẩn/ })).toHaveAttribute("href", "/management/products/9/edit");
+    await page.getByRole("combobox", { name: "Áp dụng cho" }).click();
+    await page.getByRole("option", { name: "Tất cả sản phẩm hiện có" }).click();
+    await expect(page.getByText(/Sản phẩm thêm sau không tự tham gia/)).toBeVisible();
+    await page.getByRole("textbox", { name: "Mã promotion" }).fill("ALL10");
+    await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+    await expect(page).toHaveURL(/\/management\/promotions$/);
+    expect(state.writes[0].body).toMatchObject({ scope: "all", productIds: [] });
+});
+
+test("management product editor links to the customer page when published", async ({ page }) => {
+    await management(page);
+    let published = true;
+    await page.route("**/api/v1/management/products/7", (route) => route.fulfill({ json: {
+        id: 7, name: "Laptop ưu đãi", description: "", published, brandId: null,
+        categoryIds: [], defaultVariantId: null, updatedAt: "2026-01-01T00:00:00Z", images: [], variants: [],
+    } }));
+    await page.route("**/api/v1/management/taxonomy/**", (route) => route.fulfill({ json: [] }));
+    await page.goto("/management/products/7/edit");
+    const storeLink = page.getByLabel("Xem trên cửa hàng (mở tab mới)");
+    await expect(storeLink).toHaveAttribute("href", "/products/7");
+    await expect(storeLink).toHaveAttribute("target", "_blank");
+    published = false;
+    await page.reload();
+    await expect(storeLink).toHaveAttribute("aria-disabled", "true");
 });
 
 test("admin assigns a voucher to customers and preserves edits when the API refuses a save or deletion", async ({
@@ -205,9 +244,67 @@ test("admin assigns a voucher to customers and preserves edits when the API refu
         .getByRole("button", { name: "Xác nhận xóa", exact: true })
         .click();
     await expect(
-        page.getByTestId("error-toast").getByRole("alert"),
+        page.getByRole("dialog").getByRole("alert"),
     ).toContainText("Ưu đãi đang được sử dụng");
     expect(state.rules).toHaveLength(1);
+});
+
+test("voucher scope and selected customers stay clear and removable", async ({ page }) => {
+    const state = await management(page);
+    state.customerOptions.push({ id: "00000000-0000-0000-0000-000000000002", name: "Second User", email: "second@example.invalid", username: "second", imageUrl: null });
+    await page.goto("/management/vouchers/new");
+    await expect(page.getByText(/bao gồm cả khách hàng đăng ký sau này/)).toBeVisible();
+    await page.getByRole("combobox", { name: "Áp dụng cho" }).click();
+    await page.getByRole("option", { name: "Khách hàng được chọn" }).click();
+    await page.getByLabel("Chọn khách hàng").click();
+    const first = page.getByRole("option", { name: /Discount User/ });
+    await expect(first).toContainText(customer.email);
+    await first.click();
+    await page.getByLabel("Chọn khách hàng").click();
+    await page.getByRole("option", { name: /Second User/ }).click();
+    await expect(page.getByText("Đã chọn 2 khách hàng")).toBeVisible();
+    await page.getByRole("button", { name: "Bỏ chọn Discount User" }).click();
+    await expect(page.getByText("Đã chọn 1 khách hàng")).toBeVisible();
+    await page.getByRole("textbox", { name: "Mã voucher" }).fill("PERSONAL");
+    await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+    await expect(page).toHaveURL(/\/management\/vouchers$/);
+    expect(state.writes[0].body).toMatchObject({ scope: "user", userIds: ["00000000-0000-0000-0000-000000000002"] });
+});
+
+test("account management offers staff and admin roles only", async ({ page }) => {
+    await management(page);
+    await page.route("**/api/v1/management/users?*", (route) => route.fulfill({ json: { content: [], page: 0, size: 20, totalElements: 0 } }));
+    await page.goto("/management/users");
+    await page.getByRole("button", { name: "Thêm tài khoản" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("combobox", { name: "Vai trò" }).click();
+    await expect(page.getByRole("option", { name: "Nhân viên" })).toBeVisible();
+    await expect(page.getByRole("option", { name: "Quản trị viên" })).toBeVisible();
+    await expect(page.getByRole("option", { name: "Khách hàng" })).toHaveCount(0);
+});
+
+test("staff detail shows two balanced sections and saves access changes", async ({ page }) => {
+    await management(page);
+    const employee = { id: "00000000-0000-0000-0000-000000000003", name: "Nhân viên A", email: "staff@example.invalid", phone: null, role: "staff", isActive: true };
+    await page.route("**/api/v1/management/users/00000000-0000-0000-0000-000000000003**", async (route) => {
+        if (route.request().method() === "PUT") Object.assign(employee, route.request().postDataJSON());
+        await route.fulfill({ json: employee });
+    });
+    await page.goto(`/management/users/${employee.id}`);
+    const info = page.getByRole("heading", { name: "Thông tin tài khoản" }).locator("xpath=../..");
+    const access = page.getByRole("heading", { name: "Vai trò và quyền truy cập" }).locator("xpath=../..");
+    const infoBox = await info.boundingBox();
+    const accessBox = await access.boundingBox();
+    expect(infoBox).not.toBeNull();
+    expect(accessBox).not.toBeNull();
+    expect(Math.abs(infoBox!.width - accessBox!.width)).toBeLessThan(2);
+    await page.getByRole("combobox", { name: "Vai trò" }).click();
+    await page.getByRole("option", { name: "Quản trị viên" }).click();
+    await expect(page.getByText("Vai trò đang chọn")).toBeVisible();
+    await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Xác nhận" }).click();
+    await expect(page.getByText("Đã lưu quyền tài khoản.")).toBeVisible();
+    expect(employee.role).toBe("admin");
 });
 
 test("checkout gets server quotes, applies and removes vouchers and does not keep a stale discounted total on failure", async ({

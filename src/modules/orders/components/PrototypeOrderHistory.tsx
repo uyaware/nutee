@@ -143,7 +143,7 @@ export function PrototypeOrderHistory({
             <StatusBadge status={order.status} />
           </Stack>
           <Stack spacing={2.5} sx={{ p: { xs: 2, sm: 3 } }}>
-            {!compact && <OrderProducts items={order.items} />}
+            {!compact && <OrderProducts items={order.items} management={!customer} />}
             <Stack
               direction={{ xs: "column", sm: "row" }}
               justifyContent="space-between"

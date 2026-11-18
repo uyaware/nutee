@@ -39,6 +39,7 @@ import ImageOutlined from "@mui/icons-material/ImageOutlined";
 import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
 import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
 import CloseRounded from "@mui/icons-material/CloseRounded";
+import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
@@ -216,9 +217,14 @@ function ProductEditor({
                 title={product ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
                 description="Quản lý thông tin, ảnh và các biến thể."
                 action={
-                    <Button component={Link} to="/management/products" variant="outlined" startIcon={<ArrowBackRounded />}>
-                        Về danh sách
-                    </Button>
+                    <Stack direction="row" gap={1} flexWrap="wrap">
+                        {product && <Tooltip title={product.published ? "Mở trang sản phẩm cho khách hàng" : "Công khai sản phẩm trước khi mở trên cửa hàng"}>
+                            <span><Button component={Link} to={`/products/${product.id}`} target="_blank" rel="noopener noreferrer" disabled={!product.published} variant="outlined" startIcon={<OpenInNewRounded />} aria-label="Xem trên cửa hàng (mở tab mới)">Xem trên cửa hàng</Button></span>
+                        </Tooltip>}
+                        <Button component={Link} to="/management/products" variant="outlined" startIcon={<ArrowBackRounded />}>
+                            Về danh sách
+                        </Button>
+                    </Stack>
                 }
             />
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 3fr) minmax(0, 7fr)" }, gap: 3, alignItems: "start" }}>

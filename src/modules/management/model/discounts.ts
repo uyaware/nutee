@@ -5,6 +5,13 @@ export interface DiscountOption {
     id: string;
     name: string;
     email?: string;
+    username?: string;
+    published?: boolean;
+    imageUrl?: string | null;
+    minPrice?: number | null;
+    maxPrice?: number | null;
+    promotionId?: string | null;
+    promotionCode?: string | null;
 }
 export const discountStatusLabels: Record<string, string> = {
     active: "Đang áp dụng",

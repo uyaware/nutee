@@ -150,7 +150,7 @@ export function PrototypeOrderDetail({ portal }: { portal: Portal }) {
           <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
             <Stack spacing={3}>
               <Typography variant="h2">Sản phẩm trong đơn</Typography>
-              <OrderProducts items={order.items} />
+              <OrderProducts items={order.items} management={!customer} />
               {customer && status === "delivered" && (
                 <Stack spacing={2}>
                   {order.items.map((item) => (

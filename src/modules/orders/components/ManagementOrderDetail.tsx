@@ -15,6 +15,8 @@ import {
 } from "@mui/material";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import PaymentsOutlined from "@mui/icons-material/PaymentsOutlined";
+import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
+import HighlightOffRounded from "@mui/icons-material/HighlightOffRounded";
 import { alpha } from "@mui/material/styles";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
@@ -169,7 +171,7 @@ export function ManagementOrderDetail() {
                         <Typography>Ghi chú: {order.note}</Typography>
                     )}
                     <Divider />
-                    <OrderDetailProducts items={order.items} />
+                    <OrderDetailProducts items={order.items} management />
                     <Divider />
                     <OrderTotals quote={order} />
                     <Box sx={(theme) => ({ p: 2, borderRadius: 2, border: "1px solid", borderColor: paymentColor === "default" ? theme.palette.divider : alpha(theme.palette[paymentColor].main, 0.35), bgcolor: paymentColor === "default" ? theme.palette.action.hover : alpha(theme.palette[paymentColor].main, 0.08) })}>
@@ -222,12 +224,12 @@ export function ManagementOrderDetail() {
                                     <Typography fontWeight={700}>{step.title}</Typography>
                                     <Typography variant="body2" color="text.secondary">{step.description}</Typography>
                                 </Box>
-                                {index > 0 && <Button size="small" variant={available ? "contained" : "outlined"} disabled={!available || transition.isPending} onClick={() => { if (next) { transition.reset(); setSelected(next); } }}>{completed ? "Đã hoàn thành" : actions[steps[index - 1].status].label}</Button>}
+                                {index > 0 && <Button size="small" variant={available ? "contained" : "outlined"} startIcon={<CheckCircleOutlineRounded />} disabled={!available || transition.isPending} onClick={() => { if (next) { transition.reset(); setSelected(next); } }}>{completed ? "Đã hoàn thành" : actions[steps[index - 1].status].label}</Button>}
                             </Stack>
                         );
                     })}
                     </Stack>
-                    {canCancel && <Button color="error" variant="outlined" sx={{ alignSelf: "flex-end" }} onClick={() => { transition.reset(); setSelected({ status: "cancelled", label: "Hủy đơn" }); }}>Hủy đơn</Button>}
+                    {canCancel && <Button color="error" variant="outlined" startIcon={<HighlightOffRounded />} sx={{ alignSelf: "flex-end" }} onClick={() => { transition.reset(); setSelected({ status: "cancelled", label: "Hủy đơn" }); }}>Hủy đơn</Button>}
                 </Stack>
             </Paper>
             <OrderHistoryPanel
@@ -261,11 +263,13 @@ export function ManagementOrderDetail() {
                     <Button
                         disabled={transition.isPending}
                         onClick={() => setSelected(null)}
+                        startIcon={<ArrowBackRounded />}
                     >
                         Quay lại
                     </Button>
                     <Button
                         disabled={transition.isPending}
+                        startIcon={<CheckCircleOutlineRounded />}
                         onClick={() => {
                             if (selected) transition.mutate(selected.status);
                         }}

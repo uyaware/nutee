@@ -20,6 +20,8 @@ import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
 import SellOutlined from "@mui/icons-material/SellOutlined";
 import EditOutlined from "@mui/icons-material/EditOutlined";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import SaveOutlined from "@mui/icons-material/SaveOutlined";
+import CloseRounded from "@mui/icons-material/CloseRounded";
 import { api } from "@/app/services";
 import { useSession } from "@/modules/auth/hooks/useSession";
 import {
@@ -261,10 +263,11 @@ function TaxonomyEditor({ kind }: { kind: "brands" | "categories" }) {
                             </Stack>
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={() => setDraft(null)}>Hủy</Button>
+                            <Button onClick={() => setDraft(null)} startIcon={<CloseRounded />}>Hủy</Button>
                             <Button
                                 type="submit"
                                 variant="contained"
+                                startIcon={<SaveOutlined />}
                                 disabled={save.isPending || !draft.name.trim()}
                             >
                                 Lưu

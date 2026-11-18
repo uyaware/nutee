@@ -18,7 +18,7 @@ interface ApiRule extends Partial<DiscountDraft> {
     endsAt: string;
     isActive: boolean;
     status: string;
-    products?: { id: number; name: string }[];
+    products?: (Omit<DiscountOption, "id"> & { id: number })[];
     users?: DiscountOption[];
 }
 function rule(kind: DiscountKind, value: ApiRule): DiscountRule {
@@ -71,7 +71,7 @@ export function createDiscountService(api: ApiClient) {
             };
             const body =
                 kind === "promotions"
-                    ? { ...common, productIds: fields.productIds }
+                    ? { ...common, scope: fields.scope, productIds: fields.scope === "all" ? [] : fields.productIds }
                     : {
                           ...common,
                           scope: fields.scope,
@@ -106,7 +106,7 @@ export function createDiscountService(api: ApiClient) {
             q: string,
         ): Promise<DiscountOption[]> {
             const result = await api.request<
-                ApiPage<{ id: number | string; name: string; email?: string }>
+                ApiPage<Omit<DiscountOption, "id"> & { id: number | string }>
             >(
                 `${path(kind)}/${kind === "promotions" ? "products" : "customers"}?${new URLSearchParams({ q, size: "50" })}`,
             );

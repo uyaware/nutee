@@ -4,7 +4,7 @@ import { ProductImage } from "@/modules/catalog/components/ProductImage";
 import type { CustomerOrder } from "@/modules/orders/model/api";
 import { money } from "@/shared/lib/format";
 
-export function OrderDetailProducts({ items }: { items: CustomerOrder["items"] }) {
+export function OrderDetailProducts({ items, management = false }: { items: CustomerOrder["items"]; management?: boolean }) {
     return <Box>
         <Typography variant="h2" sx={{ mb: 2 }}>Sản phẩm đã mua</Typography>
         <Stack divider={<Divider />}>
@@ -13,7 +13,7 @@ export function OrderDetailProducts({ items }: { items: CustomerOrder["items"] }
                     <ProductImage src={item.imageUrl ?? ""} alt={`Minh họa ${item.name}`} />
                 </Box>
                 <Box sx={{ flex: 1, minWidth: 100 }}>
-                    <Typography component={Link} to={`/products/${item.productId}`} sx={{ fontWeight: 700, textDecoration: "none", overflowWrap: "anywhere" }}>{item.name}</Typography>
+                    <Typography component={Link} to={management ? `/management/products/${item.productId}/edit` : `/products/${item.productId}`} sx={{ fontWeight: 700, textDecoration: "none", overflowWrap: "anywhere" }}>{item.name}</Typography>
                     {item.configuration && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{item.configuration}</Typography>}
                     {item.sku && <Typography variant="body2" color="text.secondary">SKU: {item.sku}</Typography>}
                 </Box>

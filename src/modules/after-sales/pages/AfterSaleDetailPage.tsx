@@ -145,6 +145,7 @@ export default function AfterSaleDetailPage({ portal }: { portal: Portal }) {
                             </Stack>
                             {item && (
                                 <OrderProducts
+                                    management={!customer}
                                     items={[
                                         {
                                             ...item,

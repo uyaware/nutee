@@ -25,7 +25,7 @@ describe("discount management API", () => {
         };
         await service.save("promotions", undefined, promotion);
         let body = JSON.parse(fetch.mock.calls.at(-1)![1]!.body as string);
-        expect(body).toMatchObject({ code: "SAVE10", productIds: [7] });
+        expect(body).toMatchObject({ code: "SAVE10", scope: "product", productIds: [7] });
         expect(body).not.toHaveProperty("userIds");
         expect(body).not.toHaveProperty("minOrder");
         await service.save("vouchers", "rule-id", {
@@ -45,6 +45,17 @@ describe("discount management API", () => {
         expect(fetch.mock.calls.at(-1)?.[0]).toBe(
             "/api/v1/management/vouchers/rule-id",
         );
+    });
+    it("sends all-products scope without a product selection", async () => {
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url) => Response.json(
+            String(url).endsWith("/csrf") ? { token: "csrf", headerName: "X-XSRF-TOKEN" } : {
+                id: "rule-id", ...emptyDiscount("promotions"), code: "ALL10", scope: "all", products: [],
+            },
+        ));
+        const service = createDiscountService(createApiClient({ fetch }));
+        await service.save("promotions", undefined, { ...emptyDiscount("promotions"), code: "ALL10", scope: "all" });
+        const body = JSON.parse(fetch.mock.calls.at(-1)![1]!.body as string);
+        expect(body).toMatchObject({ scope: "all", productIds: [] });
     });
     it("validates ranges and assignments before sending writes", async () => {
         const fetch = vi.fn<typeof globalThis.fetch>();

@@ -19,6 +19,11 @@ import {
     Typography,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import PauseCircleOutlineRounded from "@mui/icons-material/PauseCircleOutlineRounded";
+import PlayCircleOutlineRounded from "@mui/icons-material/PlayCircleOutlineRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
+import CheckRounded from "@mui/icons-material/CheckRounded";
 import { StatusBadge } from "@/shared/components/StatusBadge";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -207,11 +212,13 @@ export function DiscountList({ kind }: { kind: DiscountKind }) {
                                                 <Button
                                                     component={Link}
                                                     to={`/management/${kind}/${item.id}`}
+                                                    startIcon={<EditOutlined />}
                                                 >
                                                     Chỉnh sửa
                                                 </Button>
                                                 <Button
                                                     disabled={toggle.isPending}
+                                                    startIcon={item.isActive ? <PauseCircleOutlineRounded /> : <PlayCircleOutlineRounded />}
                                                     onClick={() => {
                                                         toggle.reset();
                                                         setSelected(item);
@@ -263,12 +270,14 @@ export function DiscountList({ kind }: { kind: DiscountKind }) {
                     <Button
                         disabled={toggle.isPending}
                         onClick={() => setSelected(null)}
+                        startIcon={<CloseRounded />}
                     >
                         Hủy
                     </Button>
                     <Button
                         disabled={toggle.isPending}
                         onClick={() => toggle.mutate()}
+                        startIcon={<CheckRounded />}
                     >
                         Xác nhận
                     </Button>

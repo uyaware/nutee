@@ -1,5 +1,7 @@
 import { useState } from "react";
 import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
+import PersonAddOutlined from "@mui/icons-material/PersonAddOutlined";
+import CloseRounded from "@mui/icons-material/CloseRounded";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Button,
@@ -60,10 +62,11 @@ export default function ConnectedUsersPage() {
         <Stack spacing={3}>
             <AdminPageHeader
                 title="Tài khoản"
-                description="Tra cứu và quản lý quyền truy cập tài khoản."
+                description="Tra cứu và quản lý tài khoản nhân viên, quản trị viên."
                 action={
                     <Button
                         variant="contained"
+                        startIcon={<PersonAddOutlined />}
                         onClick={() => setCreating(true)}
                     >
                         Thêm tài khoản
@@ -90,9 +93,9 @@ export default function ConnectedUsersPage() {
                     }}
                 >
                     <MenuItem value="all">Tất cả</MenuItem>
-                    {Object.entries(roleLabels).map(([key, label]) => (
-                        <MenuItem key={key} value={key}>
-                            {label}
+                    {(["staff", "admin"] as const).map((role) => (
+                        <MenuItem key={role} value={role}>
+                            {roleLabels[role]}
                         </MenuItem>
                     ))}
                 </TextField>
@@ -271,19 +274,20 @@ function CreateUserDialog({
                             value={role}
                             onChange={(event) => setRole(event.target.value)}
                         >
-                            {Object.entries(roleLabels).map(([key, label]) => (
-                                <MenuItem key={key} value={key}>
-                                    {label}
+                            {(["staff", "admin"] as const).map((role) => (
+                                <MenuItem key={role} value={role}>
+                                    {roleLabels[role]}
                                 </MenuItem>
                             ))}
                         </TextField>
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose}>Hủy</Button>
+                    <Button onClick={onClose} startIcon={<CloseRounded />}>Hủy</Button>
                     <Button
                         type="submit"
                         variant="contained"
+                        startIcon={<PersonAddOutlined />}
                         disabled={create.isPending}
                     >
                         Tạo tài khoản

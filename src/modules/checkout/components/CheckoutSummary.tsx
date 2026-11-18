@@ -29,7 +29,7 @@ type SummaryQuote = Pick<
     shippingConfirmed?: boolean;
 };
 
-export function OrderProducts({ items }: { items: CheckoutProduct[] }) {
+export function OrderProducts({ items, management = false }: { items: CheckoutProduct[]; management?: boolean }) {
     return (
         <Stack spacing={2}>
             {items.map((item) => (
@@ -57,7 +57,7 @@ export function OrderProducts({ items }: { items: CheckoutProduct[] }) {
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography
                             component={Link}
-                            to={`/products/${item.productId}`}
+                            to={management ? `/management/products/${item.productId}/edit` : `/products/${item.productId}`}
                             sx={{
                                 fontWeight: 600,
                                 textDecoration: "none",
